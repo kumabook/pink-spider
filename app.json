@@ -1,0 +1,11 @@
+{
+  "name": "MusicFav application  server",
+  "description": "An application server for MusicFav app",
+  "repository": "https://github.com/kumabook/musicfav-cloud.git",
+  "success_url": "/",
+  "keywords": ["rust", "iron"],
+  "website": "https://github.com/kumabook/musicfav-cloud/wiki",
+  "env": {
+    "BUILDPACK_URL": "https://github.com/kumabook/heroku-buildpack-rust.git"
+  }
+}

@@ -1,0 +1,12 @@
+[package]
+
+name = "musicfav-cloud"
+version = "0.0.1"
+authors = ["kumabook@live.jp"]
+
+[[bin]]
+name = "app"
+
+[dependencies]
+iron = "*"
+
