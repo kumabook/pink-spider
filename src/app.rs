@@ -1,8 +1,7 @@
+#![feature(net)]
 extern crate iron;
 
-use std::os;
 use std::net::{IpAddr, SocketAddr};
-use std::str::FromStr;
 use iron::prelude::*;
 use iron::status;
 
@@ -11,10 +10,10 @@ fn main() {
         Ok(Response::with((status::Ok, "Hello World!")))
     }
 
-    let opt_port = os::getenv("PORT");
+    let opt_port = std::env::var("PORT");
     let port_str = match opt_port {
-        Some(n) => n,
-        None    => "8080".to_string()
+        Ok(n)    => n,
+        Err(_) => "8080".to_string()
     };
     let port: u16 = match port_str.trim().parse() {
         Ok(n) => n,
