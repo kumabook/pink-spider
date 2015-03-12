@@ -4,9 +4,15 @@ name = "musicfav-cloud"
 version = "0.0.1"
 authors = ["kumabook@live.jp"]
 
+#![feature(os)]
+
 [[bin]]
 name = "app"
 
 [dependencies]
 iron = "*"
+postgres = "0.7"
+
+[dependencies.html5ever]
+git = "https://github.com/servo/html5ever"
 
