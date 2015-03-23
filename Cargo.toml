@@ -1,6 +1,6 @@
 [package]
 
-name = "musicfav-cloud"
+name = "pink_spider"
 version = "0.0.1"
 authors = ["kumabook@live.jp"]
 
@@ -12,7 +12,13 @@ name = "app"
 [dependencies]
 iron = "*"
 postgres = "0.7"
+regex = "0.1.8"
+regex_macros = "0.1.8"
 
+[dependencies.string_cache]
+git = "https://github.com/servo/string-cache"
+[dependencies.string_cache_plugin]
+git = "https://github.com/servo/string-cache"
 [dependencies.html5ever]
 git = "https://github.com/servo/html5ever"
 
