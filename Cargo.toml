@@ -11,10 +11,15 @@ name = "app"
 
 [dependencies]
 iron = "*"
+router = "*"
+hyper = "*"
+rustc-serialize = "*"
 postgres = "0.7"
 regex = "0.1.8"
 regex_macros = "0.1.8"
 
+[dependencies.urlencoded]
+version = "0.1.0"
 [dependencies.string_cache]
 git = "https://github.com/servo/string-cache"
 [dependencies.string_cache_plugin]

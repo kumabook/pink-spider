@@ -6,7 +6,11 @@ use iron::prelude::*;
 use iron::status;
 
 fn main() {
-    fn hello_world(_: &mut Request) -> IronResult<Response> {
+    let mut router = Router::new();
+    router.get("/", handler);
+    router.get("/:query", handler);
+
+    fn hander(_: &mut Request) -> IronResult<Response> {
         Ok(Response::with((status::Ok, "Hello World!")))
     }
 
@@ -24,5 +28,5 @@ fn main() {
     };
     println!("PORT {}", port_str);
     let ip = IpAddr::new_v4(0, 0, 0, 0);
-    Iron::new(hello_world).http(SocketAddr::new(ip, port)).unwrap();
+    Iron::new(router).http(SocketAddr::new(ip, port)).unwrap();
 }

@@ -1,18 +1,32 @@
 extern crate html5ever;
 extern crate regex;
+extern crate hyper;
 
 use self::html5ever::sink::common::{Document, Doctype, Text, Comment, Element};
 use self::html5ever::sink::rcdom::{RcDom, Handle};
 use self::html5ever::{parse, one_input, Attribute};
 use std::default::Default;
+use std::io::Read;
 
 use self::regex::Regex;
+use self::hyper::Client;
+use self::hyper::header::Connection;
+use self::hyper::header::ConnectionOption;
+
+
 use Provider;
 use Track;
 use Playlist;
 
-pub fn extract_playlist(input: String) {
-    let dom: RcDom = parse(one_input(input), Default::default());
+pub fn extract_playlist(url: &str) -> Playlist {
+    let mut client = Client::new();
+     let mut res = client.get(url)
+                         .header(Connection(vec![ConnectionOption::Close]))
+                         .send().unwrap();
+    let mut body = String::new();
+    res.read_to_string(&mut body).unwrap();
+
+    let dom: RcDom = parse(one_input(body), Default::default());
     let mut playlist = Playlist {
         title: "".to_string(),
         tracks: Vec::new()
@@ -24,9 +38,7 @@ pub fn extract_playlist(input: String) {
             println!(" {}", err);
         }
     }*/
-    for t in playlist.tracks.iter() {
-        println!("{}", t.url);
-    }
+    return playlist
 }
 
 // This is not proper HTML serialization, of course.
@@ -68,7 +80,7 @@ pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
                                      provider: Provider::YouTube,
                                         title: strs[0].to_string(),
                                           url: attr.value.to_string(),
-                                    serviceId: strs[0].to_string()
+                                    service_id: strs[0].to_string()
                                 })
                             },
                             Err(err) =>
@@ -93,7 +105,7 @@ pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
                                      provider: Provider::SoundCloud,
                                         title: strs[0].to_string(),
                                           url: attr.value.to_string(),
-                                    serviceId: strs[0].to_string()
+                                    service_id: strs[0].to_string()
                                 })
                             },
                             Err(err) =>
