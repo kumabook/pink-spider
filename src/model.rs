@@ -40,10 +40,15 @@ pub struct Playlist {
     pub tracks: Vec<Track>,
 }
 
-impl ToJson for Playlist {
+pub struct Entry {
+    pub url: String,
+    pub tracks: Vec<Track>,
+}
+
+impl ToJson for Entry {
     fn to_json(&self) -> Json {
         let mut d = BTreeMap::new();
-        d.insert("title".to_string(), self.title.to_json());
+        d.insert("url".to_string(), self.url.to_json());
         let ref tracks = self.tracks;
         let mut t = Vec::new();
         for ref x in tracks.iter() {

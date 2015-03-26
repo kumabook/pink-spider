@@ -18,7 +18,8 @@ extern crate regex;
 #[macro_use]
 extern crate string_cache;
 
-use pink_spider::scraper::extract_playlist;
+use pink_spider::scraper::extract_tracks;
+use pink_spider::model::Entry;
 use serialize::json::{ToJson, Json};
 
 
@@ -30,8 +31,12 @@ fn log_params(req: &mut Request) -> IronResult<Response> {
         Ok(ref params) => {
             match params.get("url") {
                 Some(url) => {
-                    let playlist = extract_playlist(&url[0]);
-                    let json_obj: Json = playlist.to_json();
+                    let tracks = extract_tracks(&url[0]);
+                    let entry = Entry {
+                        url:    url[0].to_string(),
+                        tracks: tracks
+                    };
+                    let json_obj: Json = entry.to_json();
                     let json_str: String = json_obj.to_string();
 
                     return Ok(Response::with((status::Ok, json_str)))
@@ -47,11 +52,6 @@ fn log_params(req: &mut Request) -> IronResult<Response> {
 }
 
 fn main() {
-//    let input = io::stdin().read_to_string().unwrap();
-//    println!("playlist extractor\n");
-//    println!("{}", input);
-//    pink_spider::scraper::extract_playlist(input);
-//        let mut router = Router::new();
     let mut router = Router::new();
     router.get("/playlistify", log_params);
     router.get("/:query", handler);

@@ -16,9 +16,8 @@ use self::hyper::header::ConnectionOption;
 
 use Provider;
 use Track;
-use Playlist;
 
-pub fn extract_playlist(url: &str) -> Playlist {
+pub fn extract_tracks(url: &str) -> Vec<Track> {
     let mut client = Client::new();
      let mut res = client.get(url)
                          .header(Connection(vec![ConnectionOption::Close]))
@@ -27,22 +26,13 @@ pub fn extract_playlist(url: &str) -> Playlist {
     res.read_to_string(&mut body).unwrap();
 
     let dom: RcDom = parse(one_input(body), Default::default());
-    let mut playlist = Playlist {
-        title: "".to_string(),
-        tracks: Vec::new()
-    };
-    walk(0, dom.document, &mut playlist);
-/*    if !dom.errors.is_empty() {
-        println!("\nParse errorsasd:");
-        for err in dom.errors.into_iter() {
-            println!(" {}", err);
-        }
-    }*/
-    return playlist
+    let mut tracks  = Vec::new();
+    walk(0, dom.document, &mut tracks);
+    return tracks
 }
 
 // This is not proper HTML serialization, of course.
-fn walk(indent: usize, handle: Handle, playlist: &mut Playlist) {
+fn walk(indent: usize, handle: Handle, tracks: &mut Vec<Track>) {
     let node = handle.borrow();
     match node.node {
         Document         => (),
@@ -52,13 +42,13 @@ fn walk(indent: usize, handle: Handle, playlist: &mut Playlist) {
         Element(ref name, ref attrs) => {
             let tag_name = name.local.as_slice();
             match extract_track(tag_name, attrs) {
-                Some(track) => (*playlist).tracks.push(track),
+                Some(track) => (*tracks).push(track),
                 None => {}
             }
         }
     }
     for child in node.children.iter() {
-        walk(indent+4, child.clone(), playlist);
+        walk(indent+4, child.clone(), tracks);
     }
 }
 
@@ -68,9 +58,6 @@ pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
             match Regex::new(r"www.youtube.com/embed") {
                 Ok(re) =>
                     if re.is_match(&attr.value) {
-/*                        println!("YouTube {}=\"{}\"",
-                                 attr.name.local.as_slice(),
-                                 attr.value);*/
                         match Regex::new(r"www.youtube.com/embed/(.+)") {
                             Ok(re) => {
                                 let cap = re.captures(&attr.value).unwrap();
