@@ -8,12 +8,13 @@ pub enum Provider {
     SoundCloud,
     Raw
 }
-
-fn provider2str(provider: &Provider) -> String {
-    match *provider {
-        Provider::YouTube    => "YouTube".to_string(),
-        Provider::SoundCloud => "SoundCloud".to_string(),
-        Provider::Raw        => "Raw".to_string(),
+impl Provider {
+    fn to_string(&self) -> String {
+        match *self {
+            Provider::YouTube    => "YouTube".to_string(),
+            Provider::SoundCloud => "SoundCloud".to_string(),
+            Provider::Raw        => "Raw".to_string(),
+        }
     }
 }
 
@@ -26,7 +27,7 @@ pub struct Track {
 impl ToJson for Track {
     fn to_json(&self) -> Json {
         let mut d = BTreeMap::new();
-        d.insert("provider".to_string(),   provider2str(&self.provider).to_json());
+        d.insert("provider".to_string(),   self.provider.to_string().to_json());
         d.insert("service_id".to_string(), self.service_id.to_json());
         d.insert("title".to_string(),      self.title.to_json());
         d.insert("url".to_string(),        self.url.to_json());
