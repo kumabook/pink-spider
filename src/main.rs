@@ -19,7 +19,7 @@ extern crate regex;
 extern crate string_cache;
 
 use pink_spider::scraper::extract_tracks;
-use pink_spider::model::Entry;
+use pink_spider::model::{Entry, create_tables};
 use serialize::json::{ToJson, Json};
 
 
@@ -52,6 +52,9 @@ fn log_params(req: &mut Request) -> IronResult<Response> {
 }
 
 fn main() {
+
+    create_tables();
+
     let mut router = Router::new();
     router.get("/playlistify", log_params);
     router.get("/:query", handler);

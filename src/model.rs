@@ -1,5 +1,7 @@
 extern crate serialize;
+extern crate postgres;
 
+use self::postgres::{Connection, SslMode};
 use std::collections::BTreeMap;
 use self::serialize::json::{ToJson, Json};
 
@@ -57,4 +59,24 @@ impl ToJson for Entry {
         d.insert("tracks".to_string(), Json::Array(t));
         Json::Object(d)
     }
+}
+
+
+pub fn create_tables() {
+    let conn = Connection::connect("postgres://postgres@localhost",
+                                   &SslMode::None)
+        .unwrap();
+
+    conn.execute("CREATE TABLE track (id         SERIAL PRIMARY KEY,
+                                      provider   VARCHAR NOT NULL,
+                                      service_id VARCHAR NOT NULL,
+                                      title      VARCHAR NOT NULL,
+                                      url        VARCHAR NOT NULL)", &[]).unwrap();
+
+    conn.execute("CREATE TABLE entry (id  SERIAL PRIMARY KEY,
+                                      url VARCHAR NOT NULL)", &[]).unwrap();
+
+    conn.execute("CREATE TABLE track_entry (id  SERIAL PRIMARY KEY,
+                                            track_id SERIAL NOT NULL,
+                                            entry_id SERIAL NOT NULL)", &[]).unwrap();
 }
