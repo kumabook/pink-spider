@@ -95,7 +95,8 @@ impl Track {
                                         t.url,
                                         t.identifier
                                  FROM track t LEFT JOIN track_entry te
-                                 ON t.id = te.track_id AND te.entry_id = $1").unwrap();
+                                 ON t.id = te.track_id
+                                 WHERE te.entry_id = $1").unwrap();
         for row in stmt.query(&[&entry_id]).unwrap() {
             tracks.push(Track {
                       id: row.get(0),
