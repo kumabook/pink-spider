@@ -288,30 +288,6 @@ pub fn create_tables() {
         Ok(_) => println!("Succeeded in creating track_entry table"),
         Err(error) => println!("error {}", error)
     }
-
-    match Entry::create_by_url("http://dummy.com".to_string()) {
-        Some(mut entry) => {
-            println!("Succeeded in inserting {:?}", entry);
-            match Track::create(Provider::YouTube,
-                                "".to_string(),
-                                "http:://dummy.com".to_string(),
-                                "1234".to_string()) {
-                Some(track) => {
-                    println!("Find {:?}", track);
-                    entry.add_track(track)
-                },
-                None        => println!("Not found"),
-            }
-        },
-        None        => println!("Failed to insert"),
-    }
-
-    match Entry::find_by_url("http://dummy.com") {
-        Some(entry) => {
-            println!("Succeeded in find {:?}", entry);
-        },
-        None        => println!("Failed to find"),
-    }
 }
 
 pub fn drop_tables() {

@@ -19,27 +19,20 @@ extern crate regex;
 extern crate string_cache;
 
 use pink_spider::scraper::extract_tracks;
-use pink_spider::model::{Entry, create_tables, drop_tables};
+use pink_spider::model::{Track, Entry, create_tables, drop_tables};
 use serialize::json::{ToJson, Json};
 
 
 extern crate pink_spider;
 
-fn log_params(req: &mut Request) -> IronResult<Response> {
-    // Extract the decoded data as hashmap, using the UrlEncodedQuery plugin.
+fn playlistify(req: &mut Request) -> IronResult<Response> {
     match req.get_ref::<UrlEncodedQuery>() {
         Ok(ref params) => {
             match params.get("url") {
                 Some(url) => {
-                    let tracks = extract_tracks(&url[0]);
-                    let entry = Entry {
-                            id: 0,
-                           url: url[0].to_string(),
-                        tracks: tracks
-                    };
+                    let entry = find_or_create_entry(&url[0]);
                     let json_obj: Json = entry.to_json();
                     let json_str: String = json_obj.to_string();
-
                     return Ok(Response::with((status::Ok, json_str)))
                 },
                 None => println!("no url")
@@ -52,12 +45,44 @@ fn log_params(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, "{}")))
 }
 
+fn find_or_create_entry(url: &str) -> Entry {
+    match Entry::find_by_url(url) {
+        Some(entry) => {
+            println!("Get entry from database cache");
+            entry
+        },
+        None => {
+            let tracks = extract_tracks(url);
+            match Entry::create_by_url(url.to_string()) {
+                Some(mut entry) => {
+                    println!("Create new entry to database cache");
+                    for t in tracks {
+                        match Track::create(t.provider, t.title, t.url, t.identifier) {
+                            Some(track) => entry.add_track(track),
+                            None        => ()
+                        }
+                    }
+                    entry
+                },
+                None => {
+                    println!("Failed to create entry database cache");
+                    Entry {
+                            id: 0,
+                           url: url.to_string(),
+                        tracks: tracks
+                    }
+                }
+            }
+        }
+    }
+}
+
 fn main() {
     drop_tables();
     create_tables();
 
     let mut router = Router::new();
-    router.get("/playlistify", log_params);
+    router.get("/playlistify", playlistify);
     router.get("/:query", handler);
 
     fn handler(req: &mut Request) -> IronResult<Response> {
