@@ -62,12 +62,12 @@ pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
                             Ok(re) => {
                                 let cap = re.captures(&attr.value).unwrap();
                                 let strs: Vec<&str> = cap.at(1).unwrap().split_str('?').collect();
-//                                println!("id: {} ", strs[0]);
                                 return Some(Track {
+                                           id: 0,
                                      provider: Provider::YouTube,
                                         title: strs[0].to_string(),
                                           url: attr.value.to_string(),
-                                    service_id: strs[0].to_string()
+                                   identifier: strs[0].to_string()
                                 })
                             },
                             Err(err) =>
@@ -89,10 +89,11 @@ pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
                                 let strs: Vec<&str> = cap.at(1).unwrap().split_str('&').collect();
 //                                println!("id: {} ", strs[0]);
                                 return Some(Track {
+                                           id: 0,
                                      provider: Provider::SoundCloud,
                                         title: strs[0].to_string(),
                                           url: attr.value.to_string(),
-                                    service_id: strs[0].to_string()
+                                   identifier: strs[0].to_string()
                                 })
                             },
                             Err(err) =>
