@@ -50,7 +50,7 @@ impl ToJson for Track {
 }
 
 impl Track {
-    fn find_by_id(id: i32) -> Option<Track> {
+    pub fn find_by_id(id: i32) -> Option<Track> {
         let conn = conn();
         let stmt = conn.prepare("SELECT id, provider, title, url, identifier
                                  FROM track WHERE id = $1").unwrap();
@@ -67,7 +67,7 @@ impl Track {
         return None
     }
 
-    fn find_by(provider: &Provider, identifier: &str) -> Option<Track> {
+    pub fn find_by(provider: &Provider, identifier: &str) -> Option<Track> {
         let conn = conn();
         let stmt = conn.prepare("SELECT id,  provider, title, url, identifier
                                  FROM track WHERE provider = $1
@@ -85,8 +85,7 @@ impl Track {
         return None
     }
 
-
-    fn find_by_entry_id(entry_id: i32) -> Vec<Track> {
+    pub fn find_by_entry_id(entry_id: i32) -> Vec<Track> {
         let mut tracks = Vec::new();
         let conn = conn();
         println!(" entry_id {}", entry_id);
@@ -109,7 +108,7 @@ impl Track {
         return tracks
     }
 
-    fn find_all() -> Vec<Track> {
+    pub fn find_all() -> Vec<Track> {
         let mut tracks = Vec::new();
         let conn = conn();
         let stmt = conn.prepare("SELECT id, provider, title, url, identifier FROM track").unwrap();
@@ -126,7 +125,7 @@ impl Track {
         return tracks
     }
 
-    fn create(provider: Provider, title: String, url: String, identifier: String) -> Option<Track> {
+    pub fn create(provider: Provider, title: String, url: String, identifier: String) -> Option<Track> {
         let conn = conn();
         let stmt = conn.prepare("INSERT INTO track (provider, title, url, identifier)
                                  VALUES ($1, $2, $3, $4) RETURNING id").unwrap();
@@ -143,14 +142,14 @@ impl Track {
         return None
     }
 
-    fn find_or_create(provider: Provider, title: String, url: String, identifier: String) -> Option<Track> {
-        return match Track::find_by(&provider, identifier.as_slice()) {
+    pub fn find_or_create(provider: Provider, title: String, url: String, identifier: String) -> Option<Track> {
+        return match Track::find_by(&provider, &identifier) {
             Some(track) => Some(track),
             None        => Track::create(provider, title, url, identifier)
         }
     }
 
-    fn save(&self) -> bool {
+    pub fn save(&self) -> bool {
         return true
     }
 }
@@ -183,7 +182,7 @@ impl ToJson for Entry {
 }
 
 impl Entry {
-    fn find_by_id(id: String) -> Option<Entry> {
+    pub fn find_by_id(id: String) -> Option<Entry> {
         let conn = conn();
         let stmt = conn.prepare("SELECT id, url FROM entry WHERE id = $1").unwrap();
         for row in stmt.query(&[&id]).unwrap() {
@@ -196,7 +195,7 @@ impl Entry {
         return None
     }
 
-    fn find_by_url(url: &str) -> Option<Entry> {
+    pub fn find_by_url(url: &str) -> Option<Entry> {
         let conn = conn();
         let stmt = conn.prepare("SELECT id, url FROM entry WHERE url = $1").unwrap();
         for row in stmt.query(&[&url]).unwrap() {
@@ -210,7 +209,7 @@ impl Entry {
         return None
     }
 
-    fn find_all() -> Vec<Entry> {
+    pub fn find_all() -> Vec<Entry> {
         let conn = conn();
         let stmt = conn.prepare("SELECT id, url FROM entry").unwrap();
         let mut entries = Vec::new();
@@ -224,14 +223,14 @@ impl Entry {
         return entries
     }
 
-    fn find_or_create_by_url(url: String) -> Option<Entry> {
-        return match Entry::find_by_url(url.as_slice()) {
+    pub fn find_or_create_by_url(url: String) -> Option<Entry> {
+        return match Entry::find_by_url(&url) {
             Some(entry) => Some(entry),
             None        => Entry::create_by_url(url)
         }
     }
 
-    fn create_by_url(url: String) -> Option<Entry> {
+    pub fn create_by_url(url: String) -> Option<Entry> {
         let conn = conn();
         let stmt = conn.prepare("INSERT INTO entry (url) VALUES ($1) RETURNING id").unwrap();
         for row in stmt.query(&[&url]).unwrap() {
@@ -245,7 +244,7 @@ impl Entry {
         return None
     }
 
-    fn add_track(&mut self, track: Track) {
+    pub fn add_track(&mut self, track: Track) {
         let conn = conn();
         let stmt = conn.prepare("INSERT INTO track_entry (track_id, entry_id)
                                  VALUES ($1, $2)").unwrap();
@@ -253,7 +252,7 @@ impl Entry {
         self.tracks.push(track);
     }
 
-    fn save(&self) -> bool {
+    pub fn save(&self) -> bool {
         return true
     }
 }
@@ -272,20 +271,20 @@ pub fn create_tables() {
                                             identifier VARCHAR NOT NULL,
                                             title      VARCHAR NOT NULL,
                                             url        VARCHAR NOT NULL)", &[]) {
-        Ok(result) => println!("Succeeded in creating track table"),
+        Ok(_) => println!("Succeeded in creating track table"),
         Err(error) => println!("error {}", error)
     }
 
     match conn.execute("CREATE TABLE entry (id  SERIAL PRIMARY KEY,
                                             url VARCHAR NOT NULL)", &[]) {
-        Ok(result) => println!("Succeeded in creating entry table"),
+        Ok(_) => println!("Succeeded in creating entry table"),
         Err(error) => println!("error {}", error)
     }
 
     match conn.execute("CREATE TABLE track_entry (id  SERIAL PRIMARY KEY,
                                             track_id SERIAL NOT NULL,
                                             entry_id SERIAL NOT NULL)", &[]) {
-        Ok(result) => println!("Succeeded in creating track_entry table"),
+        Ok(_) => println!("Succeeded in creating track_entry table"),
         Err(error) => println!("error {}", error)
     }
 
@@ -307,7 +306,7 @@ pub fn create_tables() {
     }
 
     match Entry::find_by_url("http://dummy.com") {
-        Some(mut entry) => {
+        Some(entry) => {
             println!("Succeeded in find {:?}", entry);
         },
         None        => println!("Failed to find"),
@@ -317,15 +316,15 @@ pub fn create_tables() {
 pub fn drop_tables() {
     let conn = conn();
     match conn.execute("DROP TABLE track", &[]) {
-        Ok(result) => println!("Succeded in dropping track table"),
+        Ok(_) => println!("Succeded in dropping track table"),
         Err(error) => println!("Failed to drop error {}", error)
     }
     match conn.execute("DROP TABLE entry", &[]) {
-        Ok(result) => println!("Succeded in dropping entry table"),
+        Ok(_) => println!("Succeded in dropping entry table"),
         Err(error) => println!("error {}", error)
     }
     match conn.execute("DROP TABLE track_entry", &[]) {
-        Ok(result) => println!("Succeded in dropping track_entry table"),
+        Ok(_) => println!("Succeded in dropping track_entry table"),
         Err(error) => println!("error {}", error)
     }
 }

@@ -70,11 +70,11 @@ pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
                                    identifier: strs[0].to_string()
                                 })
                             },
-                            Err(err) =>
+                            Err(_) =>
                                 return None
                         }
                     },
-                Err(err) =>
+                Err(_) =>
                     return None
             };
             match Regex::new(r"api.soundcloud.com/tracks/") {
@@ -96,11 +96,11 @@ pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
                                    identifier: strs[0].to_string()
                                 })
                             },
-                            Err(err) =>
+                            Err(_) =>
                                 return None
                         }
                     },
-                Err(err) =>
+                Err(_) =>
                     return None
             };
         }
