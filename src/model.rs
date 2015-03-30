@@ -299,15 +299,15 @@ pub fn create_tables() {
 pub fn drop_tables() {
     let conn = conn();
     match conn.execute("DROP TABLE track", &[]) {
-        Ok(_) => println!("Succeded in dropping track table"),
+        Ok(_) => println!("Succeeded in dropping track table"),
         Err(error) => println!("Failed to drop error {}", error)
     }
     match conn.execute("DROP TABLE entry", &[]) {
-        Ok(_) => println!("Succeded in dropping entry table"),
+        Ok(_) => println!("Succeeded in dropping entry table"),
         Err(error) => println!("error {}", error)
     }
     match conn.execute("DROP TABLE track_entry", &[]) {
-        Ok(_) => println!("Succeded in dropping track_entry table"),
+        Ok(_) => println!("Succeeded in dropping track_entry table"),
         Err(error) => println!("error {}", error)
     }
 }
