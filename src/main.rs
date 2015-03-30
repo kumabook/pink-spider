@@ -25,7 +25,7 @@ use std::collections::BTreeMap;
 extern crate string_cache;
 
 use pink_spider::scraper::extract_tracks;
-use pink_spider::model::{Track, Entry, create_tables, drop_tables};
+use pink_spider::model::{Track, Entry, create_tables};
 use serialize::json::{ToJson, Json};
 
 
@@ -164,7 +164,6 @@ fn update_track(req: &mut Request) -> IronResult<Response> {
 }
 
 fn main() {
-    drop_tables();
     create_tables();
 
     let mut router = Router::new();

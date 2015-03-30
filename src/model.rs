@@ -273,25 +273,28 @@ pub fn conn() -> Connection {
 pub fn create_tables() {
     let conn = conn();
 
-    match conn.execute("CREATE TABLE track (id         SERIAL PRIMARY KEY,
-                                            provider   VARCHAR NOT NULL,
-                                            identifier VARCHAR NOT NULL,
-                                            title      VARCHAR NOT NULL,
-                                            url        VARCHAR NOT NULL)", &[]) {
-        Ok(_) => println!("Succeeded in creating track table"),
+    match conn.execute("CREATE TABLE IF NOT EXISTS
+                        track (id         SERIAL PRIMARY KEY,
+                               provider   VARCHAR NOT NULL,
+                               identifier VARCHAR NOT NULL,
+                               title      VARCHAR NOT NULL,
+                               url        VARCHAR NOT NULL)", &[]) {
+        Ok(_) => println!("Succeeded in creating track table if not exists"),
         Err(error) => println!("error {}", error)
     }
 
-    match conn.execute("CREATE TABLE entry (id  SERIAL PRIMARY KEY,
-                                            url VARCHAR NOT NULL)", &[]) {
-        Ok(_) => println!("Succeeded in creating entry table"),
+    match conn.execute("CREATE TABLE IF NOT EXISTS
+                        entry (id  SERIAL PRIMARY KEY,
+                        url VARCHAR NOT NULL)", &[]) {
+        Ok(_) => println!("Succeeded in creating entry table if not exists"),
         Err(error) => println!("error {}", error)
     }
 
-    match conn.execute("CREATE TABLE track_entry (id  SERIAL PRIMARY KEY,
-                                            track_id SERIAL NOT NULL,
-                                            entry_id SERIAL NOT NULL)", &[]) {
-        Ok(_) => println!("Succeeded in creating track_entry table"),
+    match conn.execute("CREATE TABLE IF NOT EXISTS
+                        track_entry (id  SERIAL PRIMARY KEY,
+                        track_id SERIAL NOT NULL,
+                        entry_id SERIAL NOT NULL)", &[]) {
+        Ok(_) => println!("Succeeded in creating track_entry table if not exists "),
         Err(error) => println!("error {}", error)
     }
 }
