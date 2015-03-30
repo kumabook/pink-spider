@@ -151,7 +151,13 @@ impl Track {
     }
 
     pub fn save(&self) -> bool {
-        return true
+        let conn = conn();
+        let stmt = conn.prepare("UPDATE track SET title=$1, url=$2
+                                 WHERE id = $3").unwrap();
+        match stmt.query(&[&self.title, &self.url, &self.id]) {
+            Ok(_)  => return true,
+            Err(_) => return false
+        }
     }
 }
 
