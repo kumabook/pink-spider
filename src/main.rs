@@ -4,16 +4,20 @@ extern crate iron;
 extern crate router;
 extern crate urlencoded;
 extern crate serialize;
+extern crate html5ever;
+extern crate regex;
+extern crate core;
 
 use std::net::SocketAddrV4;
 use std::net::Ipv4Addr;
 use iron::prelude::*;
 use iron::status;
+use iron::headers::{ContentType};
+use iron::modifiers::Header;
+use iron::mime::Mime;
 use router::{Router};
 use urlencoded::UrlEncodedQuery;
-
-extern crate html5ever;
-extern crate regex;
+use core::str::FromStr;
 
 #[macro_use]
 extern crate string_cache;
@@ -77,19 +81,42 @@ fn find_or_create_entry(url: &str) -> Entry {
     }
 }
 
+fn show_track(req: &mut Request) -> IronResult<Response> {
+    let ref track_id = req.extensions.get::<Router>().unwrap()
+                          .find("track_id").unwrap();
+    let tid: Option<i32> = track_id.parse().ok();
+    let json_type = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
+    match tid {
+        Some(n) =>
+            match Track::find_by_id(n) {
+                Some(track) => {
+                    let res = Response::with((status::Ok,
+                                              json_type,
+                                              track.to_json().to_string()));
+                    Ok(res)
+                },
+                None =>
+                    Ok(Response::with((status::Ok, json_type, "{}")))
+            },
+        None => Ok(Response::with((status::Ok, json_type, "{}")))
+    }
+}
+
 fn main() {
     drop_tables();
     create_tables();
 
     let mut router = Router::new();
-    router.get("/playlistify", playlistify);
-    router.get("/:query", handler);
-
-    fn handler(req: &mut Request) -> IronResult<Response> {
-        let ref query = req.extensions.get::<Router>()
-            .unwrap().find("query").unwrap_or("/");
-        Ok(Response::with((status::Ok, *query)))
-    }
+//    router.post(  "auth",                    signin);
+    router.get(   "/playlistify",            playlistify);
+//    router.get(   "/entry/:entry_id",        show_entry);
+//    router.post(  "/entry/:entry_id",        update_entry);
+//    router.delete("/entry/:entry_id",        destroy_entry);
+//    router.put(   "/tracks/:track_id",       create_track);
+    router.get(   "/tracks/:track_id",       show_track);
+//    router.post(  "/tracks/:track_id",       update_track);
+//    router.delete("/tracks/:track_id",       destroy_track);
+//    router.post(  "/entry/:entry_id/tracks", add_track);*/
 
     let opt_port = std::env::var("PORT");
     let port_str = match opt_port {
