@@ -1,5 +1,5 @@
-URL="https://s3-ap-northeast-1.amazonaws.com/musicfav-cloud/2015-03-08/rust-nightly-x86_64-unknown-linux-gnu.tar.gz"
-VERSION="2015-03-08"
+URL="https://s3.amazonaws.com/musicfav-cloud/2015-03-23/rust-nightly-x86_64-unknown-linux-gnu.tar.gz"
+VERSION="2015-03-23"
 
-CARGO_URL="https://s3-ap-northeast-1.amazonaws.com/musicfav-cloud/2015-03-08/cargo-nightly-x86_64-unknown-linux-gnu.tar.gz"
-CARGO_VERSION="2015-03-08"
+CARGO_URL="https://s3.amazonaws.com/musicfav-cloud/2015-03-23/cargo-nightly-x86_64-unknown-linux-gnu.tar.gz"
+CARGO_VERSION="2015-03-23"
