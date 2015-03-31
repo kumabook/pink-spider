@@ -3,7 +3,10 @@ extern crate postgres;
 
 use self::postgres::{Connection, SslMode};
 use std::collections::BTreeMap;
+use std::env;
 use self::serialize::json::{ToJson, Json};
+
+static DEFAULT_DATABASE_URL: &'static str = "postgres://pink_spider:pinkspider@localhost";
 
 #[derive(Debug)]
 pub enum Provider {
@@ -265,9 +268,13 @@ impl Entry {
 }
 
 pub fn conn() -> Connection {
-    return Connection::connect("postgres://pink_spider:pinkspider@localhost",
-                        &SslMode::None)
-        .unwrap();
+    let opt_url = env::var("DATABASE_URL");
+    match opt_url {
+        Ok(url)  =>
+            Connection::connect(url.trim(), &SslMode::None).unwrap(),
+        Err(_) =>
+            Connection::connect(DEFAULT_DATABASE_URL, &SslMode::None).unwrap()
+    }
 }
 
 pub fn create_tables() {
