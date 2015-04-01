@@ -1,6 +1,7 @@
 extern crate html5ever;
 extern crate regex;
 extern crate hyper;
+extern crate string_cache;
 
 use self::html5ever::sink::common::{Document, Doctype, Text, Comment, Element};
 use self::html5ever::sink::rcdom::{RcDom, Handle};
@@ -13,6 +14,8 @@ use self::hyper::Client;
 use self::hyper::header::Connection;
 use self::hyper::header::ConnectionOption;
 
+use self::string_cache::namespace::{QualName, Namespace};
+use self::string_cache::atom::Atom;
 
 use Provider;
 use Track;
@@ -103,6 +106,34 @@ pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
                 Err(_) =>
                     return None
             };
+        }
+    } else if tag_name == "a" {
+        for attr in attrs.iter() {
+            let href = QualName {
+                   ns: Namespace(string_cache::atom::Atom::from_slice("")),
+                local: string_cache::atom::Atom::from_slice("href")
+            };
+            if attr.name == href {
+                match Regex::new(r"www.youtube.com/watch\?v=(.+)") {
+                    Ok(re) => match re.captures(&attr.value) {
+                        Some(cap) => match cap.at(1) {
+                            Some(str) => {
+                                let strs: Vec<&str> = str.split_str('?').collect();
+                                return Some(Track {
+                                            id: 0,
+                                      provider: Provider::YouTube,
+                                         title: strs[0].to_string(),
+                                           url: attr.value.to_string(),
+                                    identifier: strs[0].to_string()
+                                })
+                            },
+                            None => ()
+                        },
+                        None => ()
+                    },
+                    Err(_) => ()
+                }
+            }
         }
     }
     return None
