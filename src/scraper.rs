@@ -58,53 +58,42 @@ fn walk(indent: usize, handle: Handle, tracks: &mut Vec<Track>) {
 pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
     if tag_name == "iframe" {
         for attr in attrs.iter() {
-            match Regex::new(r"www.youtube.com/embed") {
-                Ok(re) =>
-                    if re.is_match(&attr.value) {
-                        match Regex::new(r"www.youtube.com/embed/(.+)") {
-                            Ok(re) => {
-                                let cap = re.captures(&attr.value).unwrap();
-                                let strs: Vec<&str> = cap.at(1).unwrap().split_str('?').collect();
-                                return Some(Track {
-                                           id: 0,
-                                     provider: Provider::YouTube,
-                                        title: strs[0].to_string(),
-                                          url: attr.value.to_string(),
-                                   identifier: strs[0].to_string()
-                                })
-                            },
-                            Err(_) =>
-                                return None
-                        }
+            match Regex::new(r"www.youtube.com/embed/(.+)") {
+                Ok(re) => match re.captures(&attr.value) {
+                    Some(cap) => match (cap.at(1)) {
+                        Some(str) => {
+                            let strs: Vec<&str> = str.split_str('?').collect();
+                            return Some(Track {
+                                        id: 0,
+                                  provider: Provider::YouTube,
+                                     title: strs[0].to_string(),
+                                       url: attr.value.to_string(),
+                                identifier: strs[0].to_string()
+                            })
+                        },
+                        None => ()
                     },
-                Err(_) =>
-                    return None
+                    None => ()
+                },
+                Err(_) => ()
             };
-            match Regex::new(r"api.soundcloud.com/tracks/") {
-                Ok(re) =>
-                    if re.is_match(&attr.value) {
-/*                        println!("SoundCloud {}=\"{}\"",
-                                 attr.name.local.as_slice(),
-                                 attr.value);*/
-                        match Regex::new(r"api.soundcloud.com/tracks/(.+)") {
-                            Ok(re) => {
-                                let cap = re.captures(&attr.value).unwrap();
-                                let strs: Vec<&str> = cap.at(1).unwrap().split_str('&').collect();
-//                                println!("id: {} ", strs[0]);
-                                return Some(Track {
-                                           id: 0,
-                                     provider: Provider::SoundCloud,
-                                        title: strs[0].to_string(),
-                                          url: attr.value.to_string(),
-                                   identifier: strs[0].to_string()
-                                })
-                            },
-                            Err(_) =>
-                                return None
-                        }
-                    },
-                Err(_) =>
-                    return None
+            match Regex::new(r"api.soundcloud.com/tracks/(.+)") {
+                Ok(re) => match re.captures(&attr.value) {
+                    Some(cap) => match cap.at(1) {
+                        Some(str) => {
+                            let strs: Vec<&str> = str.split_str('&').collect();
+                            return Some(Track {
+                                        id: 0,
+                                  provider: Provider::SoundCloud,
+                                     title: strs[0].to_string(),
+                                       url: attr.value.to_string(),
+                                identifier: strs[0].to_string()
+                            })
+                        },
+                        None => ()
+                    }
+                },
+                Err(_) => ()
             };
         }
     } else if tag_name == "a" {
