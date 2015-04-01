@@ -32,6 +32,7 @@ use serialize::json::{ToJson, Json};
 extern crate pink_spider;
 
 fn playlistify(req: &mut Request) -> IronResult<Response> {
+    let json_type = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
     match req.get_ref::<UrlEncodedQuery>() {
         Ok(ref params) => {
             match params.get("url") {
@@ -39,7 +40,7 @@ fn playlistify(req: &mut Request) -> IronResult<Response> {
                     let entry = find_or_create_entry(&url[0]);
                     let json_obj: Json = entry.to_json();
                     let json_str: String = json_obj.to_string();
-                    return Ok(Response::with((status::Ok, json_str)))
+                    return Ok(Response::with((status::Ok, json_type, json_str)))
                 },
                 None => println!("no url")
             }
