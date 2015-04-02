@@ -8,6 +8,9 @@ authors = ["kumabook@live.jp"]
 
 [[bin]]
 name = "app"
+[[bin]]
+name = "drop_tables"
+path = "src/bin/drop_tables.rs"
 
 [dependencies]
 iron = "*"
