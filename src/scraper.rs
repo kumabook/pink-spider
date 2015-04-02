@@ -55,74 +55,83 @@ fn walk(indent: usize, handle: Handle, tracks: &mut Vec<Track>) {
     }
 }
 
+fn attr(attr_name: &str, attrs: &Vec<Attribute>) -> Option<String> {
+    for attr in attrs.iter() {
+        let href = QualName {
+               ns: Namespace(string_cache::atom::Atom::from_slice("")),
+            local: string_cache::atom::Atom::from_slice(attr_name)
+        };
+        if attr.name == href {
+            return Some(attr.value.to_string())
+        }
+    }
+    None
+}
+
+fn extract_identifier(value: &str, regex_str: &str) -> Option<String> {
+    match Regex::new(regex_str) {
+        Ok(re) => match re.captures(value) {
+            Some(cap) => match (cap.at(1)) {
+                Some(str) => {
+                    let strs: Vec<&str> = str.split_str('?').collect();
+                    return Some(strs[0].to_string())
+                },
+                None => None
+            },
+            None => None
+        },
+        Err(_) => None
+    }
+}
+
 pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
     if tag_name == "iframe" {
-        for attr in attrs.iter() {
-            match Regex::new(r"www.youtube.com/embed/(.+)") {
-                Ok(re) => match re.captures(&attr.value) {
-                    Some(cap) => match (cap.at(1)) {
-                        Some(str) => {
-                            let strs: Vec<&str> = str.split_str('?').collect();
-                            return Some(Track {
-                                        id: 0,
-                                  provider: Provider::YouTube,
-                                     title: strs[0].to_string(),
-                                       url: attr.value.to_string(),
-                                identifier: strs[0].to_string()
-                            })
-                        },
-                        None => ()
+        match attr("src", attrs) {
+            Some(ref src) => {
+                match extract_identifier(&src, r"www.youtube.com/embed/(.+)") {
+                    Some(identifier) => {
+                        return Some(Track {
+                                    id: 0,
+                              provider: Provider::YouTube,
+                                 title: "".to_string(),
+                                   url: src.to_string(),
+                            identifier: identifier
+                        });
                     },
                     None => ()
-                },
-                Err(_) => ()
-            };
-            match Regex::new(r"api.soundcloud.com/tracks/(.+)") {
-                Ok(re) => match re.captures(&attr.value) {
-                    Some(cap) => match cap.at(1) {
-                        Some(str) => {
-                            let strs: Vec<&str> = str.split_str('&').collect();
-                            return Some(Track {
-                                        id: 0,
-                                  provider: Provider::SoundCloud,
-                                     title: strs[0].to_string(),
-                                       url: attr.value.to_string(),
-                                identifier: strs[0].to_string()
-                            })
-                        },
-                        None => ()
-                    }
-                },
-                Err(_) => ()
-            };
+                }
+                match extract_identifier(&src, r"api.soundcloud.com/tracks/(.+)") {
+                    Some(identifier) => {
+                        return Some(Track {
+                                    id: 0,
+                              provider: Provider::SoundCloud,
+                                 title: "".to_string(),
+                                   url: src.to_string(),
+                            identifier: identifier
+                        });
+                    },
+                    None => ()
+                }
+            },
+            None => ()
         }
     } else if tag_name == "a" {
-        for attr in attrs.iter() {
-            let href = QualName {
-                   ns: Namespace(string_cache::atom::Atom::from_slice("")),
-                local: string_cache::atom::Atom::from_slice("href")
-            };
-            if attr.name == href {
-                match Regex::new(r"www.youtube.com/watch\?v=(.+)") {
-                    Ok(re) => match re.captures(&attr.value) {
-                        Some(cap) => match cap.at(1) {
-                            Some(str) => {
-                                let strs: Vec<&str> = str.split_str('?').collect();
-                                return Some(Track {
-                                            id: 0,
-                                      provider: Provider::YouTube,
-                                         title: strs[0].to_string(),
-                                           url: attr.value.to_string(),
-                                    identifier: strs[0].to_string()
-                                })
-                            },
-                            None => ()
-                        },
-                        None => ()
+        match attr("href", attrs) {
+            Some(ref href) => {
+                match extract_identifier(&href, r"www.youtube.com/watch\?v=(.+)") {
+                    Some(identifier) => {
+                        return Some(Track {
+                                    id: 0,
+                              provider: Provider::YouTube,
+                                 title: "".to_string(),
+                                   url: href.to_string(),
+                            identifier: identifier
+                        });
                     },
-                    Err(_) => ()
+                    None => ()
                 }
-            }
+            },
+            None => ()
         }
     }
     return None
