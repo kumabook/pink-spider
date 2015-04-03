@@ -1,4 +1,4 @@
-#![feature(plugin, rustc_private)]
+#![feature(plugin, rustc_private, core)]
 #![plugin(string_cache_plugin)]
 extern crate iron;
 extern crate router;
@@ -31,7 +31,7 @@ use serialize::json::{ToJson, Json};
 
 extern crate pink_spider;
 
-fn playlistify(req: &mut Request) -> IronResult<Response> {
+pub fn playlistify(req: &mut Request) -> IronResult<Response> {
     let json_type = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
     match req.get_ref::<UrlEncodedQuery>() {
         Ok(ref params) => {
@@ -52,7 +52,7 @@ fn playlistify(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, "{}")))
 }
 
-fn find_or_create_entry(url: &str) -> Entry {
+pub fn find_or_create_entry(url: &str) -> Entry {
     match Entry::find_by_url(url) {
         Some(entry) => {
             println!("Get entry from database cache");
@@ -84,7 +84,7 @@ fn find_or_create_entry(url: &str) -> Entry {
     }
 }
 
-fn show_track(req: &mut Request) -> IronResult<Response> {
+pub fn show_track(req: &mut Request) -> IronResult<Response> {
     let ref track_id = req.extensions.get::<Router>().unwrap()
                           .find("track_id").unwrap();
     let tid: Option<i32> = track_id.parse().ok();
@@ -106,7 +106,7 @@ fn show_track(req: &mut Request) -> IronResult<Response> {
 }
 
 
-fn update_track(req: &mut Request) -> IronResult<Response> {
+pub fn update_track(req: &mut Request) -> IronResult<Response> {
     let json_type = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
     fn param_as_string(req: &mut Request, key: &str) -> Option<String> {
         match req.get_ref::<UrlEncodedBody>() {
@@ -164,7 +164,7 @@ fn update_track(req: &mut Request) -> IronResult<Response> {
     }
 }
 
-fn main() {
+pub fn main() {
     create_tables();
 
     let mut router = Router::new();

@@ -70,9 +70,9 @@ fn attr(attr_name: &str, attrs: &Vec<Attribute>) -> Option<String> {
 fn extract_identifier(value: &str, regex_str: &str) -> Option<String> {
     match Regex::new(regex_str) {
         Ok(re) => match re.captures(value) {
-            Some(cap) => match (cap.at(1)) {
+            Some(cap) => match cap.at(1) {
                 Some(str) => {
-                    let strs: Vec<&str> = str.split_str('?').collect();
+                    let strs: Vec<&str> = str.split('?').collect();
                     return Some(strs[0].to_string())
                 },
                 None => None
