@@ -15,7 +15,6 @@ use self::hyper::header::Connection;
 use self::hyper::header::ConnectionOption;
 
 use self::string_cache::namespace::{QualName, Namespace};
-use self::string_cache::atom::Atom;
 
 use Provider;
 use Track;
@@ -88,7 +87,7 @@ pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
     if tag_name == "iframe" {
         match attr("src", attrs) {
             Some(ref src) => {
-                match extract_identifier(&src, r"www.youtube.com/embed/(.+)") {
+                match extract_identifier(&src, r"www.youtube.com/embed/([^\?&].+)") {
                     Some(identifier) => {
                         return Some(Track {
                                     id: 0,
@@ -100,7 +99,7 @@ pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
                     },
                     None => ()
                 }
-                match extract_identifier(&src, r"api.soundcloud.com/tracks/(.+)") {
+                match extract_identifier(&src, r"api.soundcloud.com/tracks/([^\?&]+)") {
                     Some(identifier) => {
                         return Some(Track {
                                     id: 0,
@@ -118,7 +117,7 @@ pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
     } else if tag_name == "a" {
         match attr("href", attrs) {
             Some(ref href) => {
-                match extract_identifier(&href, r"www.youtube.com/watch\?v=(.+)") {
+                match extract_identifier(&href, r"www.youtube.com/watch\?v=([^\?&]+)") {
                     Some(identifier) => {
                         return Some(Track {
                                     id: 0,
@@ -135,4 +134,36 @@ pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
         }
     }
     return None
+}
+
+#[cfg(test)]
+mod test {
+    use super::extract_identifier;
+
+    #[test]
+    fn test_extract_identifier() {
+        let soundcloud_src = "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/195425494&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&visual=true";
+        match extract_identifier(soundcloud_src,
+                                 r"api.soundcloud.com/tracks/([^\?&]+)") {
+            Some(identifier) => assert_eq!(identifier,
+                                           "195425494".to_string()),
+            None             => assert!(false)
+        }
+
+        let youtube_src = "https://www.youtube.com/embed/X8tOngmlES0?rel=0";
+        match extract_identifier(youtube_src,
+                                 r"www.youtube.com/embed/([^\?&].+)") {
+            Some(identifier) => assert_eq!(identifier,
+                                           "X8tOngmlES0".to_string()),
+            None             => assert!(false)
+        }
+
+        let youtube_href_src = "https://www.youtube.com/watch?v=oDuif301F-8";
+        match extract_identifier(youtube_href_src,
+                                 r"www.youtube.com/watch\?v=([^\?&]+)") {
+            Some(identifier) => assert_eq!(identifier,
+                                           "oDuif301F-8".to_string()),
+            None             => assert!(false)
+        }
+    }
 }
