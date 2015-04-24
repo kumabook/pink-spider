@@ -23,7 +23,7 @@ impl Provider {
         }
     }
     fn new(str: String) -> Provider {
-        match str.as_slice() {
+        match str.as_ref() {
             "YouTube"    => Provider::YouTube,
             "SoundCloud" => Provider::SoundCloud,
             _            => Provider::Raw,

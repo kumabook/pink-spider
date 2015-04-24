@@ -2,11 +2,12 @@ extern crate html5ever;
 extern crate regex;
 extern crate hyper;
 extern crate string_cache;
+extern crate core;
 
 use self::html5ever::sink::common::{Document, Doctype, Text, Comment, Element};
 use self::html5ever::sink::rcdom::{RcDom, Handle};
 use self::html5ever::{parse, one_input, Attribute};
-use std::default::Default;
+use self::core::default::Default;
 use std::io::Read;
 
 use self::regex::Regex;
@@ -21,13 +22,13 @@ use Track;
 
 pub fn extract_tracks(url: &str) -> Vec<Track> {
     let mut client = Client::new();
-     let mut res = client.get(url)
-                         .header(Connection(vec![ConnectionOption::Close]))
-                         .send().unwrap();
+    let mut res = client.get(url)
+                        .header(Connection(vec![ConnectionOption::Close]))
+                        .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
 
-    let dom: RcDom = parse(one_input(body), Default::default());
+    let dom: RcDom  = html5ever::parse(one_input(body), Default::default());
     let mut tracks  = Vec::new();
     walk(0, dom.document, &mut tracks);
     return tracks
