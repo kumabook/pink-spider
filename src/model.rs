@@ -14,6 +14,15 @@ pub enum Provider {
     SoundCloud,
     Raw
 }
+impl PartialEq for Provider {
+    fn eq(&self, p: &Provider) -> bool {
+        match *self {
+            Provider::YouTube    => match *p { Provider::YouTube    => true, _ => false },
+            Provider::SoundCloud => match *p { Provider::SoundCloud => true, _ => false },
+            Provider::Raw        => match *p { Provider::Raw        => true, _ => false }
+        }
+    }
+}
 impl Provider {
     fn to_string(&self) -> String {
         match *self {
@@ -38,6 +47,12 @@ pub struct Track {
     pub title:      String,
     pub url:        String,
     pub identifier: String
+}
+
+impl PartialEq for Track {
+    fn eq(&self, t: &Track) -> bool {
+        return self.identifier == t.identifier && self.provider == t.provider
+    }
 }
 
 impl ToJson for Track {

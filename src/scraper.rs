@@ -45,7 +45,11 @@ fn walk(indent: usize, handle: Handle, tracks: &mut Vec<Track>) {
         Element(ref name, ref attrs) => {
             let tag_name = name.local.as_slice();
             match extract_track(tag_name, attrs) {
-                Some(track) => (*tracks).push(track),
+                Some(track) => {
+                    if !(*tracks).contains(&track) {
+                        (*tracks).push(track)
+                    }
+                },
                 None => {}
             }
         }
