@@ -12,23 +12,19 @@ name = "app"
 name = "drop_tables"
 path = "src/bin/drop_tables.rs"
 
-[dependencies.urlencoded]
-git = "https://github.com/kumabook/urlencoded.git"
-rev = "128a59a4c6f02d6d14408cf086d475c8ead2b303"
-[dependencies.string_cache]
-git = "https://github.com/kumabook/string-cache"
-[dependencies.string_cache_plugin]
-git = "https://github.com/kumabook/string-cache"
-
 [dependencies]
 iron         = "*"
 router       = "*"
 postgres     = "*"
 regex_macros = "*"
 hyper        = "*"
-[dependencies.regex]
-git = "https://github.com/rust-lang/regex.git"
-rev = "910aef40aca4f525dd2fecc54a78e9bc183039d1"
+regex        = "*"
+urlencoded   = "*"
+[dependencies.string_cache]
+git = "https://github.com/servo/string-cache"
+[dependencies.string_cache_plugin]
+git = "https://github.com/servo/string-cache"
 [dependencies.html5ever]
-git = "https://github.com/kumabook/html5ever"
-rev = "95d7e2b965659720a6c439551883188014167bff"
+git = "https://github.com/servo/html5ever"
+[dependencies.html5ever_dom_sink]
+git = "https://github.com/servo/html5ever"

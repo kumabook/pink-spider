@@ -1,11 +1,12 @@
+extern crate html5ever_dom_sink;
 extern crate html5ever;
 extern crate regex;
 extern crate hyper;
 extern crate string_cache;
 extern crate core;
 
-use self::html5ever::sink::common::{Document, Doctype, Text, Comment, Element};
-use self::html5ever::sink::rcdom::{RcDom, Handle};
+use self::html5ever_dom_sink::common::{Document, Doctype, Text, Comment, Element};
+use self::html5ever_dom_sink::rcdom::{RcDom, Handle};
 use self::html5ever::{parse, one_input, Attribute};
 use self::core::default::Default;
 use std::io::Read;
