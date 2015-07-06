@@ -120,7 +120,7 @@ pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
             },
             None => ()
         }
-    } else if tag_name == "a" {
+    } else if tag_name == "a" || tag_name == "link" {
         match attr("href", attrs) {
             Some(ref href) => {
                 match extract_identifier(&href, r"www.youtube.com/watch\?v=([^\?&]+)") {
