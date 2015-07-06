@@ -1,9 +1,14 @@
 extern crate html5ever_dom_sink;
 extern crate html5ever;
+extern crate tendril;
 extern crate regex;
 extern crate hyper;
 extern crate string_cache;
 extern crate core;
+
+use self::core::str::FromStr;
+
+use self::tendril::Tendril;
 
 use self::html5ever_dom_sink::common::{Document, Doctype, Text, Comment, Element};
 use self::html5ever_dom_sink::rcdom::{RcDom, Handle};
@@ -16,20 +21,19 @@ use self::hyper::Client;
 use self::hyper::header::Connection;
 use self::hyper::header::ConnectionOption;
 
-use self::string_cache::namespace::{QualName, Namespace};
-
 use Provider;
 use Track;
 
 pub fn extract_tracks(url: &str) -> Vec<Track> {
-    let mut client = Client::new();
+    let client = Client::new();
     let mut res = client.get(url)
-                        .header(Connection(vec![ConnectionOption::Close]))
-                        .send().unwrap();
+        .header(Connection(vec![ConnectionOption::Close]))
+        .send()
+        .unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-
-    let dom: RcDom  = html5ever::parse(one_input(body), Default::default());
+    let input: Tendril<_> = FromStr::from_str(&body).unwrap();
+    let dom: RcDom = parse(one_input(input), Default::default());
     let mut tracks  = Vec::new();
     walk(0, dom.document, &mut tracks);
     return tracks
@@ -62,11 +66,7 @@ fn walk(indent: usize, handle: Handle, tracks: &mut Vec<Track>) {
 
 fn attr(attr_name: &str, attrs: &Vec<Attribute>) -> Option<String> {
     for attr in attrs.iter() {
-        let href = QualName {
-               ns: Namespace(string_cache::atom::Atom::from_slice("")),
-            local: string_cache::atom::Atom::from_slice(attr_name)
-        };
-        if attr.name == href {
+        if attr.name.local.as_slice() == attr_name {
             return Some(attr.value.to_string())
         }
     }

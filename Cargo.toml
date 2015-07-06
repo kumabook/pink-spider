@@ -20,6 +20,7 @@ regex_macros = "*"
 hyper        = "*"
 regex        = "*"
 urlencoded   = "*"
+tendril      = "*"
 [dependencies.string_cache]
 git = "https://github.com/servo/string-cache"
 [dependencies.string_cache_plugin]
