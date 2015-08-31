@@ -1,10 +1,10 @@
-extern crate serialize;
+extern crate rustc_serialize;
 extern crate postgres;
 
 use self::postgres::{Connection, SslMode};
 use std::collections::BTreeMap;
 use std::env;
-use self::serialize::json::{ToJson, Json};
+use self::rustc_serialize::json::{ToJson, Json};
 
 static DEFAULT_DATABASE_URL: &'static str = "postgres://pink_spider:pinkspider@localhost";
 

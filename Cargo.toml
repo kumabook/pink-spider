@@ -16,16 +16,10 @@ path = "src/bin/drop_tables.rs"
 iron         = "*"
 router       = "*"
 postgres     = "*"
-regex_macros = "*"
 hyper        = "*"
 regex        = "*"
+string_cache = "*"
 urlencoded   = "*"
+rustc-serialize = "*"
 tendril      = "*"
-[dependencies.string_cache]
-git = "https://github.com/servo/string-cache"
-[dependencies.string_cache_plugin]
-git = "https://github.com/servo/string-cache"
-[dependencies.html5ever]
-git = "https://github.com/servo/html5ever"
-[dependencies.html5ever_dom_sink]
-git = "https://github.com/servo/html5ever"
+html5ever = "*"

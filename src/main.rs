@@ -1,12 +1,9 @@
-#![feature(plugin, rustc_private, core)]
-#![plugin(string_cache_plugin)]
 extern crate iron;
 extern crate router;
 extern crate urlencoded;
-extern crate serialize;
+extern crate rustc_serialize;
 extern crate html5ever;
 extern crate regex;
-extern crate core;
 
 use std::net::SocketAddrV4;
 use std::net::Ipv4Addr;
@@ -18,7 +15,7 @@ use iron::mime::Mime;
 use router::{Router};
 use urlencoded::UrlEncodedQuery;
 use urlencoded::UrlEncodedBody;
-use core::str::FromStr;
+use std::str::FromStr;
 use std::collections::BTreeMap;
 
 #[macro_use]
@@ -26,7 +23,7 @@ extern crate string_cache;
 
 use pink_spider::scraper::extract_tracks;
 use pink_spider::model::{Track, Entry, create_tables};
-use serialize::json::{ToJson, Json};
+use rustc_serialize::json::{ToJson, Json};
 
 
 extern crate pink_spider;
