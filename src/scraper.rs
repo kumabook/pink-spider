@@ -3,6 +3,7 @@ extern crate tendril;
 extern crate regex;
 extern crate hyper;
 extern crate string_cache;
+extern crate url;
 
 use std::str::FromStr;
 
@@ -21,6 +22,12 @@ use self::hyper::header::ConnectionOption;
 
 use Provider;
 use Track;
+
+use self::url::percent_encoding::lossy_utf8_percent_decode;
+
+static YOUTUBE_EMBED:    &'static str = r"www.youtube.com/embed/([^\?&].+)";
+static YOUTUBE_WATCH:    &'static str = r"www.youtube.com/watch\?v=([^\?&]+)";
+static SOUNDCLOUD_TRACK: &'static str = r"api.soundcloud.com/tracks/([^\?&]+)";
 
 pub fn extract_tracks(url: &str) -> Vec<Track> {
     let client = Client::new();
@@ -91,7 +98,8 @@ pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
     if tag_name == "iframe" {
         match attr("src", attrs) {
             Some(ref src) => {
-                match extract_identifier(&src, r"www.youtube.com/embed/([^\?&].+)") {
+                let decoded = lossy_utf8_percent_decode(src.as_bytes());
+                match extract_identifier(&decoded, YOUTUBE_EMBED) {
                     Some(identifier) => {
                         return Some(Track {
                                     id: 0,
@@ -103,7 +111,7 @@ pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
                     },
                     None => ()
                 }
-                match extract_identifier(&src, r"api.soundcloud.com/tracks/([^\?&]+)") {
+                match extract_identifier(&decoded, SOUNDCLOUD_TRACK) {
                     Some(identifier) => {
                         return Some(Track {
                                     id: 0,
@@ -121,7 +129,8 @@ pub fn extract_track(tag_name: &str, attrs: &Vec<Attribute>) -> Option<Track> {
     } else if tag_name == "a" || tag_name == "link" {
         match attr("href", attrs) {
             Some(ref href) => {
-                match extract_identifier(&href, r"www.youtube.com/watch\?v=([^\?&]+)") {
+                let decoded = lossy_utf8_percent_decode(href.as_bytes());
+                match extract_identifier(&decoded, YOUTUBE_WATCH) {
                     Some(identifier) => {
                         return Some(Track {
                                     id: 0,
@@ -147,24 +156,21 @@ mod test {
     #[test]
     fn test_extract_identifier() {
         let soundcloud_src = "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/195425494&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&visual=true";
-        match extract_identifier(soundcloud_src,
-                                 r"api.soundcloud.com/tracks/([^\?&]+)") {
+        match extract_identifier(soundcloud_src, super::SOUNDCLOUD_TRACK) {
             Some(identifier) => assert_eq!(identifier,
                                            "195425494".to_string()),
             None             => assert!(false)
         }
 
         let youtube_src = "https://www.youtube.com/embed/X8tOngmlES0?rel=0";
-        match extract_identifier(youtube_src,
-                                 r"www.youtube.com/embed/([^\?&].+)") {
+        match extract_identifier(youtube_src, super::YOUTUBE_EMBED) {
             Some(identifier) => assert_eq!(identifier,
                                            "X8tOngmlES0".to_string()),
             None             => assert!(false)
         }
 
         let youtube_href_src = "https://www.youtube.com/watch?v=oDuif301F-8";
-        match extract_identifier(youtube_href_src,
-                                 r"www.youtube.com/watch\?v=([^\?&]+)") {
+        match extract_identifier(youtube_href_src, super::YOUTUBE_WATCH) {
             Some(identifier) => assert_eq!(identifier,
                                            "oDuif301F-8".to_string()),
             None             => assert!(false)
