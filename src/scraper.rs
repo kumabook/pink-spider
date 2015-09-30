@@ -25,7 +25,8 @@ use Track;
 
 use self::url::percent_encoding::lossy_utf8_percent_decode;
 
-static YOUTUBE_EMBED:    &'static str = r"www.youtube.com/embed/([^\?&].+)";
+static YOUTUBE_EMBED:    &'static str = r"www.youtube.com/embed/([^\?&{videoseries}].+)";
+static YOUTUBE_LIST:     &'static str = r"www.youtube.com/embed/videoseries\?list=([^\?]+)";
 static YOUTUBE_WATCH:    &'static str = r"www.youtube.com/watch\?v=([^\?&]+)";
 static SOUNDCLOUD_TRACK: &'static str = r"api.soundcloud.com/tracks/([^\?&]+)";
 
@@ -157,23 +158,30 @@ mod test {
     fn test_extract_identifier() {
         let soundcloud_src = "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/195425494&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&visual=true";
         match extract_identifier(soundcloud_src, super::SOUNDCLOUD_TRACK) {
-            Some(identifier) => assert_eq!(identifier,
-                                           "195425494".to_string()),
+            Some(identifier) => assert_eq!(identifier, "195425494".to_string()),
+            None             => assert!(false)
+        }
+        let youtube_embed = "https://www.youtube.com/embed/X8tOngmlES0?rel=0";
+        match extract_identifier(youtube_embed, super::YOUTUBE_EMBED) {
+            Some(identifier) => assert_eq!(identifier, "X8tOngmlES0".to_string()),
             None             => assert!(false)
         }
 
-        let youtube_src = "https://www.youtube.com/embed/X8tOngmlES0?rel=0";
-        match extract_identifier(youtube_src, super::YOUTUBE_EMBED) {
-            Some(identifier) => assert_eq!(identifier,
-                                           "X8tOngmlES0".to_string()),
+        let youtube_watch = "https://www.youtube.com/watch?v=oDuif301F-8";
+        match extract_identifier(youtube_watch, super::YOUTUBE_WATCH) {
+            Some(identifier) => assert_eq!(identifier, "oDuif301F-8".to_string()),
             None             => assert!(false)
         }
 
-        let youtube_href_src = "https://www.youtube.com/watch?v=oDuif301F-8";
-        match extract_identifier(youtube_href_src, super::YOUTUBE_WATCH) {
-            Some(identifier) => assert_eq!(identifier,
-                                           "oDuif301F-8".to_string()),
+        let youtube_list = "https://www.youtube.com/embed/videoseries?list=PLy8LZ8FM-o0ViuGAF68RAaXkQ8V-3dbTX";
+        match extract_identifier(youtube_list, super::YOUTUBE_LIST) {
+            Some(identifier) => assert_eq!(identifier, "PLy8LZ8FM-o0ViuGAF68RAaXkQ8V-3dbTX".to_string()),
             None             => assert!(false)
+        }
+
+        match extract_identifier(youtube_list, super::YOUTUBE_EMBED) {
+            Some(identifier) => assert!(false),
+            None             => assert!(true)
         }
     }
 }
