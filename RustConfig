@@ -1,5 +1,5 @@
-URL="https://s3.amazonaws.com/musicfav-cloud/2015-09-28/rust-nightly-x86_64-unknown-linux-gnu.tar.gz"
-VERSION="2015-09-28"
+URL="https://s3.amazonaws.com/musicfav-cloud/2015-10-01/rust-1.3.0-x86_64-unknown-linux-gnu.tar.gz"
+VERSION="2015-10-01"
 
-CARGO_URL="https://s3.amazonaws.com/musicfav-cloud/2015-09-28/cargo-nightly-x86_64-unknown-linux-gnu.tar.gz"
-CARGO_VERSION="2015-09-28"
+echo "-----> Cleaning up"
+rm -f "rust-1.3.0-x86_64-unknown-linux-gnu.tar.gz"
