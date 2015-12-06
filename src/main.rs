@@ -21,12 +21,12 @@ use std::collections::BTreeMap;
 #[macro_use]
 extern crate string_cache;
 
+extern crate pink_spider;
+
 use pink_spider::scraper::extract_tracks;
 use pink_spider::model::{Track, Entry, create_tables};
 use rustc_serialize::json::{ToJson, Json};
 
-
-extern crate pink_spider;
 
 pub fn playlistify(req: &mut Request) -> IronResult<Response> {
     let json_type = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));

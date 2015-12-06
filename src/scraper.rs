@@ -53,8 +53,8 @@ fn walk(indent: usize, handle: Handle, tracks: &mut Vec<Track>) {
         Doctype(_, _, _) => (),
         Text(_)          => (),
         Comment(_)       => (),
-        Element(ref name, ref attrs) => {
-            let tag_name = name.local.as_slice();
+        Element(ref name, _, ref attrs) => {
+            let tag_name = name.local.as_ref();
             match extract_track(tag_name, attrs) {
                 Some(track) => {
                     if !(*tracks).contains(&track) {
@@ -72,7 +72,7 @@ fn walk(indent: usize, handle: Handle, tracks: &mut Vec<Track>) {
 
 fn attr(attr_name: &str, attrs: &Vec<Attribute>) -> Option<String> {
     for attr in attrs.iter() {
-        if attr.name.local.as_slice() == attr_name {
+        if attr.name.local.as_ref() == attr_name {
             return Some(attr.value.to_string())
         }
     }
