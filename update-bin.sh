@@ -26,8 +26,8 @@ fi
 # Format today's date appropriately.
 DATE=`date '+%Y-%m-%d'`
 
-# The names of our nightly tarballs.
-RUST_TARBALL=rust-1.3.0-x86_64-unknown-linux-gnu.tar.gz
+# The names of our stable tarballs.
+RUST_TARBALL=rust-1.4.0-x86_64-unknown-linux-gnu.tar.gz
 
 # Download our tarballs.
 echo "-----> Fetching nightly builds"
