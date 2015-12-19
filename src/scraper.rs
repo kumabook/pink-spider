@@ -63,7 +63,12 @@ fn walk(indent: usize, handle: Handle, tracks: &mut Vec<Track>) {
         Comment(_)       => (),
         Element(ref name, _, ref attrs) => {
             let tag_name = name.local.as_ref();
-            (*tracks).append(&mut extract_tracks_from_tag(tag_name, attrs))
+            let ts: Vec<Track> = extract_tracks_from_tag(tag_name, attrs);
+            for track in ts.iter().cloned() {
+                if !(tracks).iter().any(|t| track == *t) {
+                    (*tracks).push(track)
+                }
+            }
         }
     }
     for child in node.children.iter() {

@@ -11,7 +11,7 @@ static DEFAULT_DATABASE_URL: &'static str = "postgres://pink_spider:pinkspider@l
 use youtube;
 use soundcloud;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Provider {
     YouTube,
     SoundCloud,
@@ -43,7 +43,7 @@ impl Provider {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Track {
     pub id:         i32,
     pub provider:   Provider,
