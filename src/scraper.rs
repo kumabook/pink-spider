@@ -33,7 +33,7 @@ static SOUNDCLOUD_TRACK:     &'static str = r"api.soundcloud.com/tracks/([^\?&]+
 static SOUNDCLOUD_PLAYLIST:  &'static str = r"api.soundcloud.com/playlists/([^\?&]+)";
 static SOUNDCLOUD_USER:      &'static str = r"api.soundcloud.com/users/([^\?&]+)";
 
-pub fn extract_tracks(url: &str) -> Vec<Track> {
+pub fn extract_tracks(url: &str) -> Option<Vec<Track>> {
     let client = Client::new();
     let mut res = client.get(url)
         .header(Connection(vec![ConnectionOption::Close]))
@@ -41,11 +41,16 @@ pub fn extract_tracks(url: &str) -> Vec<Track> {
         .unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    let input: Tendril<_> = FromStr::from_str(&body).unwrap();
-    let dom: RcDom = parse(one_input(input), Default::default());
-    let mut tracks  = Vec::new();
-    walk(0, dom.document, &mut tracks);
-    return tracks
+    if res.status.is_success() {
+        let input: Tendril<_> = FromStr::from_str(&body).unwrap();
+        let dom: RcDom = parse(one_input(input), Default::default());
+        let mut tracks  = Vec::new();
+        walk(0, dom.document, &mut tracks);
+        return Some(tracks)
+    } else {
+        println!("Failed to get entry html {}: {}", res.status, url);
+        return None
+    }
 }
 
 // This is not proper HTML serialization, of course.

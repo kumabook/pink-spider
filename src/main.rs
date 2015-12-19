@@ -56,24 +56,33 @@ pub fn find_or_create_entry(url: &str) -> Entry {
             entry
         },
         None => {
-            let tracks = extract_tracks(url);
-            match Entry::create_by_url(url.to_string()) {
-                Some(mut entry) => {
-                    println!("Create new entry to database cache");
-                    for t in tracks {
-                        match Track::create(t.provider, t.title, t.url, t.identifier) {
-                            Some(track) => entry.add_track(track),
-                            None        => ()
+            let opt_tracks = extract_tracks(url);
+            match opt_tracks {
+                Some(tracks) => match Entry::create_by_url(url.to_string()) {
+                    Some(mut entry) => {
+                        println!("Create new entry to database cache");
+                        for t in tracks {
+                            match Track::create(t.provider, t.title, t.url, t.identifier) {
+                                Some(track) => entry.add_track(track),
+                                None        => ()
+                            }
+                        }
+                        entry
+                    },
+                    None => {
+                        println!("Failed to create entry database cache");
+                        Entry {
+                                id: 0,
+                               url: url.to_string(),
+                            tracks: tracks
                         }
                     }
-                    entry
                 },
                 None => {
-                    println!("Failed to create entry database cache");
                     Entry {
                             id: 0,
                            url: url.to_string(),
-                        tracks: tracks
+                        tracks: vec![]
                     }
                 }
             }
