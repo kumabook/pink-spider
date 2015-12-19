@@ -8,6 +8,9 @@ use self::rustc_serialize::json::{ToJson, Json};
 
 static DEFAULT_DATABASE_URL: &'static str = "postgres://pink_spider:pinkspider@localhost";
 
+use youtube;
+use soundcloud;
+
 #[derive(Debug)]
 pub enum Provider {
     YouTube,
@@ -68,6 +71,25 @@ impl ToJson for Track {
 }
 
 impl Track {
+    pub fn from_yt_playlist_item(item: &youtube::PlaylistItem) -> Track {
+        let identifier = (*item).snippet.resourceId["videoId"].to_string();
+        Track {
+                    id: 0,
+              provider: Provider::YouTube,
+                 title: (*item).snippet.title.to_string(),
+                   url: format!("https://www.youtube.com/watch/?v={}", identifier),
+            identifier: identifier
+        }
+    }
+    pub fn from_sc_track(track: &soundcloud::Track) -> Track {
+        Track {
+                    id: (*track).id,
+              provider: Provider::SoundCloud,
+                 title: (*track).title.to_string(),
+                   url: (*track).permalink_url.to_string(),
+            identifier: (*track).id.to_string()
+        }
+    }
     pub fn find_by_id(id: i32) -> Option<Track> {
         let conn = conn();
         let stmt = conn.prepare("SELECT id, provider, title, url, identifier
