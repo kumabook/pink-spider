@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# A utility script for downloading the latest nightly build of Rust,
+# A utility script for downloading the latest stable build of Rust,
 # uploading it to S3, and updating your RustConfig file.  This requires the
 # official 'aws' command line tool, which can be installed and configured
 # as follows:
@@ -30,7 +30,7 @@ DATE=`date '+%Y-%m-%d'`
 RUST_TARBALL=rust-1.4.0-x86_64-unknown-linux-gnu.tar.gz
 
 # Download our tarballs.
-echo "-----> Fetching nightly builds"
+echo "-----> Fetching stable builds"
 rm -f "$RUST_TARBALL"
 curl -O "https://static.rust-lang.org/dist/$RUST_TARBALL"
 
