@@ -5,27 +5,26 @@ extern crate hyper;
 extern crate string_cache;
 extern crate url;
 
+use tendril::Tendril;
 use std::str::FromStr;
 
-use self::tendril::Tendril;
-
-use self::html5ever::rcdom::{Document, Doctype, Text, Comment, Element};
-use self::html5ever::rcdom::{RcDom, Handle};
-use self::html5ever::{parse, one_input, Attribute};
+use html5ever::rcdom::{Document, Doctype, Text, Comment, Element};
+use html5ever::rcdom::{RcDom, Handle};
+use html5ever::{parse, one_input, Attribute};
 use std::default::Default;
 use std::io::Read;
 
-use self::regex::Regex;
-use self::hyper::Client;
-use self::hyper::header::Connection;
-use self::hyper::header::ConnectionOption;
+use regex::Regex;
+use hyper::Client;
+use hyper::header::Connection;
+use hyper::header::ConnectionOption;
 
 use Provider;
 use Track;
 use soundcloud;
 use youtube;
 
-use self::url::percent_encoding::lossy_utf8_percent_decode;
+use url::percent_encoding::lossy_utf8_percent_decode;
 
 static YOUTUBE_EMBED:    &'static str = r"www.youtube.com/embed/([^\?&{videoseries}].+)";
 static YOUTUBE_LIST:         &'static str = r"www.youtube.com/embed/videoseries\?list=([^\?]+)";
