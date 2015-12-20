@@ -27,7 +27,7 @@ fi
 DATE=`date '+%Y-%m-%d'`
 
 # The names of our stable tarballs.
-RUST_TARBALL=rust-1.4.0-x86_64-unknown-linux-gnu.tar.gz
+RUST_TARBALL=rust-1.5.0-x86_64-unknown-linux-gnu.tar.gz
 
 # Download our tarballs.
 echo "-----> Fetching stable builds"
