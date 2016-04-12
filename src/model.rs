@@ -2,6 +2,7 @@ extern crate rustc_serialize;
 extern crate postgres;
 
 use self::postgres::{Connection, SslMode};
+use self::postgres::error::ConnectError;
 use std::collections::BTreeMap;
 use std::env;
 use self::rustc_serialize::json::{ToJson, Json};
@@ -91,10 +92,10 @@ impl Track {
         }
     }
     pub fn find_by_id(id: i32) -> Option<Track> {
-        let conn = conn();
+        let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT id, provider, title, url, identifier
                                  FROM track WHERE id = $1").unwrap();
-        for row in stmt.query(&[&id]).unwrap() {
+        for row in stmt.query(&[&id]).unwrap().iter() {
             let track = Track {
                       id: row.get(0),
                 provider: Provider::new(row.get(1)),
@@ -108,11 +109,11 @@ impl Track {
     }
 
     pub fn find_by(provider: &Provider, identifier: &str) -> Option<Track> {
-        let conn = conn();
+        let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT id,  provider, title, url, identifier
                                  FROM track WHERE provider = $1
                                  AND identifier = $2").unwrap();
-        for row in stmt.query(&[&(*provider).to_string(), &identifier]).unwrap() {
+        for row in stmt.query(&[&(*provider).to_string(), &identifier]).unwrap().iter() {
             let track = Track {
                       id: row.get(0),
                 provider: Provider::new(row.get(1)),
@@ -127,7 +128,7 @@ impl Track {
 
     pub fn find_by_entry_id(entry_id: i32) -> Vec<Track> {
         let mut tracks = Vec::new();
-        let conn = conn();
+        let conn = conn().unwrap();
         println!(" entry_id {}", entry_id);
         let stmt = conn.prepare("SELECT t.id,
                                         t.provider,
@@ -137,7 +138,7 @@ impl Track {
                                  FROM track t LEFT JOIN track_entry te
                                  ON t.id = te.track_id
                                  WHERE te.entry_id = $1").unwrap();
-        for row in stmt.query(&[&entry_id]).unwrap() {
+        for row in stmt.query(&[&entry_id]).unwrap().iter() {
             tracks.push(Track {
                       id: row.get(0),
                 provider: Provider::new(row.get(1)),
@@ -151,9 +152,9 @@ impl Track {
 
     pub fn find_all() -> Vec<Track> {
         let mut tracks = Vec::new();
-        let conn = conn();
+        let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT id, provider, title, url, identifier FROM track").unwrap();
-        for row in stmt.query(&[]).unwrap() {
+        for row in stmt.query(&[]).unwrap().iter() {
             let track = Track {
                       id: row.get(0),
                 provider: Provider::new(row.get(1)),
@@ -167,10 +168,10 @@ impl Track {
     }
 
     pub fn create(provider: Provider, title: String, url: String, identifier: String) -> Option<Track> {
-        let conn = conn();
+        let conn = conn().unwrap();
         let stmt = conn.prepare("INSERT INTO track (provider, title, url, identifier)
                                  VALUES ($1, $2, $3, $4) RETURNING id").unwrap();
-        for row in stmt.query(&[&provider.to_string(), &title, &url, &identifier]).unwrap() {
+        for row in stmt.query(&[&provider.to_string(), &title, &url, &identifier]).unwrap().iter() {
             let track = Track {
                         id: row.get(0),
                   provider: provider,
@@ -191,10 +192,10 @@ impl Track {
     }
 
     pub fn save(&self) -> bool {
-        let conn = conn();
-        let stmt = conn.prepare("UPDATE track SET title=$1, url=$2
-                                 WHERE id = $3").unwrap();
-        match stmt.query(&[&self.title, &self.url, &self.id]) {
+        let conn = conn().unwrap();
+        let stmt = conn.prepare("UPDATE track SET title=$1, url=$2 WHERE id = $3").unwrap();
+        let result = stmt.query(&[&self.title, &self.url, &self.id]);
+        match result {
             Ok(_)  => return true,
             Err(_) => return false
         }
@@ -230,9 +231,9 @@ impl ToJson for Entry {
 
 impl Entry {
     pub fn find_by_id(id: String) -> Option<Entry> {
-        let conn = conn();
+        let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT id, url FROM entry WHERE id = $1").unwrap();
-        for row in stmt.query(&[&id]).unwrap() {
+        for row in stmt.query(&[&id]).unwrap().iter() {
             return Some(Entry {
                     id: row.get(0),
                    url: row.get(1),
@@ -243,9 +244,9 @@ impl Entry {
     }
 
     pub fn find_by_url(url: &str) -> Option<Entry> {
-        let conn = conn();
+        let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT id, url FROM entry WHERE url = $1").unwrap();
-        for row in stmt.query(&[&url]).unwrap() {
+        for row in stmt.query(&[&url]).unwrap().iter() {
             let id = row.get(0);
             return Some(Entry {
                     id: id,
@@ -257,10 +258,10 @@ impl Entry {
     }
 
     pub fn find_all() -> Vec<Entry> {
-        let conn = conn();
+        let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT id, url FROM entry").unwrap();
         let mut entries = Vec::new();
-        for row in stmt.query(&[]).unwrap() {
+        for row in stmt.query(&[]).unwrap().iter() {
             entries.push(Entry {
                     id: row.get(0),
                    url: row.get(1),
@@ -278,9 +279,9 @@ impl Entry {
     }
 
     pub fn create_by_url(url: String) -> Option<Entry> {
-        let conn = conn();
+        let conn = conn().unwrap();
         let stmt = conn.prepare("INSERT INTO entry (url) VALUES ($1) RETURNING id").unwrap();
-        for row in stmt.query(&[&url]).unwrap() {
+        for row in stmt.query(&[&url]).unwrap().iter() {
             let entry = Entry {
                       id: row.get(0),
                      url: url,
@@ -292,7 +293,7 @@ impl Entry {
     }
 
     pub fn add_track(&mut self, track: Track) {
-        let conn = conn();
+        let conn = conn().unwrap();
         let stmt = conn.prepare("INSERT INTO track_entry (track_id, entry_id)
                                  VALUES ($1, $2)").unwrap();
         stmt.query(&[&track.id, &self.id]).unwrap();
@@ -304,18 +305,18 @@ impl Entry {
     }
 }
 
-pub fn conn() -> Connection {
+pub fn conn() -> Result<Connection, ConnectError> {
     let opt_url = env::var("DATABASE_URL");
     match opt_url {
-        Ok(url)  =>
-            Connection::connect(url.trim(), &SslMode::None).unwrap(),
-        Err(_) =>
-            Connection::connect(DEFAULT_DATABASE_URL, &SslMode::None).unwrap()
+        Ok(url) =>
+            Connection::connect(url.trim(), SslMode::None),
+        Err(_)  =>
+            Connection::connect(DEFAULT_DATABASE_URL, SslMode::None)
     }
 }
 
 pub fn create_tables() {
-    let conn = conn();
+    let conn = conn().unwrap();
 
     match conn.execute("CREATE TABLE IF NOT EXISTS
                         track (id         SERIAL PRIMARY KEY,
@@ -344,7 +345,7 @@ pub fn create_tables() {
 }
 
 pub fn drop_tables() {
-    let conn = conn();
+    let conn = conn().unwrap();
     match conn.execute("DROP TABLE track", &[]) {
         Ok(_) => println!("Succeeded in dropping track table"),
         Err(error) => println!("Failed to drop error {}", error)
