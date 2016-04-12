@@ -5,14 +5,11 @@ extern crate hyper;
 extern crate string_cache;
 extern crate url;
 
-use tendril::Tendril;
-use std::str::FromStr;
-
 use html5ever::rcdom::{Document, Doctype, Text, Comment, Element};
 use html5ever::rcdom::{RcDom, Handle};
-use html5ever::{parse, one_input, Attribute};
+use html5ever::{parse_document, Attribute};
+use tendril::stream::TendrilSink;
 use std::default::Default;
-use std::io::Read;
 
 use regex::Regex;
 use hyper::Client;
@@ -39,11 +36,11 @@ pub fn extract_tracks(url: &str) -> Option<Vec<Track>> {
         .header(Connection(vec![ConnectionOption::Close]))
         .send()
         .unwrap();
-    let mut body = String::new();
-    res.read_to_string(&mut body).unwrap();
     if res.status.is_success() {
-        let input: Tendril<_> = FromStr::from_str(&body).unwrap();
-        let dom: RcDom = parse(one_input(input), Default::default());
+        let dom = parse_document(RcDom::default(), Default::default())
+            .from_utf8()
+            .read_from(&mut res)
+            .unwrap();
         let mut tracks  = Vec::new();
         walk(0, dom.document, &mut tracks);
         return Some(tracks)

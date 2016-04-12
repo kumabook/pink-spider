@@ -4,7 +4,6 @@ use hyper::Client;
 use hyper::header::Connection;
 use std::collections::BTreeMap;
 use rustc_serialize::json;
-use rustc_serialize::json::{DecodeResult};
 use std::fs::File;
 
 static BASE_URL:    &'static str = "https://www.googleapis.com/youtube/v3";
