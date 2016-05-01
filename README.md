@@ -7,3 +7,9 @@
 ```shell
     cargo build
 ```
+
+##
+
+```shell
+    heroku buildpacks:set heroku/ruby
+```

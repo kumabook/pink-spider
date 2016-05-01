@@ -1,5 +1,1 @@
-URL="https://s3.amazonaws.com/musicfav-cloud/2016-05-01/rust-1.8.0-x86_64-unknown-linux-gnu.tar.gz"
-VERSION="2016-05-01"
-
-echo "-----> Cleaning up"
-rm -f "rust-1.8.0-x86_64-unknown-linux-gnu.tar.gz"
+VERSION="1.8.0"
