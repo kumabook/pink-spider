@@ -8,14 +8,13 @@ authors = ["kumabook@live.jp"]
 
 [[bin]]
 name = "app"
-[[bin]]
-name = "drop_tables"
-path = "src/bin/drop_tables.rs"
+
+[features]
+default = ["postgres"]
 
 [dependencies]
 iron            = "*"
 router          = "*"
-postgres        = "*"
 hyper           = "*"
 regex           = "*"
 string_cache    = "*"
@@ -25,3 +24,9 @@ tendril         = "*"
 html5ever       = "*"
 url             = "*"
 lazy_static     = "*"
+uuid            = "*"
+
+[dependencies.postgres]
+version = "*"
+features = ["uuid"]
+optional = true
