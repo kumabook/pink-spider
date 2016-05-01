@@ -22,7 +22,7 @@ use Track;
 use soundcloud;
 use youtube;
 
-use url::percent_encoding::lossy_utf8_percent_decode;
+use url::percent_encoding::{percent_decode};
 
 static YOUTUBE_EMBED:    &'static str = r"www.youtube.com/embed/([^\?&{videoseries}].+)";
 static YOUTUBE_LIST:         &'static str = r"www.youtube.com/embed/videoseries\?list=([^\?]+)";
@@ -117,7 +117,7 @@ pub fn extract_tracks_from_tag(tag_name: &str,
 }
 
 fn extract_tracks_from_url(url: String) -> Vec<Track> {
-    let decoded = lossy_utf8_percent_decode(url.as_bytes());
+    let decoded = percent_decode(url.as_bytes()).decode_utf8_lossy().into_owned();
     match extract_identifier(&decoded, YOUTUBE_EMBED) {
         Some(identifier) => {
             return vec![Track {
