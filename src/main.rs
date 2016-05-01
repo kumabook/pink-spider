@@ -4,6 +4,7 @@ extern crate urlencoded;
 extern crate rustc_serialize;
 extern crate html5ever;
 extern crate regex;
+extern crate uuid;
 
 use std::net::SocketAddrV4;
 use std::net::Ipv4Addr;
@@ -17,6 +18,7 @@ use urlencoded::UrlEncodedQuery;
 use urlencoded::UrlEncodedBody;
 use std::str::FromStr;
 use std::collections::BTreeMap;
+use uuid::Uuid;
 
 #[macro_use]
 extern crate string_cache;
@@ -72,7 +74,7 @@ pub fn find_or_create_entry(url: &str) -> Entry {
                     None => {
                         println!("Failed to create entry database cache");
                         Entry {
-                                id: 0,
+                                id: Uuid::new_v4(),
                                url: url.to_string(),
                             tracks: tracks
                         }
@@ -80,7 +82,7 @@ pub fn find_or_create_entry(url: &str) -> Entry {
                 },
                 None => {
                     Entry {
-                            id: 0,
+                            id: Uuid::new_v4(),
                            url: url.to_string(),
                         tracks: vec![]
                     }

@@ -1,13 +1,11 @@
-extern crate rustc_serialize;
-extern crate postgres;
-
-use self::postgres::{Connection, SslMode};
-use self::postgres::error::ConnectError;
+use postgres::{Connection, SslMode};
+use postgres::error::ConnectError;
 use std::collections::BTreeMap;
 use std::env;
-use self::rustc_serialize::json::{ToJson, Json};
+use rustc_serialize::json::{ToJson, Json};
+use uuid::Uuid;
 
-static DEFAULT_DATABASE_URL: &'static str = "postgres://pink_spider:pinkspider@localhost";
+static DEFAULT_DATABASE_URL: &'static str = "postgres://kumabook@localhost/pink_spider_development_master";
 
 use youtube;
 use soundcloud;
@@ -46,7 +44,7 @@ impl Provider {
 
 #[derive(Debug, Clone)]
 pub struct Track {
-    pub id:         i32,
+    pub id:         Uuid,
     pub provider:   Provider,
     pub title:      String,
     pub url:        String,
@@ -62,7 +60,7 @@ impl PartialEq for Track {
 impl ToJson for Track {
     fn to_json(&self) -> Json {
         let mut d = BTreeMap::new();
-        d.insert("id".to_string(),         self.id.to_json());
+        d.insert("id".to_string(),         self.id.to_string().to_json());
         d.insert("provider".to_string(),   self.provider.to_string().to_json());
         d.insert("identifier".to_string(), self.identifier.to_json());
         d.insert("title".to_string(),      self.title.to_json());
@@ -75,7 +73,7 @@ impl Track {
     pub fn from_yt_playlist_item(item: &youtube::PlaylistItem) -> Track {
         let identifier = (*item).snippet.resourceId["videoId"].to_string();
         Track {
-                    id: 0,
+                    id: Uuid::new_v4(),
               provider: Provider::YouTube,
                  title: (*item).snippet.title.to_string(),
                    url: format!("https://www.youtube.com/watch/?v={}", identifier),
@@ -84,7 +82,7 @@ impl Track {
     }
     pub fn from_sc_track(track: &soundcloud::Track) -> Track {
         Track {
-                    id: (*track).id,
+                    id: Uuid::new_v4(),
               provider: Provider::SoundCloud,
                  title: (*track).title.to_string(),
                    url: (*track).permalink_url.to_string(),
@@ -94,7 +92,7 @@ impl Track {
     pub fn find_by_id(id: i32) -> Option<Track> {
         let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT id, provider, title, url, identifier
-                                 FROM track WHERE id = $1").unwrap();
+                                 FROM tracks WHERE id = $1").unwrap();
         for row in stmt.query(&[&id]).unwrap().iter() {
             let track = Track {
                       id: row.get(0),
@@ -111,7 +109,7 @@ impl Track {
     pub fn find_by(provider: &Provider, identifier: &str) -> Option<Track> {
         let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT id,  provider, title, url, identifier
-                                 FROM track WHERE provider = $1
+                                 FROM tracks WHERE provider = $1
                                  AND identifier = $2").unwrap();
         for row in stmt.query(&[&(*provider).to_string(), &identifier]).unwrap().iter() {
             let track = Track {
@@ -126,7 +124,7 @@ impl Track {
         return None
     }
 
-    pub fn find_by_entry_id(entry_id: i32) -> Vec<Track> {
+    pub fn find_by_entry_id(entry_id: Uuid) -> Vec<Track> {
         let mut tracks = Vec::new();
         let conn = conn().unwrap();
         println!(" entry_id {}", entry_id);
@@ -135,7 +133,7 @@ impl Track {
                                         t.title,
                                         t.url,
                                         t.identifier
-                                 FROM track t LEFT JOIN track_entry te
+                                 FROM tracks t LEFT JOIN track_entries te
                                  ON t.id = te.track_id
                                  WHERE te.entry_id = $1").unwrap();
         for row in stmt.query(&[&entry_id]).unwrap().iter() {
@@ -169,7 +167,7 @@ impl Track {
 
     pub fn create(provider: Provider, title: String, url: String, identifier: String) -> Option<Track> {
         let conn = conn().unwrap();
-        let stmt = conn.prepare("INSERT INTO track (provider, title, url, identifier)
+        let stmt = conn.prepare("INSERT INTO tracks (provider, title, url, identifier)
                                  VALUES ($1, $2, $3, $4) RETURNING id").unwrap();
         for row in stmt.query(&[&provider.to_string(), &title, &url, &identifier]).unwrap().iter() {
             let track = Track {
@@ -194,7 +192,7 @@ impl Track {
     pub fn save(&self) -> bool {
         let conn = conn().unwrap();
         let stmt = conn.prepare("UPDATE track SET title=$1, url=$2 WHERE id = $3").unwrap();
-        let result = stmt.query(&[&self.title, &self.url, &self.id]);
+        let result = stmt.query(&[&self.title, &self.url, &self.id.to_string()]);
         match result {
             Ok(_)  => return true,
             Err(_) => return false
@@ -209,7 +207,7 @@ pub struct Playlist {
 
 #[derive(Debug)]
 pub struct Entry {
-    pub id:  i32,
+    pub id:  Uuid,
     pub url: String,
     pub tracks: Vec<Track>,
 }
@@ -217,7 +215,7 @@ pub struct Entry {
 impl ToJson for Entry {
     fn to_json(&self) -> Json {
         let mut d = BTreeMap::new();
-        d.insert("id".to_string(),  self.id.to_json());
+        d.insert("id".to_string(),  self.id.to_string().to_json());
         d.insert("url".to_string(), self.url.to_json());
         let ref tracks = self.tracks;
         let mut t = Vec::new();
@@ -232,7 +230,7 @@ impl ToJson for Entry {
 impl Entry {
     pub fn find_by_id(id: String) -> Option<Entry> {
         let conn = conn().unwrap();
-        let stmt = conn.prepare("SELECT id, url FROM entry WHERE id = $1").unwrap();
+        let stmt = conn.prepare("SELECT id, url FROM entries WHERE id = $1").unwrap();
         for row in stmt.query(&[&id]).unwrap().iter() {
             return Some(Entry {
                     id: row.get(0),
@@ -245,13 +243,12 @@ impl Entry {
 
     pub fn find_by_url(url: &str) -> Option<Entry> {
         let conn = conn().unwrap();
-        let stmt = conn.prepare("SELECT id, url FROM entry WHERE url = $1").unwrap();
+        let stmt = conn.prepare("SELECT id, url FROM entries WHERE url = $1").unwrap();
         for row in stmt.query(&[&url]).unwrap().iter() {
-            let id = row.get(0);
             return Some(Entry {
-                    id: id,
+                    id: row.get(0),
                    url: row.get(1),
-                tracks: Track::find_by_entry_id(id)
+                tracks: Track::find_by_entry_id(row.get(0))
             });
         }
         return None
@@ -259,7 +256,7 @@ impl Entry {
 
     pub fn find_all() -> Vec<Entry> {
         let conn = conn().unwrap();
-        let stmt = conn.prepare("SELECT id, url FROM entry").unwrap();
+        let stmt = conn.prepare("SELECT id, url FROM entries").unwrap();
         let mut entries = Vec::new();
         for row in stmt.query(&[]).unwrap().iter() {
             entries.push(Entry {
@@ -280,7 +277,7 @@ impl Entry {
 
     pub fn create_by_url(url: String) -> Option<Entry> {
         let conn = conn().unwrap();
-        let stmt = conn.prepare("INSERT INTO entry (url) VALUES ($1) RETURNING id").unwrap();
+        let stmt = conn.prepare("INSERT INTO entries (url) VALUES ($1) RETURNING id").unwrap();
         for row in stmt.query(&[&url]).unwrap().iter() {
             let entry = Entry {
                       id: row.get(0),
@@ -294,7 +291,7 @@ impl Entry {
 
     pub fn add_track(&mut self, track: Track) {
         let conn = conn().unwrap();
-        let stmt = conn.prepare("INSERT INTO track_entry (track_id, entry_id)
+        let stmt = conn.prepare("INSERT INTO track_entries (track_id, entry_id)
                                  VALUES ($1, $2)").unwrap();
         stmt.query(&[&track.id, &self.id]).unwrap();
         self.tracks.push(track);

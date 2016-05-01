@@ -10,6 +10,7 @@ use html5ever::rcdom::{RcDom, Handle};
 use html5ever::{parse_document, Attribute};
 use tendril::stream::TendrilSink;
 use std::default::Default;
+use uuid::Uuid;
 
 use regex::Regex;
 use hyper::Client;
@@ -120,7 +121,7 @@ fn extract_tracks_from_url(url: String) -> Vec<Track> {
     match extract_identifier(&decoded, YOUTUBE_EMBED) {
         Some(identifier) => {
             return vec![Track {
-                        id: 0,
+                        id: Uuid::new_v4(),
                   provider: Provider::YouTube,
                      title: "".to_string(),
                        url: url.to_string(),
@@ -132,7 +133,7 @@ fn extract_tracks_from_url(url: String) -> Vec<Track> {
     match extract_identifier(&decoded, YOUTUBE_WATCH) {
         Some(identifier) => {
             return vec![Track {
-                        id: 0,
+                        id: Uuid::new_v4(),
                   provider: Provider::YouTube,
                      title: "".to_string(),
                        url: url.to_string(),
@@ -155,7 +156,7 @@ fn extract_tracks_from_url(url: String) -> Vec<Track> {
     match extract_identifier(&decoded, SOUNDCLOUD_TRACK) {
         Some(identifier) => {
             return vec![Track {
-                        id: 0,
+                        id: Uuid::new_v4(),
                   provider: Provider::SoundCloud,
                      title: "".to_string(),
                        url: url.to_string(),
