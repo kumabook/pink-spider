@@ -24,7 +24,7 @@ extern crate string_cache;
 extern crate pink_spider;
 
 use pink_spider::scraper::extract_tracks;
-use pink_spider::model::{Track, Entry, create_tables};
+use pink_spider::model::{Track, Entry};
 use rustc_serialize::json::{ToJson, Json};
 
 
@@ -171,8 +171,6 @@ pub fn update_track(req: &mut Request) -> IronResult<Response> {
 }
 
 pub fn main() {
-    create_tables();
-
     let mut router = Router::new();
 //    router.post(  "auth",                    signin);
     router.get(   "/playlistify",            playlistify);
