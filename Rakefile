@@ -11,7 +11,7 @@ namespace :db do
 
   task :environment do
     config = YAML.load(ERB.new(File.read('config/database.yml')).result)
-    ActiveRecord::Base.establish_connection(config[env])
+    ActiveRecord::Base.establish_connection(ENV['DATABASE_URL'] || config[env])
     ActiveRecord::Base.logger = Logger.new('db/database.log')
   end
 
