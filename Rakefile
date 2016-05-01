@@ -37,3 +37,5 @@ namespace :db do
     %x( dropdb #{config[env]['database']} )
   end
 end
+
+load 'db/import_from_legacy.rb'
