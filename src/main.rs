@@ -64,7 +64,7 @@ pub fn find_or_create_entry(url: &str) -> Entry {
                     Some(mut entry) => {
                         println!("Create new entry to database cache");
                         for t in tracks {
-                            match Track::create(t.provider, t.title, t.url, t.identifier) {
+                            match Track::find_or_create(t.provider, t.title, t.url, t.identifier) {
                                 Some(track) => entry.add_track(track),
                                 None        => ()
                             }
