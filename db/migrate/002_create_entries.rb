@@ -4,6 +4,7 @@ class CreateEntries < ActiveRecord::Migration
       t.string :url, :null => false
       t.timestamps
     end
+    add_index :entries, :url, :unique => true
   end
 
   def self.down

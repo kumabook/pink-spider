@@ -7,6 +7,7 @@ class CreateTracks < ActiveRecord::Migration
       t.string :url       , :null => false
       t.timestamps
     end
+    add_index :tracks, [:provider, :identifier], :unique => true
   end
 
   def self.down

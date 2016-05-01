@@ -5,6 +5,7 @@ class CreateTrackEntries < ActiveRecord::Migration
       t.uuid :entry_id, :null => false
       t.timestamps
     end
+    add_index :track_entries, [:track_id, :entry_id], :unique => true
   end
 
   def self.down
