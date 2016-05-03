@@ -14,6 +14,10 @@ namespace :db do
     config = YAML.load(ERB.new(File.read('config/database.yml')).result)
     ActiveRecord::Base.establish_connection(ENV['DATABASE_URL'] || config[env])
     ActiveRecord::Base.logger = Logger.new('db/database.log')
+    ActiveRecord::Base.connection.tables.each do |table_name|
+      class_name = table_name.singularize.camelcase
+      self.class.const_set class_name, Class.new(ActiveRecord::Base)
+    end
   end
 
   desc "Migrate database"
