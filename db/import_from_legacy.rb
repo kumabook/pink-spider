@@ -74,5 +74,8 @@ namespace :db do
         create_track_entry_if_not_exist(connection, track['id'], entry['id'])
       end
     end
+    connection.exec("DROP TABLE IF EXISTS track_entry")
+    connection.exec("DROP TABLE IF EXISTS track")
+    connection.exec("DROP TABLE IF EXISTS entry")
   end
 end
