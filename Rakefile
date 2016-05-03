@@ -37,6 +37,5 @@ namespace :db do
     config = YAML.load(ERB.new(File.read('config/database.yml')).result)
     %x( dropdb #{config[env]['database']} )
   end
-end
 
-load 'db/import_from_legacy.rb'
+end
