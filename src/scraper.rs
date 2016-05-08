@@ -24,12 +24,12 @@ use youtube;
 
 use url::percent_encoding::{percent_decode};
 
-static YOUTUBE_EMBED:    &'static str = r"www.youtube.com/embed/([^\?&{videoseries}].+)";
-static YOUTUBE_LIST:         &'static str = r"www.youtube.com/embed/videoseries\?list=([^\?]+)";
-static YOUTUBE_WATCH:        &'static str = r"www.youtube.com/watch\?v=([^\?&]+)";
-static SOUNDCLOUD_TRACK:     &'static str = r"api.soundcloud.com/tracks/([^\?&]+)";
-static SOUNDCLOUD_PLAYLIST:  &'static str = r"api.soundcloud.com/playlists/([^\?&]+)";
-static SOUNDCLOUD_USER:      &'static str = r"api.soundcloud.com/users/([^\?&]+)";
+static YOUTUBE_EMBED:       &'static str = r"www.youtube.com/embed/([^/\?&{videoseries}].+)";
+static YOUTUBE_LIST:        &'static str = r"www.youtube.com/embed/videoseries\?list=([a-zA-Z0-9_-]+)";
+static YOUTUBE_WATCH:       &'static str = r"www.youtube.com/watch\?v=([a-zA-Z0-9_-]+)";
+static SOUNDCLOUD_TRACK:    &'static str = r"api.soundcloud.com/tracks/([a-zA-Z0-9_-]+)";
+static SOUNDCLOUD_PLAYLIST: &'static str = r"api.soundcloud.com/playlists/([a-zA-Z0-9_-]+)";
+static SOUNDCLOUD_USER:     &'static str = r"api.soundcloud.com/users/([a-zA-Z0-9_-]+)";
 
 pub fn extract_tracks(url: &str) -> Option<Vec<Track>> {
     let client = Client::new();
@@ -198,7 +198,7 @@ mod test {
 
     #[test]
     fn test_extract_identifier() {
-        let soundcloud_src = "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/195425494&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&visual=true";
+        let soundcloud_src = "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/195425494/stream&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&visual=true";
         match extract_identifier(soundcloud_src, super::SOUNDCLOUD_TRACK) {
             Some(identifier) => assert_eq!(identifier, "195425494".to_string()),
             None             => assert!(false)
@@ -222,8 +222,8 @@ mod test {
         }
 
         match extract_identifier(youtube_list, super::YOUTUBE_EMBED) {
-            Some(identifier) => assert!(false),
-            None             => assert!(true)
+            Some(_) => assert!(false),
+            None    => assert!(true)
         }
     }
 }
