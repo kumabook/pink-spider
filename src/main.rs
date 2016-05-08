@@ -26,7 +26,7 @@ extern crate string_cache;
 extern crate pink_spider;
 
 use pink_spider::scraper::extract_tracks;
-use pink_spider::model::{Track, Entry};
+use pink_spider::model::{Track, Entry, Provider};
 use rustc_serialize::json::{ToJson, Json};
 
 
@@ -113,6 +113,22 @@ pub fn show_track(req: &mut Request) -> IronResult<Response> {
     }
 }
 
+pub fn show_track_by_provider_id(req: &mut Request) -> IronResult<Response> {
+    let provider   = req.extensions.get::<Router>().unwrap().find("provider").unwrap();
+    let identifier = req.extensions.get::<Router>().unwrap().find("id").unwrap();
+    let json_type  = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
+    let p          = &Provider::new(provider.to_string());
+    match Track::find_by(p, identifier) {
+        Some(track) => {
+            let res = Response::with((status::Ok,
+                                      json_type,
+                                      track.to_json().to_string()));
+            Ok(res)
+        },
+        None => Ok(Response::with((status::Ok, json_type, "{}")))
+    }
+}
+
 
 pub fn update_track(req: &mut Request) -> IronResult<Response> {
     let json_type = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
@@ -174,16 +190,10 @@ pub fn update_track(req: &mut Request) -> IronResult<Response> {
 
 pub fn main() {
     let mut router = Router::new();
-//    router.post(  "auth",                    signin);
-    router.get(   "/playlistify",            playlistify);
-//    router.get(   "/entry/:entry_id",        show_entry);
-//    router.post(  "/entry/:entry_id",        update_entry);
-//    router.delete("/entry/:entry_id",        destroy_entry);
-//    router.put(   "/tracks/:track_id",       create_track);
-    router.get(   "/tracks/:track_id",       show_track);
-    router.post(  "/tracks/:track_id",       update_track);
-//    router.delete("/tracks/:track_id",       destroy_track);
-//    router.post(  "/entry/:entry_id/tracks", add_track);*/
+    router.get( "/playlistify"         , playlistify);
+    router.get( "/tracks/:track_id"    , show_track);
+    router.post("/tracks/:track_id"    , update_track);
+    router.get( "/tracks/:provider/:id", show_track_by_provider_id);
 
     let opt_port = std::env::var("PORT");
     let port_str = match opt_port {

@@ -34,10 +34,12 @@ impl Provider {
             Provider::Raw        => "Raw".to_string(),
         }
     }
-    fn new(str: String) -> Provider {
+    pub fn new(str: String) -> Provider {
         match str.as_ref() {
             "YouTube"    => Provider::YouTube,
+            "youtube"    => Provider::YouTube,
             "SoundCloud" => Provider::SoundCloud,
+            "soundcloud" => Provider::SoundCloud,
             _            => Provider::Raw,
         }
     }
