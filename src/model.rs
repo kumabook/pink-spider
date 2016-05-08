@@ -140,7 +140,6 @@ impl Track {
     pub fn find_by_entry_id(entry_id: Uuid) -> Vec<Track> {
         let mut tracks = Vec::new();
         let conn = conn().unwrap();
-        println!(" entry_id {}", entry_id);
         let stmt = conn.prepare("SELECT t.id,
                                         t.provider,
                                         t.title,
