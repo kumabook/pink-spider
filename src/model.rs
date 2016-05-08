@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 use std::env;
 use rustc_serialize::json::{ToJson, Json};
 use uuid::Uuid;
+use std::fmt;
 
 static DEFAULT_DATABASE_URL: &'static str = "postgres://kumabook@localhost/pink_spider_development_master";
 
@@ -42,6 +43,12 @@ impl Provider {
     }
 }
 
+impl fmt::Display for Provider {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({})", self.to_string())
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Track {
     pub id:         Uuid,
@@ -66,6 +73,12 @@ impl ToJson for Track {
         d.insert("title".to_string(),      self.title.to_json());
         d.insert("url".to_string(),        self.url.to_json());
         Json::Object(d)
+    }
+}
+
+impl fmt::Display for Track {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}:{}", self.provider, self.identifier)
     }
 }
 
