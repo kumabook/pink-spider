@@ -95,21 +95,21 @@ pub fn find_or_create_entry(url: &str) -> Entry {
 pub fn show_track(req: &mut Request) -> IronResult<Response> {
     let ref track_id = req.extensions.get::<Router>().unwrap()
                           .find("track_id").unwrap();
-    let tid: Option<i32> = track_id.parse().ok();
     let json_type = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
-    match tid {
-        Some(n) =>
-            match Track::find_by_id(n) {
-                Some(track) => {
-                    let res = Response::with((status::Ok,
-                                              json_type,
-                                              track.to_json().to_string()));
-                    Ok(res)
-                },
-                None =>
-                    Ok(Response::with((status::Ok, json_type, "{}")))
-            },
-        None => Ok(Response::with((status::Ok, json_type, "{}")))
+    match Track::find_by_id(track_id) {
+        Ok(track) => {
+            let res = Response::with((status::Ok,
+                                      json_type,
+                                      track.to_json().to_string()));
+            Ok(res)
+        },
+        Err(msg) => {
+            let mut info = BTreeMap::new();
+            info.insert("error".to_string(), msg);
+            Ok(Response::with((status::NotFound,
+                               json_type,
+                               info.to_json().to_string())))
+        }
     }
 }
 
@@ -147,16 +147,11 @@ pub fn update_track(req: &mut Request) -> IronResult<Response> {
                   .find(key).unwrap().to_string();
     }
 
-    let track_id = query_as_string(req, "track_id");
-    let tid: Option<i32> = track_id.parse().ok();
-
-    let opt_track = match tid {
-        Some(id) => Track::find_by_id(id),
-        None     => None
-    };
+    let track_id  = query_as_string(req, "track_id");
+    let opt_track = Track::find_by_id(&track_id);
 
     match opt_track {
-        Some(mut track) => {
+        Ok(mut track) => {
             match param_as_string(req, "title") {
                 Some(title) => track.title = title,
                 None        => println!("no title")
@@ -178,9 +173,9 @@ pub fn update_track(req: &mut Request) -> IronResult<Response> {
                                    info.to_json().to_string())))
             }
         },
-        None =>  {
+        Err(msg) =>  {
             let mut info = BTreeMap::new();
-            info.insert("error".to_string(), "Track is not found".to_string());
+            info.insert("error".to_string(), msg);
             Ok(Response::with((status::NotFound,
                                json_type,
                                info.to_json().to_string())))

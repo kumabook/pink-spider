@@ -104,11 +104,12 @@ impl Track {
             identifier: (*track).id.to_string()
         }
     }
-    pub fn find_by_id(id: i32) -> Option<Track> {
+    pub fn find_by_id(id: &str) -> Result<Track, String> {
         let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT id, provider, title, url, identifier
                                  FROM tracks WHERE id = $1").unwrap();
-        for row in stmt.query(&[&id]).unwrap().iter() {
+        let uuid = try!(Uuid::parse_str(id).map_err(|e| e.to_string()));
+        for row in stmt.query(&[&uuid]).unwrap().iter() {
             let track = Track {
                       id: row.get(0),
                 provider: Provider::new(row.get(1)),
@@ -116,9 +117,9 @@ impl Track {
                      url: row.get(3),
               identifier: row.get(4)
             };
-            return Some(track);
+            return Ok(track);
         }
-        return None
+        return Err(String::from("Not found"))
     }
 
     pub fn find_by(provider: &Provider, identifier: &str) -> Option<Track> {
