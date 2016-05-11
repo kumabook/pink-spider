@@ -1,4 +1,5 @@
 extern crate hyper;
+extern crate iron;
 extern crate rustc_serialize;
 extern crate html5ever;
 extern crate tendril;
@@ -15,6 +16,7 @@ pub use self::model::Track;
 pub use self::model::Playlist;
 pub use self::model::Provider;
 
+pub mod error;
 pub mod scraper;
 pub mod model;
 pub mod youtube;

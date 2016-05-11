@@ -17,14 +17,13 @@ use router::{Router};
 use urlencoded::UrlEncodedQuery;
 use urlencoded::UrlEncodedBody;
 use std::str::FromStr;
-use std::collections::BTreeMap;
-use uuid::Uuid;
 
 #[macro_use]
 extern crate string_cache;
 
 extern crate pink_spider;
 
+use pink_spider::error::Error;
 use pink_spider::scraper::extract_tracks;
 use pink_spider::model::{Track, Entry, Provider};
 use rustc_serialize::json::{ToJson, Json};
@@ -36,59 +35,38 @@ pub fn playlistify(req: &mut Request) -> IronResult<Response> {
         Ok(ref params) => {
             match params.get("url") {
                 Some(url) => {
-                    let entry = find_or_create_entry(&url[0]);
-                    let json_obj: Json = entry.to_json();
-                    let json_str: String = json_obj.to_string();
-                    return Ok(Response::with((status::Ok, json_type, json_str)))
+                    match find_or_create_entry(&url[0]) {
+                        Ok(entry) => {
+                            let json_obj: Json   = entry.to_json();
+                            let json_str: String = json_obj.to_string();
+                            Ok(Response::with((status::Ok, json_type, json_str)))
+                        },
+                        Err(e) => Ok(e.as_response())
+                    }
                 },
-                None => println!("no url")
+                None => Ok(Error::BadRequest.as_response())
             }
         }
-        Err(ref e) =>
-            println!("{:?}", e)
-    };
-
-    Ok(Response::with((status::Ok, "{}")))
+        Err(_) => Ok(Error::BadRequest.as_response())
+    }
 }
 
-pub fn find_or_create_entry(url: &str) -> Entry {
+pub fn find_or_create_entry(url: &str) -> Result<Entry, Error> {
     match Entry::find_by_url(url) {
-        Some(entry) => {
+        Ok(entry) => {
             println!("Get entry from database cache");
-            entry
+            Ok(entry)
         },
-        None => {
-            let opt_tracks = extract_tracks(url);
-            match opt_tracks {
-                Some(tracks) => match Entry::create_by_url(url.to_string()) {
-                    Some(mut entry) => {
-                        println!("Create new entry to database cache");
-                        for t in tracks {
-                            match Track::find_or_create(t.provider, t.title, t.url, t.identifier) {
-                                Some(track) => entry.add_track(track),
-                                None        => ()
-                            }
-                        }
-                        entry
-                    },
-                    None => {
-                        println!("Failed to create entry database cache");
-                        Entry {
-                                id: Uuid::new_v4(),
-                               url: url.to_string(),
-                            tracks: tracks
-                        }
-                    }
-                },
-                None => {
-                    Entry {
-                            id: Uuid::new_v4(),
-                           url: url.to_string(),
-                        tracks: vec![]
-                    }
-                }
+        Err(_) => {
+            let     tracks = try!(extract_tracks(url));
+            let mut entry  = try!(Entry::create_by_url(url.to_string()));
+            println!("Create new entry to database cache");
+            for t in tracks {
+                let track = try!(Track::find_or_create(t.provider, t.title, t.url, t.identifier));
+                entry.add_track(track)
             }
-        }
+            Ok(entry)
+        },
     }
 }
 
@@ -98,18 +76,11 @@ pub fn show_track(req: &mut Request) -> IronResult<Response> {
     let json_type = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
     match Track::find_by_id(track_id) {
         Ok(track) => {
-            let res = Response::with((status::Ok,
-                                      json_type,
-                                      track.to_json().to_string()));
-            Ok(res)
-        },
-        Err(msg) => {
-            let mut info = BTreeMap::new();
-            info.insert("error".to_string(), msg);
-            Ok(Response::with((status::NotFound,
+            Ok(Response::with((status::Ok,
                                json_type,
-                               info.to_json().to_string())))
-        }
+                               track.to_json().to_string())))
+        },
+        Err(e) => Ok(e.as_response())
     }
 }
 
@@ -117,15 +88,14 @@ pub fn show_track_by_provider_id(req: &mut Request) -> IronResult<Response> {
     let provider   = req.extensions.get::<Router>().unwrap().find("provider").unwrap();
     let identifier = req.extensions.get::<Router>().unwrap().find("id").unwrap();
     let json_type  = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
-    let p          = &Provider::new(provider.to_string());
+    let p = &Provider::new(provider.to_string());
     match Track::find_by(p, identifier) {
-        Some(track) => {
-            let res = Response::with((status::Ok,
-                                      json_type,
-                                      track.to_json().to_string()));
-            Ok(res)
+        Ok(track) => {
+            Ok(Response::with((status::Ok,
+                               json_type,
+                               track.to_json().to_string())))
         },
-        None => Ok(Response::with((status::Ok, json_type, "{}")))
+        Err(e) => Ok(e.as_response())
     }
 }
 
@@ -147,10 +117,7 @@ pub fn update_track(req: &mut Request) -> IronResult<Response> {
                   .find(key).unwrap().to_string();
     }
 
-    let track_id  = query_as_string(req, "track_id");
-    let opt_track = Track::find_by_id(&track_id);
-
-    match opt_track {
+    match Track::find_by_id(&query_as_string(req, "track_id")) {
         Ok(mut track) => {
             match param_as_string(req, "title") {
                 Some(title) => track.title = title,
@@ -160,25 +127,15 @@ pub fn update_track(req: &mut Request) -> IronResult<Response> {
                 Some(url) => track.url = url,
                 None      => println!("no url")
             }
-            if track.save() {
-                let res = Response::with((status::Ok,
-                                          json_type,
-                                          track.to_json().to_string()));
-                Ok(res)
-            } else {
-                let mut info = BTreeMap::new();
-                info.insert("error".to_string(), "Failed to save".to_string());
-                Ok(Response::with((status::BadRequest,
-                                   json_type,
-                                   info.to_json().to_string())))
+            match track.save() {
+                Ok(_) => Ok(Response::with((status::Ok,
+                                         json_type,
+                                         track.to_json().to_string()))),
+                Err(e) =>  Ok(e.as_response())
             }
         },
-        Err(msg) =>  {
-            let mut info = BTreeMap::new();
-            info.insert("error".to_string(), msg);
-            Ok(Response::with((status::NotFound,
-                               json_type,
-                               info.to_json().to_string())))
+        Err(e) =>  {
+            Ok(e.as_response())
         }
     }
 }
@@ -190,8 +147,7 @@ pub fn main() {
     router.post("/tracks/:track_id"    , update_track);
     router.get( "/tracks/:provider/:id", show_track_by_provider_id);
 
-    let opt_port = std::env::var("PORT");
-    let port_str = match opt_port {
+    let port_str = match std::env::var("PORT") {
         Ok(n)    => n,
         Err(_) => "8080".to_string()
     };

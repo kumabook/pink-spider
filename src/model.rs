@@ -10,6 +10,7 @@ static DEFAULT_DATABASE_URL: &'static str = "postgres://kumabook@localhost/pink_
 
 use youtube;
 use soundcloud;
+use error::Error;
 
 #[derive(Debug, Clone)]
 pub enum Provider {
@@ -104,11 +105,11 @@ impl Track {
             identifier: (*track).id.to_string()
         }
     }
-    pub fn find_by_id(id: &str) -> Result<Track, String> {
+    pub fn find_by_id(id: &str) -> Result<Track, Error> {
         let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT id, provider, title, url, identifier
                                  FROM tracks WHERE id = $1").unwrap();
-        let uuid = try!(Uuid::parse_str(id).map_err(|e| e.to_string()));
+        let uuid = try!(Uuid::parse_str(id).map_err(|_| Error::Unprocessable));
         for row in stmt.query(&[&uuid]).unwrap().iter() {
             let track = Track {
                       id: row.get(0),
@@ -119,10 +120,10 @@ impl Track {
             };
             return Ok(track);
         }
-        return Err(String::from("Not found"))
+        return Err(Error::NotFound)
     }
 
-    pub fn find_by(provider: &Provider, identifier: &str) -> Option<Track> {
+    pub fn find_by(provider: &Provider, identifier: &str) -> Result<Track, Error> {
         let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT id,  provider, title, url, identifier
                                  FROM tracks WHERE provider = $1
@@ -135,9 +136,9 @@ impl Track {
                      url: row.get(3),
               identifier: row.get(4)
             };
-            return Some(track);
+            return Ok(track);
         }
-        return None
+        return Err(Error::NotFound)
     }
 
     pub fn find_by_entry_id(entry_id: Uuid) -> Vec<Track> {
@@ -180,7 +181,10 @@ impl Track {
         return tracks
     }
 
-    pub fn create(provider: Provider, title: String, url: String, identifier: String) -> Option<Track> {
+    pub fn create(provider: Provider,
+                  title: String,
+                  url: String,
+                  identifier: String) -> Result<Track, Error> {
         let conn = conn().unwrap();
         let stmt = conn.prepare("INSERT INTO tracks (provider, title, url, identifier)
                                  VALUES ($1, $2, $3, $4) RETURNING id").unwrap();
@@ -192,25 +196,28 @@ impl Track {
                        url: url,
                 identifier: identifier
             };
-            return Some(track);
+            return Ok(track);
         }
-        return None
+        Err(Error::Unexpected)
     }
 
-    pub fn find_or_create(provider: Provider, title: String, url: String, identifier: String) -> Option<Track> {
+    pub fn find_or_create(provider: Provider,
+                          title: String,
+                          url: String,
+                          identifier: String) -> Result<Track, Error> {
         return match Track::find_by(&provider, &identifier) {
-            Some(track) => Some(track),
-            None        => Track::create(provider, title, url, identifier)
+            Ok(track) => Ok(track),
+            Err(_)    => Track::create(provider, title, url, identifier)
         }
     }
 
-    pub fn save(&self) -> bool {
+    pub fn save(&self) -> Result<(), Error> {
         let conn = conn().unwrap();
         let stmt = conn.prepare("UPDATE track SET title=$1, url=$2 WHERE id = $3").unwrap();
         let result = stmt.query(&[&self.title, &self.url, &self.id.to_string()]);
         match result {
-            Ok(_)  => return true,
-            Err(_) => return false
+            Ok(_)  => Ok(()),
+            Err(_) => Err(Error::Unexpected)
         }
     }
 }
@@ -243,30 +250,30 @@ impl ToJson for Entry {
 }
 
 impl Entry {
-    pub fn find_by_id(id: String) -> Option<Entry> {
+    pub fn find_by_id(id: String) -> Result<Entry, Error> {
         let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT id, url FROM entries WHERE id = $1").unwrap();
         for row in stmt.query(&[&id]).unwrap().iter() {
-            return Some(Entry {
+            return Ok(Entry {
                     id: row.get(0),
                    url: row.get(1),
                 tracks: Track::find_by_entry_id(row.get(0))
             });
         }
-        return None
+        return Err(Error::NotFound)
     }
 
-    pub fn find_by_url(url: &str) -> Option<Entry> {
+    pub fn find_by_url(url: &str) -> Result<Entry, Error> {
         let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT id, url FROM entries WHERE url = $1").unwrap();
         for row in stmt.query(&[&url]).unwrap().iter() {
-            return Some(Entry {
+            return Ok(Entry {
                     id: row.get(0),
                    url: row.get(1),
                 tracks: Track::find_by_entry_id(row.get(0))
             });
         }
-        return None
+        return Err(Error::NotFound)
     }
 
     pub fn find_all() -> Vec<Entry> {
@@ -283,14 +290,14 @@ impl Entry {
         return entries
     }
 
-    pub fn find_or_create_by_url(url: String) -> Option<Entry> {
-        return match Entry::find_by_url(&url) {
-            Some(entry) => Some(entry),
-            None        => Entry::create_by_url(url)
+    pub fn find_or_create_by_url(url: String) -> Result<Entry, Error> {
+        match Entry::find_by_url(&url) {
+            Ok(entry) => Ok(entry),
+            Err(_)    => Entry::create_by_url(url)
         }
     }
 
-    pub fn create_by_url(url: String) -> Option<Entry> {
+    pub fn create_by_url(url: String) -> Result<Entry, Error> {
         let conn = conn().unwrap();
         let stmt = conn.prepare("INSERT INTO entries (url) VALUES ($1) RETURNING id").unwrap();
         for row in stmt.query(&[&url]).unwrap().iter() {
@@ -299,9 +306,9 @@ impl Entry {
                      url: url,
                   tracks: Vec::new()
             };
-            return Some(entry);
+            return Ok(entry);
         }
-        return None
+        Err(Error::Unexpected)
     }
 
     pub fn add_track(&mut self, track: Track) {

@@ -21,6 +21,7 @@ use Provider;
 use Track;
 use soundcloud;
 use youtube;
+use error::Error;
 
 use url::percent_encoding::{percent_decode};
 
@@ -31,7 +32,7 @@ static SOUNDCLOUD_TRACK:    &'static str = r"api.soundcloud.com/tracks/([a-zA-Z0
 static SOUNDCLOUD_PLAYLIST: &'static str = r"api.soundcloud.com/playlists/([a-zA-Z0-9_-]+)";
 static SOUNDCLOUD_USER:     &'static str = r"api.soundcloud.com/users/([a-zA-Z0-9_-]+)";
 
-pub fn extract_tracks(url: &str) -> Option<Vec<Track>> {
+pub fn extract_tracks(url: &str) -> Result<Vec<Track>, Error> {
     let client = Client::new();
     let mut res = client.get(url)
         .header(Connection(vec![ConnectionOption::Close]))
@@ -44,10 +45,10 @@ pub fn extract_tracks(url: &str) -> Option<Vec<Track>> {
             .unwrap();
         let mut tracks  = Vec::new();
         walk(0, dom.document, &mut tracks);
-        return Some(tracks)
+        Ok(tracks)
     } else {
         println!("Failed to get entry html {}: {}", res.status, url);
-        return None
+        Err(Error::NotFound)
     }
 }
 
