@@ -84,22 +84,6 @@ fn attr(attr_name: &str, attrs: &Vec<Attribute>) -> Option<String> {
     None
 }
 
-fn extract_identifier(value: &str, regex_str: &str) -> Option<String> {
-    match Regex::new(regex_str) {
-        Ok(re) => match re.captures(value) {
-            Some(cap) => match cap.at(1) {
-                Some(str) => {
-                    let strs: Vec<&str> = str.split('?').collect();
-                    return Some(strs[0].to_string())
-                },
-                None => None
-            },
-            None => None
-        },
-        Err(_) => None
-    }
-}
-
 pub fn extract_tracks_from_tag(tag_name: &str,
                                attrs: &Vec<Attribute>) -> Vec<Track> {
     if tag_name == "iframe" {
@@ -114,6 +98,22 @@ pub fn extract_tracks_from_tag(tag_name: &str,
         }
     } else {
         vec![]
+    }
+}
+
+fn extract_identifier(value: &str, regex_str: &str) -> Option<String> {
+    match Regex::new(regex_str) {
+        Ok(re) => match re.captures(value) {
+            Some(cap) => match cap.at(1) {
+                Some(str) => {
+                    let strs: Vec<&str> = str.split('?').collect();
+                    return Some(strs[0].to_string())
+                },
+                None => None
+            },
+            None => None
+        },
+        Err(_) => None
     }
 }
 
