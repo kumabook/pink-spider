@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::env;
 use rustc_serialize::json::{ToJson, Json};
 use uuid::Uuid;
 use error::Error;
