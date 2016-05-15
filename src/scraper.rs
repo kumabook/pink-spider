@@ -25,7 +25,7 @@ use error::Error;
 
 use url::percent_encoding::{percent_decode};
 
-static YOUTUBE_EMBED:       &'static str = r"www.youtube.com/embed/([^/\?&{videoseries}].+)";
+static YOUTUBE_EMBED:       &'static str = r"www.youtube.com/embed/([a-zA-Z0-9_-].+)";
 static YOUTUBE_LIST:        &'static str = r"www.youtube.com/embed/videoseries\?list=([a-zA-Z0-9_-]+)";
 static YOUTUBE_WATCH:       &'static str = r"www.youtube.com/watch\?v=([a-zA-Z0-9_-]+)";
 static SOUNDCLOUD_TRACK:    &'static str = r"api.soundcloud.com/tracks/([a-zA-Z0-9_-]+)";
@@ -119,18 +119,6 @@ pub fn extract_tracks_from_tag(tag_name: &str,
 
 fn extract_tracks_from_url(url: String) -> Vec<Track> {
     let decoded = percent_decode(url.as_bytes()).decode_utf8_lossy().into_owned();
-    match extract_identifier(&decoded, YOUTUBE_EMBED) {
-        Some(identifier) => {
-            return vec![Track {
-                        id: Uuid::new_v4(),
-                  provider: Provider::YouTube,
-                     title: "".to_string(),
-                       url: url.to_string(),
-                identifier: identifier
-            }]
-        },
-        None => ()
-    }
     match extract_identifier(&decoded, YOUTUBE_WATCH) {
         Some(identifier) => {
             return vec![Track {
@@ -151,6 +139,18 @@ fn extract_tracks_from_url(url: String) -> Vec<Track> {
                                     .collect::<Vec<_>>(),
                 Err(_)       => vec![]
             }
+        },
+        None => ()
+    }
+    match extract_identifier(&decoded, YOUTUBE_EMBED) {
+        Some(identifier) => {
+            return vec![Track {
+                        id: Uuid::new_v4(),
+                  provider: Provider::YouTube,
+                     title: "".to_string(),
+                       url: url.to_string(),
+                identifier: identifier
+            }]
         },
         None => ()
     }
@@ -220,11 +220,6 @@ mod test {
         match extract_identifier(youtube_list, super::YOUTUBE_LIST) {
             Some(identifier) => assert_eq!(identifier, "PLy8LZ8FM-o0ViuGAF68RAaXkQ8V-3dbTX".to_string()),
             None             => assert!(false)
-        }
-
-        match extract_identifier(youtube_list, super::YOUTUBE_EMBED) {
-            Some(_) => assert!(false),
-            None    => assert!(true)
         }
     }
 }
