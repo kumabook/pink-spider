@@ -46,6 +46,12 @@ impl Provider {
     }
 }
 
+impl ToJson for Provider {
+    fn to_json(&self) -> Json {
+        self.to_string().to_json()
+    }
+}
+
 impl fmt::Display for Provider {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "({})", self.to_string())
@@ -71,7 +77,7 @@ impl ToJson for Track {
     fn to_json(&self) -> Json {
         let mut d = BTreeMap::new();
         d.insert("id".to_string(),         self.id.to_string().to_json());
-        d.insert("provider".to_string(),   self.provider.to_string().to_json());
+        d.insert("provider".to_string(),   self.provider.to_json());
         d.insert("identifier".to_string(), self.identifier.to_json());
         d.insert("title".to_string(),      self.title.to_json());
         d.insert("url".to_string(),        self.url.to_json());
