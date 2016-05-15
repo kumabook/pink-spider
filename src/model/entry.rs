@@ -17,12 +17,8 @@ impl ToJson for Entry {
         let mut d = BTreeMap::new();
         d.insert("id".to_string(),  self.id.to_string().to_json());
         d.insert("url".to_string(), self.url.to_json());
-        let ref tracks = self.tracks;
-        let mut t = Vec::new();
-        for ref x in tracks.iter() {
-            t.push(x.to_json());
-        }
-        d.insert("tracks".to_string(), Json::Array(t));
+        d.insert("tracks".to_string(),
+                 Json::Array(self.tracks.iter().map(|x| x.to_json()).collect()));
         Json::Object(d)
     }
 }
