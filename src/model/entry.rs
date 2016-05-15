@@ -4,12 +4,15 @@ use uuid::Uuid;
 use error::Error;
 use super::conn;
 use Track;
+use super::open_graph;
 
 #[derive(Debug)]
 pub struct Entry {
     pub id:      Uuid,
     pub url:     String,
     pub tracks:  Vec<Track>,
+
+    pub og_obj: Option<open_graph::Object>,
 }
 
 impl ToJson for Entry {
@@ -19,6 +22,8 @@ impl ToJson for Entry {
         d.insert("url".to_string(), self.url.to_json());
         d.insert("tracks".to_string(),
                  Json::Array(self.tracks.iter().map(|x| x.to_json()).collect()));
+
+        d.insert("og_object".to_string()  , self.og_obj.to_json());
         Json::Object(d)
     }
 }
@@ -31,7 +36,8 @@ impl Entry {
             return Ok(Entry {
                     id: row.get(0),
                    url: row.get(1),
-                tracks: Track::find_by_entry_id(row.get(0))
+                tracks: Track::find_by_entry_id(row.get(0)),
+                og_obj: None,
             });
         }
         return Err(Error::NotFound)
@@ -44,7 +50,8 @@ impl Entry {
             return Ok(Entry {
                     id: row.get(0),
                    url: row.get(1),
-                tracks: Track::find_by_entry_id(row.get(0))
+                tracks: Track::find_by_entry_id(row.get(0)),
+                og_obj: None,
             });
         }
         return Err(Error::NotFound)
@@ -58,7 +65,8 @@ impl Entry {
             entries.push(Entry {
                     id: row.get(0),
                    url: row.get(1),
-                tracks: Track::find_by_entry_id(row.get(0))
+                tracks: Track::find_by_entry_id(row.get(0)),
+                og_obj: None,
             })
         }
         return entries
@@ -78,7 +86,8 @@ impl Entry {
             let entry = Entry {
                       id: row.get(0),
                      url: url,
-                  tracks: Vec::new()
+                  tracks: Vec::new(),
+                  og_obj: None,
             };
             return Ok(entry);
         }

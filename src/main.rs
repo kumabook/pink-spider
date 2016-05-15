@@ -24,7 +24,7 @@ extern crate string_cache;
 extern crate pink_spider;
 
 use pink_spider::error::Error;
-use pink_spider::scraper::extract_tracks;
+use pink_spider::scraper::extract;
 use pink_spider::model::{Track, Entry, Provider};
 use rustc_serialize::json::{ToJson, Json};
 
@@ -58,10 +58,11 @@ pub fn find_or_create_entry(url: &str) -> Result<Entry, Error> {
             Ok(entry)
         },
         Err(_) => {
-            let     tracks = try!(extract_tracks(url));
-            let mut entry  = try!(Entry::create_by_url(url.to_string()));
+            let     product = try!(extract(url));
+            let mut entry   = try!(Entry::create_by_url(url.to_string()));
             println!("Create new entry to database cache");
-            for t in tracks {
+            entry.og_obj = product.og_obj;
+            for t in product.tracks {
                 let track = try!(Track::find_or_create(t.provider, t.title, t.url, t.identifier));
                 entry.add_track(track)
             }

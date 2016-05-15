@@ -19,6 +19,7 @@ use hyper::header::ConnectionOption;
 
 use Provider;
 use Track;
+use open_graph;
 use soundcloud;
 use youtube;
 use error::Error;
@@ -32,7 +33,13 @@ static SOUNDCLOUD_TRACK:    &'static str = r"api.soundcloud.com/tracks/([a-zA-Z0
 static SOUNDCLOUD_PLAYLIST: &'static str = r"api.soundcloud.com/playlists/([a-zA-Z0-9_-]+)";
 static SOUNDCLOUD_USER:     &'static str = r"api.soundcloud.com/users/([a-zA-Z0-9_-]+)";
 
-pub fn extract_tracks(url: &str) -> Result<Vec<Track>, Error> {
+#[derive(Debug)]
+pub struct ScraperProduct {
+    pub tracks: Vec<Track>,
+    pub og_obj: Option<open_graph::Object>,
+}
+
+pub fn extract(url: &str) -> Result<ScraperProduct, Error> {
     let client = Client::new();
     let mut res = client.get(url)
         .header(Connection(vec![ConnectionOption::Close]))
@@ -43,9 +50,18 @@ pub fn extract_tracks(url: &str) -> Result<Vec<Track>, Error> {
             .from_utf8()
             .read_from(&mut res)
             .unwrap();
-        let mut tracks  = Vec::new();
-        walk(0, dom.document, &mut tracks);
-        Ok(tracks)
+        let mut tracks   = Vec::new();
+        let mut og_props = Vec::new();
+        walk(0, dom.document, &mut tracks, &mut og_props);
+        let og_obj = if og_props.len() > 0 {
+            Some(open_graph::Object::new(&og_props))
+        } else {
+            None
+        };
+        Ok(ScraperProduct {
+            tracks: tracks,
+            og_obj: og_obj
+        })
     } else {
         println!("Failed to get entry html {}: {}", res.status, url);
         Err(Error::NotFound)
@@ -53,7 +69,10 @@ pub fn extract_tracks(url: &str) -> Result<Vec<Track>, Error> {
 }
 
 // This is not proper HTML serialization, of course.
-fn walk(indent: usize, handle: Handle, tracks: &mut Vec<Track>) {
+fn walk(indent: usize,
+        handle: Handle,
+        tracks: &mut Vec<Track>,
+        og_props: &mut Vec<(String, String)>) {
     let node = handle.borrow();
     match node.node {
         Document         => (),
@@ -62,7 +81,9 @@ fn walk(indent: usize, handle: Handle, tracks: &mut Vec<Track>) {
         Comment(_)       => (),
         Element(ref name, _, ref attrs) => {
             let tag_name = name.local.as_ref();
-            let ts: Vec<Track> = extract_tracks_from_tag(tag_name, attrs);
+            let mut ps = extract_open_graph_metadata_from_tag(tag_name, attrs);
+            og_props.append(&mut ps);
+            let ts = extract_tracks_from_tag(tag_name, attrs);
             for track in ts.iter().cloned() {
                 if !(tracks).iter().any(|t| track == *t) {
                     (*tracks).push(track)
@@ -71,7 +92,7 @@ fn walk(indent: usize, handle: Handle, tracks: &mut Vec<Track>) {
         }
     }
     for child in node.children.iter() {
-        walk(indent+4, child.clone(), tracks);
+        walk(indent+4, child.clone(), tracks, og_props);
     }
 }
 
@@ -99,6 +120,30 @@ pub fn extract_tracks_from_tag(tag_name: &str,
     } else {
         vec![]
     }
+}
+
+pub fn extract_open_graph_metadata_from_tag(tag_name: &str,
+                                            attrs: &Vec<Attribute>) -> Vec<(String, String)> {
+
+    let mut og_props = vec!();
+    if tag_name == "meta" {
+        match attr("property", attrs) {
+            Some(property) => {
+                if property.starts_with("og:") {
+                    let end = property.chars().count();
+                    let key = unsafe {
+                        property.slice_unchecked(3, end)
+                    }.to_string();
+                    match attr("content", attrs) {
+                        Some(content) => og_props.push((key, content)),
+                        None          => (),
+                    }
+                }
+            },
+            None => (),
+        }
+    }
+    og_props
 }
 
 fn extract_identifier(value: &str, regex_str: &str) -> Option<String> {
