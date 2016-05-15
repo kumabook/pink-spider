@@ -3,7 +3,7 @@ pub use self::entry::Entry;
 
 mod track;
 mod entry;
-mod open_graph;
+pub mod open_graph;
 
 use postgres::{Connection, SslMode};
 use postgres::error::ConnectError;

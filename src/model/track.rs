@@ -30,10 +30,10 @@ impl PartialEq for Provider {
 impl Provider {
     fn to_string(&self) -> String {
         match *self {
-            Provider::YouTube    => "YouTube".to_string(),
-            Provider::SoundCloud => "SoundCloud".to_string(),
-            Provider::Raw        => "Raw".to_string(),
-        }
+            Provider::YouTube    => "YouTube",
+            Provider::SoundCloud => "SoundCloud",
+            Provider::Raw        => "Raw",
+        }.to_string()
     }
     pub fn new(str: String) -> Provider {
         match str.as_ref() {

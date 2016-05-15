@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use rustc_serialize::json::{ToJson, Json};
 
-#[derive(Debug)]
+#[derive(Debug, Default, Clone)]
 pub struct Object {
     pub title:            String,
     pub obj_type:         ObjectType,
@@ -14,8 +14,48 @@ pub struct Object {
     pub description:      Option<String>,
     pub determiner:       Option<Determiner>,
     pub locale:           Option<String>,
-    pub locale_alternate: Option<Vec<String>>,
+    pub locale_alternate: Vec<String>,
     pub site_name:        Option<String>,
+}
+
+impl Object {
+    pub fn new<'a>(props: &'a Vec<(String, String)>) -> Object {
+        let mut obj = Object::default();
+        for prop in props.iter() {
+            let key: &str = &(prop.0);
+            let v         = prop.1.clone();
+            match key {
+                "title"       => { obj.title       = v; },
+                "type"        => { obj.obj_type    = ObjectType::new(v); },
+                "url"         => { obj.url         = v; },
+                "description" => { obj.description = Some(v); },
+                "determiner"  => { obj.determiner  = Some(Determiner::new(v)); },
+                "locale"      => { obj.locale      = Some(v); },
+                "site_name"   => { obj.site_name   = Some(v); },
+
+                "image"            => { obj.images.push(Image::new(v)); },
+                "video"            => { obj.videos.push(Video::new(v)); },
+                "audio"            => { obj.audios.push(Audio::new(v)); },
+                "locale:alternate" => {
+                    obj.locale_alternate.push(v)
+                },
+                v if v.starts_with("image") => {
+                },
+                v if v.starts_with("music") => {
+                },
+                v if v.starts_with("video") => {
+                },
+                v if v.starts_with("article") => {
+                },
+                v if v.starts_with("book") => {
+                },
+                v if v.starts_with("profile") => {
+                },
+                _ => {},
+            }
+        }
+        obj
+    }
 }
 
 impl ToJson for Object {
@@ -42,7 +82,7 @@ impl ToJson for Object {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ObjectType {
     // No Vetical
     Article,
@@ -97,6 +137,9 @@ impl ObjectType {
     }
 }
 
+impl Default for ObjectType {
+    fn default() -> ObjectType  { ObjectType::Website }
+}
 
 impl ToJson for ObjectType {
     fn to_json(&self) -> Json {
@@ -104,7 +147,7 @@ impl ToJson for ObjectType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Determiner {
     A,
     An,
@@ -134,19 +177,35 @@ impl Determiner {
     }
 }
 
+impl Default for Determiner {
+    fn default() -> Determiner  { Determiner::Blank }
+}
+
 impl ToJson for Determiner {
     fn to_json(&self) -> Json {
         self.to_string().to_json()
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default, Clone)]
 pub struct Image {
     pub url:        String,
     pub secure_url: Option<String>,
     pub obj_type:   Option<String>,
     pub width:      Option<i32>,
     pub height:     Option<i32>
+}
+
+impl Image {
+    pub fn new(url: String) -> Image {
+        Image {
+            url:        url,
+            secure_url: None,
+            obj_type:   None,
+            width:      None,
+            height:     None,
+        }
+    }
 }
 
 impl ToJson for Image {
@@ -161,13 +220,25 @@ impl ToJson for Image {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default, Clone)]
 pub struct Video {
     pub url:        String,
     pub secure_url: Option<String>,
     pub obj_type:   Option<String>,
     pub width:      Option<i32>,
     pub height:     Option<i32>
+}
+
+impl Video {
+    pub fn new(url: String) -> Video {
+        Video {
+            url:        url,
+            secure_url: None,
+            obj_type:   None,
+            width:      None,
+            height:     None,
+        }
+    }
 }
 
 impl ToJson for Video {
@@ -182,11 +253,17 @@ impl ToJson for Video {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default, Clone)]
 pub struct Audio {
     pub url:        String,
     pub secure_url: Option<String>,
     pub obj_type:   Option<String>,
+}
+
+impl Audio {
+    pub fn new(url: String) -> Audio {
+        Audio { url: url, secure_url: None, obj_type: None }
+    }
 }
 
 impl ToJson for Audio {
