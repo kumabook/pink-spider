@@ -35,7 +35,9 @@ pub fn playlistify(req: &mut Request) -> IronResult<Response> {
         Ok(ref params) => {
             match params.get("url") {
                 Some(url) => {
-                    match find_or_create_entry(&url[0]) {
+                    let defaults = &vec!("false".to_string());
+                    let force    = params.get("force").unwrap_or(defaults);
+                    match find_or_playlistify_entry(&url[0], force.len() > 0 && &force[0] == "true") {
                         Ok(entry) => {
                             let json_obj: Json   = entry.to_json();
                             let json_str: String = json_obj.to_string();
@@ -51,24 +53,51 @@ pub fn playlistify(req: &mut Request) -> IronResult<Response> {
     }
 }
 
-pub fn find_or_create_entry(url: &str) -> Result<Entry, Error> {
+pub fn find_or_playlistify_entry(url: &str, force: bool) -> Result<Entry, Error> {
     match Entry::find_by_url(url) {
         Ok(entry) => {
-            println!("Get entry from database cache");
-            Ok(entry)
+            println!("Get entry from database cache: {}", url);
+            if force {
+                println!("Update entry: {}", url);
+                let entry = try!(playlistify_entry(entry));
+                Ok(entry)
+            } else {
+                Ok(entry)
+            }
         },
         Err(_) => {
-            let     product = try!(extract(url));
-            let mut entry   = try!(Entry::create_by_url(url.to_string()));
-            println!("Create new entry to database cache");
-            entry.og_obj = product.og_obj;
-            for t in product.tracks {
-                let track = try!(Track::find_or_create(t.provider, t.title, t.url, t.identifier));
-                entry.add_track(track)
-            }
+            let entry = try!(Entry::create_by_url(url.to_string()));
+            let entry = try!(playlistify_entry(entry));
+            println!("Create new entry to database cache: {}", url);
             Ok(entry)
         },
     }
+}
+
+pub fn playlistify_entry(entry: Entry) -> Result<Entry, Error> {
+    let mut e = entry.clone();
+    let product = try!(extract(&entry.url));
+    match product.og_obj {
+        Some(og_obj) => {
+            e.title       = Some(og_obj.title);
+            e.description = og_obj.description;
+            e.locale      = og_obj.locale;
+            e.visual_url  = og_obj.images.first().map(|i| i.url.clone());
+        },
+        None => (),
+    }
+    for t in product.tracks {
+        let track = try!(Track::find_or_create(t.provider,
+                                               t.title,
+                                               t.url,
+                                               t.identifier));
+        match entry.tracks.iter().find(|&t| t.id == track.id) {
+            Some(_) => (),
+            None    => e.add_track(track.clone())
+        }
+    }
+    try!(e.save());
+    Ok(e)
 }
 
 pub fn show_track(req: &mut Request) -> IronResult<Response> {

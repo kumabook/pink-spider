@@ -194,7 +194,8 @@ impl Track {
         let conn = conn().unwrap();
         let stmt = conn.prepare("INSERT INTO tracks (provider, title, url, identifier)
                                  VALUES ($1, $2, $3, $4) RETURNING id").unwrap();
-        for row in stmt.query(&[&provider.to_string(), &title, &url, &identifier]).unwrap().iter() {
+        let rows = try!(stmt.query(&[&provider.to_string(), &title, &url, &identifier]));
+        for row in rows.iter() {
             let track = Track {
                         id: row.get(0),
                   provider: provider,
