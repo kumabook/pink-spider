@@ -1,16 +1,13 @@
-use postgres::{Connection, SslMode};
-use postgres::error::ConnectError;
 use std::collections::BTreeMap;
-use std::env;
 use rustc_serialize::json::{ToJson, Json};
 use uuid::Uuid;
 use std::fmt;
 
-static DEFAULT_DATABASE_URL: &'static str = "postgres://kumabook@localhost/pink_spider_development_master";
-
 use youtube;
 use soundcloud;
 use error::Error;
+
+use super::conn;
 
 #[derive(Debug, Clone)]
 pub enum Provider {
@@ -234,12 +231,3 @@ pub struct Playlist {
     pub tracks: Vec<Track>,
 }
 
-pub fn conn() -> Result<Connection, ConnectError> {
-    let opt_url = env::var("DATABASE_URL");
-    match opt_url {
-        Ok(url) =>
-            Connection::connect(url.trim(), SslMode::None),
-        Err(_)  =>
-            Connection::connect(DEFAULT_DATABASE_URL, SslMode::None)
-    }
-}

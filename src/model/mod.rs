@@ -10,8 +10,7 @@ use postgres::error::ConnectError;
 use std::env;
 
 
-static DEFAULT_DATABASE_URL: &'static str = "postgres://kumabook@localhost/pink_spider_development_master";
-
+static DEFAULT_DATABASE_URL: &'static str = "postgres://kumabook@localhost/pink_spider_development";
 
 pub fn conn() -> Result<Connection, ConnectError> {
     let opt_url = env::var("DATABASE_URL");
