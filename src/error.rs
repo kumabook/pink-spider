@@ -7,12 +7,14 @@ use iron::headers::{ContentType};
 use iron::modifiers::Header;
 use iron::mime::Mime;
 use std::str::FromStr;
+use postgres;
 
 #[derive(Debug)]
 pub enum Error {
     BadRequest,
     Unprocessable,
     NotFound,
+    DbError(postgres::error::Error),
     Unexpected,
 }
 
@@ -22,6 +24,7 @@ impl Error {
             Error::BadRequest    => Status::BadRequest,
             Error::Unprocessable => Status::UnprocessableEntity,
             Error::NotFound      => Status::NotFound,
+            Error::DbError(_)    => Status::InternalServerError,
             Error::Unexpected    => Status::InternalServerError,
         }
     }
@@ -38,10 +41,11 @@ impl Error {
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         match *self {
-            Error::BadRequest    => write!(f, "BadRequest"),
-            Error::Unprocessable => write!(f, "Unproccesable"),
-            Error::NotFound      => write!(f, "NotFound"),
-            Error::Unexpected    => write!(f, "UnexpectedError"),
+            Error::BadRequest     => write!(f, "BadRequest"),
+            Error::Unprocessable  => write!(f, "Unproccesable"),
+            Error::NotFound       => write!(f, "NotFound"),
+            Error::DbError(ref e) => write!(f, "UnexpectedError: DBError {}", e),
+            Error::Unexpected     => write!(f, "UnexpectedError"),
         }
     }
 }
@@ -54,3 +58,8 @@ impl ToJson for Error {
     }
 }
 
+impl From<postgres::error::Error> for Error {
+    fn from(err: postgres::error::Error) -> Error {
+        Error::DbError(err)
+    }
+}
