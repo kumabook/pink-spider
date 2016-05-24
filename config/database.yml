@@ -5,9 +5,7 @@ default: &default
 
 development:
   <<: *default
-  database: pink_spider_development_<%=
-    `git symbolic-ref --short HEAD`
-  %>
+  database: pink_spider_development
 test:
   <<: *default
   database: pink_spider_test
