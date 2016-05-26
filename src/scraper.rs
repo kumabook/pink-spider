@@ -127,23 +127,30 @@ pub fn extract_open_graph_metadata_from_tag(tag_name: &str,
 
     let mut og_props = vec!();
     if tag_name == "meta" {
-        match attr("property", attrs) {
-            Some(property) => {
-                if property.starts_with("og:") {
-                    let end = property.chars().count();
-                    let key = unsafe {
-                        property.slice_unchecked(3, end)
-                    }.to_string();
-                    match attr("content", attrs) {
-                        Some(content) => og_props.push((key, content)),
-                        None          => (),
-                    }
-                }
-            },
-            None => (),
+        match extract_open_graph_prop("property", attrs) {
+            Some((key, content)) => og_props.push((key, content)),
+            None                 => (),
+        }
+        match extract_open_graph_prop("name", attrs) {
+            Some((key, content)) => og_props.push((key, content)),
+            None                 => (),
         }
     }
     og_props
+}
+
+fn extract_open_graph_prop<'a>(attr_name: &str, attrs: &Vec<Attribute>) -> Option<(String, String)> {
+    attr(attr_name, attrs)
+        .and_then(|property|
+                  if property.starts_with("og:") {
+                      let end = property.chars().count();
+                      let key = unsafe {
+                          property.slice_unchecked(3, end)
+                      }.to_string();
+                      attr("content", attrs).map(|content| (key, content))
+                  } else {
+                      None
+                  })
 }
 
 fn extract_identifier(value: &str, regex_str: &str) -> Option<String> {
