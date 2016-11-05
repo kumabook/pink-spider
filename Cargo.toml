@@ -24,9 +24,9 @@ tendril         = "*"
 html5ever       = "*"
 url             = "*"
 lazy_static     = "*"
-uuid            = "*"
+uuid            = { version = "*", features = ["v4"] }
 
 [dependencies.postgres]
-version = "*"
-features = ["uuid"]
+version = "0.12"
+features = ["with-uuid"]
 optional = true

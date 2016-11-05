@@ -1,4 +1,5 @@
 extern crate iron;
+#[macro_use]
 extern crate router;
 extern crate urlencoded;
 extern crate rustc_serialize;
@@ -171,11 +172,10 @@ pub fn update_track(req: &mut Request) -> IronResult<Response> {
 }
 
 pub fn main() {
-    let mut router = Router::new();
-    router.get( "/playlistify"         , playlistify);
-    router.get( "/tracks/:track_id"    , show_track);
-    router.post("/tracks/:track_id"    , update_track);
-    router.get( "/tracks/:provider/:id", show_track_by_provider_id);
+    let router = router!(playlistify: get  "/playlistify"          => playlistify,
+                          show_track: get  "/tracks/:track_id"     => show_track,
+                        update_track: post "/tracks/:track_id"     => update_track,
+           show_track_by_provider_id: get  "/tracks/:provider/:id" => show_track_by_provider_id);
 
     let port_str = match std::env::var("PORT") {
         Ok(n)    => n,
