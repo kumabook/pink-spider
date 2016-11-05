@@ -13,5 +13,6 @@
 ##
 
 ```shell
+    heroku buildpacks:set https://github.com/emk/heroku-buildpack-rust.git
     heroku buildpacks:set heroku/ruby
 ```
