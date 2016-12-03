@@ -1,8 +1,10 @@
 pub use self::track::{Track, Provider, Playlist};
 pub use self::entry::Entry;
+pub use self::feed::Feed;
 
 mod track;
 mod entry;
+mod feed;
 pub mod open_graph;
 
 use postgres::{Connection, TlsMode};

@@ -12,6 +12,7 @@ extern crate postgres;
 #[macro_use]
 extern crate lazy_static;
 
+pub use self::model::Feed;
 pub use self::model::Track;
 pub use self::model::Playlist;
 pub use self::model::Provider;
