@@ -1,6 +1,8 @@
 extern crate iron;
 #[macro_use]
 extern crate router;
+extern crate staticfile;
+extern crate mount;
 extern crate urlencoded;
 extern crate rustc_serialize;
 extern crate html5ever;
@@ -9,11 +11,14 @@ extern crate uuid;
 
 use std::net::SocketAddrV4;
 use std::net::Ipv4Addr;
+use std::path::Path;
 use iron::prelude::*;
 use iron::status;
 use iron::headers::{ContentType};
 use iron::modifiers::Header;
 use iron::mime::Mime;
+use staticfile::Static;
+use mount::Mount;
 use router::{Router};
 use urlencoded::UrlEncodedQuery;
 use urlencoded::UrlEncodedBody;
@@ -172,11 +177,16 @@ pub fn update_track(req: &mut Request) -> IronResult<Response> {
 }
 
 pub fn main() {
-    let router = router!(playlistify: get  "/playlistify"          => playlistify,
+    let path = Path::new("public");
+    let mut mount = Mount::new();
+    mount.mount("/web/", Static::new(Path::new(path)));
+    let router = router!(
+                         playlistify: get  "/playlistify"          => playlistify,
                           show_track: get  "/tracks/:track_id"     => show_track,
                         update_track: post "/tracks/:track_id"     => update_track,
-           show_track_by_provider_id: get  "/tracks/:provider/:id" => show_track_by_provider_id);
-
+           show_track_by_provider_id: get  "/tracks/:provider/:id" => show_track_by_provider_id,
+                                 web: get  "/*"                    => mount,
+    );
     let port_str = match std::env::var("PORT") {
         Ok(n)    => n,
         Err(_) => "8080".to_string()
