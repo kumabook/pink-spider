@@ -25,7 +25,9 @@ html5ever       = "*"
 url             = "*"
 lazy_static     = "*"
 uuid            = { version = "*", features = ["v4"] }
-
+staticfile      = "*"
+[dependencies.mount]
+git = "https://github.com/iron/mount.git"
 [dependencies.postgres]
 version = "0.12"
 features = ["with-uuid"]
