@@ -66,9 +66,9 @@ impl Entry {
         return Err(Error::NotFound)
     }
 
-    pub fn find_all() -> Vec<Entry> {
+    pub fn find() -> Vec<Entry> {
         let conn = conn().unwrap();
-        let stmt = conn.prepare("SELECT id, url, title, description, visual_url, locale FROM entries").unwrap();
+        let stmt = conn.prepare("SELECT id, url, title, description, visual_url, locale FROM entries LIMIT 20 OFFSET 0").unwrap();
         let mut entries = Vec::new();
         for row in stmt.query(&[]).unwrap().iter() {
             entries.push(Entry {

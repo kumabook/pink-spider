@@ -167,10 +167,10 @@ impl Track {
         return tracks
     }
 
-    pub fn find_all() -> Vec<Track> {
+    pub fn find() -> Vec<Track> {
         let mut tracks = Vec::new();
         let conn = conn().unwrap();
-        let stmt = conn.prepare("SELECT id, provider, title, url, identifier FROM track").unwrap();
+        let stmt = conn.prepare("SELECT id, provider, title, url, identifier FROM tracks LIMIT 20 OFFSET 0").unwrap();
         for row in stmt.query(&[]).unwrap().iter() {
             let track = Track {
                       id: row.get(0),
