@@ -34,6 +34,15 @@ use pink_spider::scraper::extract;
 use pink_spider::model::{Track, Entry, Provider};
 use rustc_serialize::json::{ToJson, Json};
 
+static JSON: &'static str = "application/json";
+
+pub fn index_entries(req: &mut Request) -> IronResult<Response> {
+    let json_type = Header(ContentType(Mime::from_str(JSON).ok().unwrap()));
+    let entries = Entry::find();
+    let json_obj: Json   = entries.to_json();
+    let json_str: String = json_obj.to_string();
+    Ok(Response::with((status::Ok, json_type, json_str)))
+}
 
 pub fn playlistify(req: &mut Request) -> IronResult<Response> {
     let json_type = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
@@ -185,6 +194,7 @@ pub fn main() {
                           show_track: get  "/tracks/:track_id"     => show_track,
                         update_track: post "/tracks/:track_id"     => update_track,
            show_track_by_provider_id: get  "/tracks/:provider/:id" => show_track_by_provider_id,
+                       index_entries: get  "/entries"              => index_entries,
                                  web: get  "/*"                    => mount,
     );
     let port_str = match std::env::var("PORT") {
