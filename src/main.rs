@@ -44,6 +44,14 @@ pub fn index_entries(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, json_type, json_str)))
 }
 
+pub fn index_tracks(req: &mut Request) -> IronResult<Response> {
+    let json_type = Header(ContentType(Mime::from_str(JSON).ok().unwrap()));
+    let tracks = Track::find();
+    let json_obj: Json   = tracks.to_json();
+    let json_str: String = json_obj.to_string();
+    Ok(Response::with((status::Ok, json_type, json_str)))
+}
+
 pub fn playlistify(req: &mut Request) -> IronResult<Response> {
     let json_type = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
     match req.get_ref::<UrlEncodedQuery>() {
@@ -195,6 +203,7 @@ pub fn main() {
                         update_track: post "/tracks/:track_id"     => update_track,
            show_track_by_provider_id: get  "/tracks/:provider/:id" => show_track_by_provider_id,
                        index_entries: get  "/entries"              => index_entries,
+                        index_tracks: get  "/tracks"               => index_tracks,
                                  web: get  "/*"                    => mount,
     );
     let port_str = match std::env::var("PORT") {
