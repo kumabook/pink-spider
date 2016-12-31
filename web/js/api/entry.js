@@ -1,5 +1,10 @@
 import axios from 'axios';
 
 export default {
-  index: () => axios.get('/entries').then(response => response.data),
+  index: (page = 0, perPage = 10) => axios.get('/entries', {
+    params: {
+      page,
+      per_page: perPage,
+    },
+  }).then(response => response.data),
 };

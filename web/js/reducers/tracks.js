@@ -2,6 +2,8 @@ import { combineReducers } from 'redux';
 
 const page = (state = 0, action) => {
   switch (action.type) {
+    case 'RECEIVE_TRACKS':
+      return action.page;
     default:
       return state;
   }
@@ -9,6 +11,17 @@ const page = (state = 0, action) => {
 
 const perPage = (state = 20, action) => {
   switch (action.type) {
+    case 'RECEIVE_TRACKS':
+      return action.perPage;
+    default:
+      return state;
+  }
+};
+
+const total = (state = 0, action) => {
+  switch (action.type) {
+    case 'RECEIVE_TRACKS':
+      return action.total;
     default:
       return state;
   }
@@ -27,4 +40,5 @@ export default combineReducers({
   items,
   page,
   perPage,
+  total,
 });
