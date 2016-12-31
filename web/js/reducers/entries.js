@@ -1,15 +1,40 @@
 import { combineReducers } from 'redux';
+import { LOCATION_CHANGE } from 'react-router-redux';
 
-const page = (state = 0, action) => {
+export const Status = {
+  Normal: 'Normal',
+  Dirty: 'Dirty',
+  Fetching: 'Fetching',
+};
+
+const status = (state = Status.Dirty, action) => {
   switch (action.type) {
+    case 'FETCH_ENTRIES':
+      return Status.Fetching;
     case 'RECEIVE_ENTRIES':
-      return action.page;
+      return Status.Normal;
+    case LOCATION_CHANGE:
+      if (state !== Status.Fetching) {
+        return Status.Dirty;
+      }
+      return state;
     default:
       return state;
   }
 };
 
-const perPage = (state = 20, action) => {
+const page = (state = 0, action) => {
+  switch (action.type) {
+    case 'RECEIVE_ENTRIES':
+      return action.page;
+    case LOCATION_CHANGE:
+      return parseInt(action.payload.query.page) || 0;
+    default:
+      return state;
+  }
+};
+
+const perPage = (state = 10, action) => {
   switch (action.type) {
     case 'RECEIVE_ENTRIES':
       return action.perPage;
@@ -37,6 +62,7 @@ const items = (state = [], action) => {
 };
 
 export default combineReducers({
+  status,
   items,
   page,
   perPage,

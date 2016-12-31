@@ -12,6 +12,7 @@ export const receiveEntries = entries => ({
 });
 
 export const fetchEntries = (page = 0, perPage = 10) => (dispatch) => {
+  dispatch({ type: 'FETCH_ENTRIES', page, perPage });
   entry.index(page, perPage).then((entries) => {
     dispatch(receiveEntries(entries));
   });
@@ -26,7 +27,8 @@ export const receiveTracks = tracks => ({
 });
 
 export const fetchTracks = (page = 0, perPage = 10) => (dispatch) => {
-  track.index(page, perPage).then((tracks) => {
+  dispatch({ type: 'FETCH_TRACKS', page, perPage });
+  track.index(parseInt(page) || 0, parseInt(perPage) || 0).then((tracks) => {
     dispatch(receiveTracks(tracks));
   });
 };

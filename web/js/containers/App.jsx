@@ -48,11 +48,11 @@ function mapDispatchToProps(dispatch) {
   return {
     handleClick: () => dispatch(toggleDrawler()),
     handleEntriesMenuClick: () => {
-      dispatch(push('entries'));
+      dispatch(push({ pathname: 'entries', query: { page: 0 } }));
       dispatch(toggleDrawler());
     },
     handleTracksMenuClick: () => {
-      dispatch(push('tracks'));
+      dispatch(push({ pathname: 'tracks', query: { page: 0 } }));
       dispatch(toggleDrawler());
     },
   };

@@ -1,5 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { push } from 'react-router-redux';
 import {
   Table,
   TableBody,
@@ -10,17 +11,22 @@ import {
 } from 'material-ui/Table';
 import ReactPaginate from 'react-paginate';
 import { fetchTracks } from '../actions';
+import { Status } from '../reducers/tracks';
 
 class TrackList extends React.Component {
   static get propTypes() {
     return {
       tracks: React.PropTypes.object.isRequired,
+      page: React.PropTypes.number,
       fetchTracks: React.PropTypes.func,
       handlePageChange: React.PropTypes.func,
     };
   }
-  componentWillMount() {
-    this.props.fetchTracks();
+  componentDidUpdate() {
+    if (this.props.tracks.status === Status.Dirty) {
+      this.props.fetchTracks(this.props.tracks.page,
+                             this.props.tracks.perPage);
+    }
   }
   render() {
     const rows = this.props.tracks.items.map(track => (
@@ -45,6 +51,7 @@ class TrackList extends React.Component {
             <TableRow>
               <TableHeaderColumn colSpan="3" style={{ textAlign: 'center' }}>
                 <ReactPaginate
+                  initialPage={this.props.page}
                   previousLabel={'previous'}
                   nextLabel={'next'}
                   breakLabel={breakLabel}
@@ -74,16 +81,20 @@ class TrackList extends React.Component {
   }
 }
 
-function mapStateToProps(state) {
+function mapStateToProps(state, ownProps) {
   return {
     tracks: state.tracks,
+    page: parseInt(ownProps.location.query.page) || 0,
   };
 }
 
-function mapDispatchToProps(dispatch) {
+function mapDispatchToProps(dispatch, ownProps) {
+  const page = +ownProps.location.query.page;
   return {
-    fetchTracks: () => dispatch(fetchTracks()),
-    handlePageChange: data => dispatch(fetchTracks(data.selected)),
+    fetchTracks: () => dispatch(fetchTracks(page)),
+    handlePageChange: (data) => {
+      dispatch(push({ pathname: 'tracks', query: { page: data.selected } }));
+    },
   };
 }
 
