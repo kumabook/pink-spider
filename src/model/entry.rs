@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use rustc_serialize::json::{ToJson, Json};
 use uuid::Uuid;
 use error::Error;
-use super::conn;
+use super::{conn, PaginatedCollection};
 use Track;
 
 #[derive(Debug, Clone)]
@@ -66,11 +66,12 @@ impl Entry {
         return Err(Error::NotFound)
     }
 
-    pub fn find() -> Vec<Entry> {
+    pub fn find(page: i64, per_page: i64) -> PaginatedCollection<Entry> {
         let conn = conn().unwrap();
-        let stmt = conn.prepare("SELECT id, url, title, description, visual_url, locale FROM entries LIMIT 20 OFFSET 0").unwrap();
+        let stmt = conn.prepare("SELECT id, url, title, description, visual_url, locale FROM entries LIMIT $2 OFFSET $1").unwrap();
+        let offset = page * per_page;
         let mut entries = Vec::new();
-        for row in stmt.query(&[]).unwrap().iter() {
+        for row in stmt.query(&[&offset, &per_page]).unwrap().iter() {
             entries.push(Entry {
                     id: row.get(0),
                    url: row.get(1),
@@ -81,7 +82,16 @@ impl Entry {
                 tracks: Track::find_by_entry_id(row.get(0)),
             })
         }
-        return entries
+        let mut total: i64 = 0;
+        for row in conn.query("SELECT COUNT(*) FROM entries", &[]).unwrap().iter() {
+            total = row.get(0);
+        }
+        PaginatedCollection {
+            page:     page,
+            per_page: per_page,
+            total:    total,
+            items:    entries,
+        }
     }
 
     pub fn find_or_create_by_url(url: String) -> Result<Entry, Error> {

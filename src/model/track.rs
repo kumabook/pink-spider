@@ -6,8 +6,7 @@ use std::fmt;
 use youtube;
 use soundcloud;
 use error::Error;
-
-use super::conn;
+use super::{conn, PaginatedCollection};
 
 #[derive(Debug, Clone)]
 pub enum Provider {
@@ -167,11 +166,12 @@ impl Track {
         return tracks
     }
 
-    pub fn find() -> Vec<Track> {
+    pub fn find(page: i64, per_page: i64) -> PaginatedCollection<Track> {
         let mut tracks = Vec::new();
         let conn = conn().unwrap();
-        let stmt = conn.prepare("SELECT id, provider, title, url, identifier FROM tracks LIMIT 20 OFFSET 0").unwrap();
-        for row in stmt.query(&[]).unwrap().iter() {
+        let stmt = conn.prepare("SELECT id, provider, title, url, identifier FROM tracks LIMIT $2 OFFSET $1").unwrap();
+        let offset = page * per_page;
+        for row in stmt.query(&[&offset, &per_page]).unwrap().iter() {
             let track = Track {
                       id: row.get(0),
                 provider: Provider::new(row.get(1)),
@@ -181,7 +181,16 @@ impl Track {
             };
             tracks.push(track);
         }
-        return tracks
+        let mut total: i64 = 0;
+        for row in conn.query("SELECT COUNT(*) FROM tracks", &[]).unwrap().iter() {
+            total = row.get(0);
+        }
+        PaginatedCollection {
+            page:     page,
+            per_page: per_page,
+            total:    total,
+            items:    tracks,
+        }
     }
 
     pub fn create(provider: Provider,

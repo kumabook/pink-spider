@@ -38,7 +38,8 @@ static JSON: &'static str = "application/json";
 
 pub fn index_entries(req: &mut Request) -> IronResult<Response> {
     let json_type = Header(ContentType(Mime::from_str(JSON).ok().unwrap()));
-    let entries = Entry::find();
+    let (page, per_page) = pagination_params(req);
+    let entries          = Entry::find(page, per_page);
     let json_obj: Json   = entries.to_json();
     let json_str: String = json_obj.to_string();
     Ok(Response::with((status::Ok, json_type, json_str)))
@@ -46,7 +47,8 @@ pub fn index_entries(req: &mut Request) -> IronResult<Response> {
 
 pub fn index_tracks(req: &mut Request) -> IronResult<Response> {
     let json_type = Header(ContentType(Mime::from_str(JSON).ok().unwrap()));
-    let tracks = Track::find();
+    let (page, per_page) = pagination_params(req);
+    let tracks  = Track::find(page, per_page);
     let json_obj: Json   = tracks.to_json();
     let json_str: String = json_obj.to_string();
     Ok(Response::with((status::Ok, json_type, json_str)))
@@ -155,21 +157,6 @@ pub fn show_track_by_provider_id(req: &mut Request) -> IronResult<Response> {
 
 pub fn update_track(req: &mut Request) -> IronResult<Response> {
     let json_type = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
-    fn param_as_string(req: &mut Request, key: &str) -> Option<String> {
-        match req.get_ref::<UrlEncodedBody>() {
-            Ok(ref params) => match params.get(key) {
-                Some(val) => Some(val[0].clone()),
-                None      => None
-            },
-            Err(_) => None
-        }
-    }
-
-    fn query_as_string(req: &mut Request, key: &str) -> String {
-        return req.extensions.get::<Router>().unwrap()
-                  .find(key).unwrap().to_string();
-    }
-
     match Track::find_by_id(&query_as_string(req, "track_id")) {
         Ok(mut track) => {
             match param_as_string(req, "title") {
@@ -190,6 +177,31 @@ pub fn update_track(req: &mut Request) -> IronResult<Response> {
         Err(e) =>  {
             Ok(e.as_response())
         }
+    }
+}
+
+fn param_as_string(req: &mut Request, key: &str) -> Option<String> {
+    match req.get_ref::<UrlEncodedBody>() {
+        Ok(ref params) => match params.get(key) {
+            Some(val) => Some(val[0].clone()),
+            None      => None
+        },
+        Err(_) => None
+    }
+}
+
+fn query_as_string(req: &mut Request, key: &str) -> String {
+    return req.extensions.get::<Router>().unwrap()
+        .find(key).unwrap().to_string();
+}
+
+fn pagination_params(req: &mut Request) -> (i64, i64) {
+    match req.get_ref::<UrlEncodedQuery>() {
+        Ok(ref params) =>
+            (params.get("page").unwrap()[0].to_string().parse::<i64>().unwrap(),
+             params.get("per_page").unwrap()[0].to_string().parse::<i64>().unwrap()),
+        Err(_) =>
+            (0, 10)
     }
 }
 
