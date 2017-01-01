@@ -40,7 +40,7 @@ class EntryList extends React.Component {
             href={`/web/entries/${entry.id}/tracks`}
             onClick={this.props.handleEntryClick}
           >
-            {entry.id}
+            <img id={entry.id} src={entry.visual_url} className="entry-list-thumb" />
           </a>
         </TableRowColumn>
         <TableRowColumn>
@@ -102,7 +102,7 @@ function mapDispatchToProps(dispatch, ownProps) {
     fetchEntries: (page, perPage) => dispatch(fetchEntries(page, perPage)),
     handleEntryClick: (e) => {
       e.preventDefault();
-      const id = e.target.textContent;
+      const id = e.target.id;
       const location = { pathname: `entries/${id}/tracks` };
       dispatch(push(location));
     },
