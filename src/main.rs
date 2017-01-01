@@ -26,7 +26,6 @@ use std::str::FromStr;
 
 #[macro_use]
 extern crate string_cache;
-
 extern crate pink_spider;
 
 use pink_spider::error::Error;
@@ -34,28 +33,23 @@ use pink_spider::scraper::extract;
 use pink_spider::model::{Track, Entry, Provider};
 use rustc_serialize::json::{ToJson, Json};
 
-static JSON: &'static str = "application/json";
-
 pub fn index_entries(req: &mut Request) -> IronResult<Response> {
-    let json_type = Header(ContentType(Mime::from_str(JSON).ok().unwrap()));
     let (page, per_page) = pagination_params(req);
     let entries          = Entry::find(page, per_page);
     let json_obj: Json   = entries.to_json();
     let json_str: String = json_obj.to_string();
-    Ok(Response::with((status::Ok, json_type, json_str)))
+    Ok(Response::with((status::Ok, application_json(), json_str)))
 }
 
 pub fn index_tracks(req: &mut Request) -> IronResult<Response> {
-    let json_type = Header(ContentType(Mime::from_str(JSON).ok().unwrap()));
     let (page, per_page) = pagination_params(req);
     let tracks  = Track::find(page, per_page);
     let json_obj: Json   = tracks.to_json();
     let json_str: String = json_obj.to_string();
-    Ok(Response::with((status::Ok, json_type, json_str)))
+    Ok(Response::with((status::Ok, application_json(), json_str)))
 }
 
 pub fn playlistify(req: &mut Request) -> IronResult<Response> {
-    let json_type = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
     match req.get_ref::<UrlEncodedQuery>() {
         Ok(ref params) => {
             match params.get("url") {
@@ -66,7 +60,7 @@ pub fn playlistify(req: &mut Request) -> IronResult<Response> {
                         Ok(entry) => {
                             let json_obj: Json   = entry.to_json();
                             let json_str: String = json_obj.to_string();
-                            Ok(Response::with((status::Ok, json_type, json_str)))
+                            Ok(Response::with((status::Ok, application_json(), json_str)))
                         },
                         Err(e) => Ok(e.as_response())
                     }
@@ -128,11 +122,10 @@ pub fn playlistify_entry(entry: Entry) -> Result<Entry, Error> {
 pub fn show_track(req: &mut Request) -> IronResult<Response> {
     let ref track_id = req.extensions.get::<Router>().unwrap()
                           .find("track_id").unwrap();
-    let json_type = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
     match Track::find_by_id(track_id) {
         Ok(track) => {
             Ok(Response::with((status::Ok,
-                               json_type,
+                               application_json(),
                                track.to_json().to_string())))
         },
         Err(e) => Ok(e.as_response())
@@ -142,12 +135,11 @@ pub fn show_track(req: &mut Request) -> IronResult<Response> {
 pub fn show_track_by_provider_id(req: &mut Request) -> IronResult<Response> {
     let provider   = req.extensions.get::<Router>().unwrap().find("provider").unwrap();
     let identifier = req.extensions.get::<Router>().unwrap().find("id").unwrap();
-    let json_type  = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
     let p = &Provider::new(provider.to_string());
     match Track::find_by(p, identifier) {
         Ok(track) => {
             Ok(Response::with((status::Ok,
-                               json_type,
+                               application_json(),
                                track.to_json().to_string())))
         },
         Err(e) => Ok(e.as_response())
@@ -156,7 +148,6 @@ pub fn show_track_by_provider_id(req: &mut Request) -> IronResult<Response> {
 
 
 pub fn update_track(req: &mut Request) -> IronResult<Response> {
-    let json_type = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
     match Track::find_by_id(&query_as_string(req, "track_id")) {
         Ok(mut track) => {
             match param_as_string(req, "title") {
@@ -169,7 +160,7 @@ pub fn update_track(req: &mut Request) -> IronResult<Response> {
             }
             match track.save() {
                 Ok(_) => Ok(Response::with((status::Ok,
-                                         json_type,
+                                         application_json(),
                                          track.to_json().to_string()))),
                 Err(e) =>  Ok(e.as_response())
             }
@@ -203,6 +194,10 @@ fn pagination_params(req: &mut Request) -> (i64, i64) {
         Err(_) =>
             (0, 10)
     }
+}
+
+fn application_json() -> Mime {
+    Mime::from_str("application/json").ok().unwrap()
 }
 
 pub fn main() {
