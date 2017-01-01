@@ -12,6 +12,7 @@ import {
 import ReactPaginate from 'react-paginate';
 import { fetchEntries } from '../actions';
 import { Status } from '../reducers/entries';
+import parseIntOr from '../utils/parseIntOr';
 
 class EntryList extends React.Component {
   static get propTypes() {
@@ -84,7 +85,7 @@ class EntryList extends React.Component {
 function mapStateToProps(state, ownProps) {
   return {
     entries: state.entries,
-    page: parseInt(ownProps.location.query.page) || 0,
+    page: parseIntOr(ownProps.location.query.page, 0),
   };
 }
 
@@ -93,7 +94,7 @@ function mapDispatchToProps(dispatch, ownProps) {
     fetchEntries: (page, perPage) => dispatch(fetchEntries(page, perPage)),
     handlePageChange: (data) => {
       const location = { pathname: 'entries', query: { page: data.selected } };
-      if (parseInt(ownProps.location.query.page) === data.selected) {
+      if (parseIntOr(ownProps.location.query.page, 0) === data.selected) {
         dispatch(replace(location));
       } else {
         dispatch(push(location));

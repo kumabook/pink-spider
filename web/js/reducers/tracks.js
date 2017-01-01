@@ -1,5 +1,6 @@
 import { combineReducers } from 'redux';
 import { LOCATION_CHANGE } from 'react-router-redux';
+import parseIntOr from '../utils/parseIntOr';
 
 export const Status = {
   Normal: 'Normal',
@@ -28,7 +29,7 @@ const page = (state = 0, action) => {
     case 'RECEIVE_TRACKS':
       return action.page;
     case LOCATION_CHANGE:
-      return parseInt(action.payload.query.page) || 0;
+      return parseIntOr(action.payload.query.page, 0);
     default:
       return state;
   }

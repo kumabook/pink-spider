@@ -12,6 +12,7 @@ import {
 import ReactPaginate from 'react-paginate';
 import { fetchTracks } from '../actions';
 import { Status } from '../reducers/tracks';
+import parseIntOr from '../utils/parseIntOr';
 
 class TrackList extends React.Component {
   static get propTypes() {
@@ -84,12 +85,12 @@ class TrackList extends React.Component {
 function mapStateToProps(state, ownProps) {
   return {
     tracks: state.tracks,
-    page: parseInt(ownProps.location.query.page) || 0,
+    page: parseIntOr(ownProps.location.query.page, 0),
   };
 }
 
 function mapDispatchToProps(dispatch, ownProps) {
-  const page = +ownProps.location.query.page;
+  const page = parseIntOr(ownProps.location.query.page, 0);
   return {
     fetchTracks: () => dispatch(fetchTracks(page)),
     handlePageChange: (data) => {

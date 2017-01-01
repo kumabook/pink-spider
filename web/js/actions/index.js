@@ -1,5 +1,6 @@
 import entry from '../api/entry';
 import track from '../api/track';
+import parseIntOr from '../utils/parseIntOr';
 
 export const toggleDrawler = () => ({ type: 'TOGGLE_DRAWLER' });
 
@@ -28,7 +29,7 @@ export const receiveTracks = tracks => ({
 
 export const fetchTracks = (page = 0, perPage = 10) => (dispatch) => {
   dispatch({ type: 'FETCH_TRACKS', page, perPage });
-  track.index(parseInt(page) || 0, parseInt(perPage) || 0).then((tracks) => {
+  track.index(parseIntOr(page, 0), parseIntOr(perPage, 0)).then((tracks) => {
     dispatch(receiveTracks(tracks));
   });
 };
