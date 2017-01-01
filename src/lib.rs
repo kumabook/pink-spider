@@ -6,6 +6,7 @@ extern crate tendril;
 extern crate regex;
 extern crate string_cache;
 extern crate url;
+extern crate urlencoded;
 extern crate uuid;
 extern crate postgres;
 

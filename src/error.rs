@@ -7,7 +7,9 @@ use iron::headers::{ContentType};
 use iron::modifiers::Header;
 use iron::mime::Mime;
 use std::str::FromStr;
+use std::error;
 use postgres;
+use urlencoded;
 
 #[derive(Debug)]
 pub enum Error {
@@ -61,5 +63,27 @@ impl ToJson for Error {
 impl From<postgres::error::Error> for Error {
     fn from(err: postgres::error::Error) -> Error {
         Error::DbError(err)
+    }
+}
+
+impl From<urlencoded::UrlDecodingError> for Error {
+    fn from(_: urlencoded::UrlDecodingError) -> Error {
+        Error::BadRequest
+    }
+}
+
+impl error::Error for Error {
+    fn description(&self) -> &str { "" }
+}
+
+impl From<Error> for IronError {
+    fn from(err: Error) -> IronError {
+        match err {
+            Error::BadRequest     => IronError::new(err, Status::BadRequest),
+            Error::Unprocessable  => IronError::new(err, Status::BadRequest),
+            Error::NotFound       => IronError::new(err, Status::NotFound),
+            Error::DbError(_)     => IronError::new(err, Status::BadRequest),
+            Error::Unexpected     => IronError::new(err, Status::BadRequest),
+        }
     }
 }

@@ -14,8 +14,6 @@ use std::net::Ipv4Addr;
 use std::path::Path;
 use iron::prelude::*;
 use iron::status;
-use iron::headers::{ContentType};
-use iron::modifiers::Header;
 use iron::mime::Mime;
 use staticfile::Static;
 use mount::Mount;
@@ -50,26 +48,18 @@ pub fn index_tracks(req: &mut Request) -> IronResult<Response> {
 }
 
 pub fn playlistify(req: &mut Request) -> IronResult<Response> {
-    match req.get_ref::<UrlEncodedQuery>() {
-        Ok(ref params) => {
-            match params.get("url") {
-                Some(url) => {
-                    let defaults = &vec!("false".to_string());
-                    let force    = params.get("force").unwrap_or(defaults);
-                    match find_or_playlistify_entry(&url[0], force.len() > 0 && &force[0] == "true") {
-                        Ok(entry) => {
-                            let json_obj: Json   = entry.to_json();
-                            let json_str: String = json_obj.to_string();
-                            Ok(Response::with((status::Ok, application_json(), json_str)))
-                        },
-                        Err(e) => Ok(e.as_response())
-                    }
-                },
-                None => Ok(Error::BadRequest.as_response())
-            }
-        }
-        Err(_) => Ok(Error::BadRequest.as_response())
+    pub fn playlistify2(req: &mut Request) -> Result<Response, Error> {
+        let ref params  = try!(req.get_ref::<UrlEncodedQuery>());
+        let url         = try!(params.get("url").ok_or(Error::BadRequest));
+        let defaults    = &vec!("false".to_string());
+        let force_param = params.get("force").unwrap_or(defaults);
+        let force       = force_param.len() > 0 && &force_param[0] == "true";
+        let entry       = try!(find_or_playlistify_entry(&url[0], force));
+        let json_obj    = entry.to_json() as Json;
+        let json_str    = json_obj.to_string() as String;
+        Ok(Response::with((status::Ok, application_json(), json_str)))
     }
+    playlistify2(req).map_err(|err| IronError::from(err))
 }
 
 pub fn find_or_playlistify_entry(url: &str, force: bool) -> Result<Entry, Error> {
@@ -148,27 +138,18 @@ pub fn show_track_by_provider_id(req: &mut Request) -> IronResult<Response> {
 
 
 pub fn update_track(req: &mut Request) -> IronResult<Response> {
-    match Track::find_by_id(&query_as_string(req, "track_id")) {
-        Ok(mut track) => {
-            match param_as_string(req, "title") {
-                Some(title) => track.title = title,
-                None        => println!("no title")
-            }
-            match param_as_string(req, "url") {
-                Some(url) => track.url = url,
-                None      => println!("no url")
-            }
-            match track.save() {
-                Ok(_) => Ok(Response::with((status::Ok,
-                                         application_json(),
-                                         track.to_json().to_string()))),
-                Err(e) =>  Ok(e.as_response())
-            }
-        },
-        Err(e) =>  {
-            Ok(e.as_response())
-        }
+    let mut track = try!(Track::find_by_id(&query_as_string(req, "track_id")));
+    match param_as_string(req, "title") {
+        Some(title) => track.title = title,
+        None        => println!("no title")
     }
+    match param_as_string(req, "url") {
+        Some(url) => track.url = url,
+        None      => println!("no url")
+    }
+    try!(track.save());
+    let res = track.to_json().to_string();
+    Ok(Response::with((status::Ok, application_json(), res)))
 }
 
 fn param_as_string(req: &mut Request, key: &str) -> Option<String> {
