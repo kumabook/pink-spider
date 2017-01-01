@@ -109,7 +109,7 @@ pub fn playlistify_entry(entry: Entry) -> Result<Entry, Error> {
     Ok(e)
 }
 
-pub fn show_track(req: &mut Request) -> IronResult<Response> {
+pub fn show_track_by_id(req: &mut Request) -> IronResult<Response> {
     let ref track_id = req.extensions.get::<Router>().unwrap()
                           .find("track_id").unwrap();
     match Track::find_by_id(track_id) {
@@ -122,7 +122,7 @@ pub fn show_track(req: &mut Request) -> IronResult<Response> {
     }
 }
 
-pub fn show_track_by_provider_id(req: &mut Request) -> IronResult<Response> {
+pub fn show_track(req: &mut Request) -> IronResult<Response> {
     let provider   = req.extensions.get::<Router>().unwrap().find("provider").unwrap();
     let identifier = req.extensions.get::<Router>().unwrap().find("id").unwrap();
     let p = &Provider::new(provider.to_string());
@@ -186,13 +186,13 @@ pub fn main() {
     let mut mount = Mount::new();
     mount.mount("/web/", Static::new(Path::new(path)));
     let router = router!(
-                         playlistify: get  "/playlistify"          => playlistify,
-                          show_track: get  "/tracks/:track_id"     => show_track,
-                        update_track: post "/tracks/:track_id"     => update_track,
-           show_track_by_provider_id: get  "/tracks/:provider/:id" => show_track_by_provider_id,
-                       index_entries: get  "/entries"              => index_entries,
-                        index_tracks: get  "/tracks"               => index_tracks,
-                                 web: get  "/*"                    => mount,
+        playlistify:      get  "/playlistify"          => playlistify,
+        show_track_by_id: get  "/tracks/:track_id"     => show_track_by_id,
+        update_track:     post "/tracks/:track_id"     => update_track,
+        show_track:       get  "/tracks/:provider/:id" => show_track,
+        index_entries:    get  "/entries"              => index_entries,
+        index_tracks:     get  "/tracks"               => index_tracks,
+        web:              get  "/*"                    => mount,
     );
     let port_str = match std::env::var("PORT") {
         Ok(n)    => n,
