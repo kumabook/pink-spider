@@ -21,6 +21,7 @@ use router::{Router};
 use urlencoded::UrlEncodedQuery;
 use urlencoded::UrlEncodedBody;
 use std::str::FromStr;
+use uuid::Uuid;
 
 #[macro_use]
 extern crate string_cache;
@@ -28,7 +29,7 @@ extern crate pink_spider;
 
 use pink_spider::error::Error;
 use pink_spider::scraper::extract;
-use pink_spider::model::{Track, Entry, Provider};
+use pink_spider::model::{Track, Entry, Provider, PaginatedCollection};
 use rustc_serialize::json::{ToJson, Json};
 
 pub fn index_entries(req: &mut Request) -> IronResult<Response> {
@@ -43,6 +44,21 @@ pub fn index_tracks(req: &mut Request) -> IronResult<Response> {
     let (page, per_page) = pagination_params(req);
     let tracks  = Track::find(page, per_page);
     let json_obj: Json   = tracks.to_json();
+    let json_str: String = json_obj.to_string();
+    Ok(Response::with((status::Ok, application_json(), json_str)))
+}
+
+pub fn index_tracks_by_entry(req: &mut Request) -> IronResult<Response> {
+    let ref entry_id = req.extensions.get::<Router>().unwrap().find("entry_id").unwrap();
+    let uuid = try!(Uuid::parse_str(entry_id).map_err(|_| Error::Unprocessable));
+    let items = Track::find_by_entry_id(uuid);
+    let col = PaginatedCollection {
+        page:     0,
+        per_page: items.len() as i64,
+        total:    items.len() as i64,
+        items:    items,
+    };
+    let json_obj: Json   = col.to_json();
     let json_str: String = json_obj.to_string();
     Ok(Response::with((status::Ok, application_json(), json_str)))
 }
@@ -186,13 +202,14 @@ pub fn main() {
     let mut mount = Mount::new();
     mount.mount("/web/", Static::new(Path::new(path)));
     let router = router!(
-        playlistify:      get  "/playlistify"          => playlistify,
-        show_track_by_id: get  "/tracks/:track_id"     => show_track_by_id,
-        update_track:     post "/tracks/:track_id"     => update_track,
-        show_track:       get  "/tracks/:provider/:id" => show_track,
-        index_entries:    get  "/entries"              => index_entries,
-        index_tracks:     get  "/tracks"               => index_tracks,
-        web:              get  "/*"                    => mount,
+        playlistify:           get  "/playlistify"              => playlistify,
+        show_track_by_id:      get  "/tracks/:track_id"         => show_track_by_id,
+        update_track:          post "/tracks/:track_id"         => update_track,
+        show_track:            get  "/tracks/:provider/:id"     => show_track,
+        index_entries:         get  "/entries"                  => index_entries,
+        index_tracks:          get  "/tracks"                   => index_tracks,
+        index_tracks_by_entry: get  "/entries/:entry_id/tracks" => index_tracks_by_entry,
+        web:                   get  "/*"                        => mount,
     );
     let port_str = match std::env::var("PORT") {
         Ok(n)    => n,
