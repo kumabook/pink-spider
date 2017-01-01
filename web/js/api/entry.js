@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { DEFAULT_PAGE, DEFAULT_PER_PAGE } from './pagination';
 
 export default {
-  index: (page = 0, perPage = 10) => axios.get('/entries', {
+  index: (page = DEFAULT_PAGE, perPage = DEFAULT_PER_PAGE) => axios.get('/entries', {
     params: {
       page,
       per_page: perPage,

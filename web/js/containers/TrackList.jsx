@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { push } from 'react-router-redux';
+import { push, replace } from 'react-router-redux';
 import {
   Table,
   TableBody,
@@ -13,6 +13,7 @@ import ReactPaginate from 'react-paginate';
 import { fetchTracks } from '../actions';
 import { Status } from '../reducers/tracks';
 import parseIntOr from '../utils/parseIntOr';
+import { DEFAULT_PER_PAGE } from '../api/pagination';
 
 class TrackList extends React.Component {
   static get propTypes() {
@@ -86,15 +87,24 @@ function mapStateToProps(state, ownProps) {
   return {
     tracks: state.tracks,
     page: parseIntOr(ownProps.location.query.page, 0),
+    entry_id: ownProps.params.entry_id,
   };
 }
 
 function mapDispatchToProps(dispatch, ownProps) {
   const page = parseIntOr(ownProps.location.query.page, 0);
+  const perPage = parseIntOr(ownProps.location.query.per_page, DEFAULT_PER_PAGE);
+  const entryId = ownProps.params.entry_id;
   return {
-    fetchTracks: () => dispatch(fetchTracks(page)),
+    fetchTracks: () => dispatch(fetchTracks(page, undefined, entryId)),
     handlePageChange: (data) => {
-      dispatch(push({ pathname: 'tracks', query: { page: data.selected } }));
+      const path = entryId ? `entries/${entryId}/tracks` : 'tracks';
+      const location = { pathname: path, query: { page: data.selected, per_page: perPage } };
+      if (parseIntOr(ownProps.location.query.page, 0) === data.selected) {
+        dispatch(replace(location));
+      } else {
+        dispatch(push(location));
+      }
     },
   };
 }

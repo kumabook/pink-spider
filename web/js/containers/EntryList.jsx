@@ -14,12 +14,15 @@ import { fetchEntries } from '../actions';
 import { Status } from '../reducers/entries';
 import parseIntOr from '../utils/parseIntOr';
 
+import { DEFAULT_PER_PAGE } from '../api/pagination';
+
 class EntryList extends React.Component {
   static get propTypes() {
     return {
       entries: React.PropTypes.object.isRequired,
       page: React.PropTypes.number,
       fetchEntries: React.PropTypes.func,
+      handleEntryClick: React.PropTypes.func,
       handlePageChange: React.PropTypes.func,
     };
   }
@@ -33,7 +36,12 @@ class EntryList extends React.Component {
     const rows = this.props.entries.items.map(entry => (
       <TableRow key={entry.id}>
         <TableRowColumn>
-          {entry.id}
+          <a
+            href={`/web/entries/${entry.id}/tracks`}
+            onClick={this.props.handleEntryClick}
+          >
+            {entry.id}
+          </a>
         </TableRowColumn>
         <TableRowColumn>
           <a href={entry.url}>{entry.url}</a>
@@ -92,8 +100,15 @@ function mapStateToProps(state, ownProps) {
 function mapDispatchToProps(dispatch, ownProps) {
   return {
     fetchEntries: (page, perPage) => dispatch(fetchEntries(page, perPage)),
+    handleEntryClick: (e) => {
+      e.preventDefault();
+      const id = e.target.textContent;
+      const location = { pathname: `entries/${id}/tracks` };
+      dispatch(push(location));
+    },
     handlePageChange: (data) => {
-      const location = { pathname: 'entries', query: { page: data.selected } };
+      const perPage = parseIntOr(ownProps.location.query.per_page, DEFAULT_PER_PAGE);
+      const location = { pathname: 'entries', query: { page: data.selected, per_page: perPage } };
       if (parseIntOr(ownProps.location.query.page, 0) === data.selected) {
         dispatch(replace(location));
       } else {

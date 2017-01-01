@@ -24,6 +24,15 @@ const status = (state = Status.Dirty, action) => {
   }
 };
 
+const entryId = (state = 0, action) => {
+  switch (action.type) {
+    case 'FETCH_TRACKS':
+      return action.entryId;
+    default:
+      return state;
+  }
+};
+
 const page = (state = 0, action) => {
   switch (action.type) {
     case 'RECEIVE_TRACKS':
@@ -39,6 +48,8 @@ const perPage = (state = 10, action) => {
   switch (action.type) {
     case 'RECEIVE_TRACKS':
       return action.perPage;
+    case LOCATION_CHANGE:
+      return parseIntOr(action.payload.query.per_page, 10);
     default:
       return state;
   }
@@ -64,6 +75,7 @@ const items = (state = [], action) => {
 
 export default combineReducers({
   status,
+  entryId,
   items,
   page,
   perPage,

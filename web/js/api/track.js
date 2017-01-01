@@ -1,10 +1,18 @@
 import axios from 'axios';
+import { DEFAULT_PAGE, DEFAULT_PER_PAGE } from './pagination';
 
 export default {
-  index: (page = 0, perPage = 10) => axios.get('/tracks', {
+  index: (page = DEFAULT_PAGE, perPage = DEFAULT_PER_PAGE) => axios.get('/tracks', {
     params: {
       page,
       per_page: perPage,
     },
   }).then(response => response.data),
+  indexByEntry: (entryId, page = DEFAULT_PAGE, perPage = DEFAULT_PER_PAGE) =>
+    axios.get(`/entries/${entryId}/tracks`, {
+      params: {
+        page,
+        per_page: perPage,
+      },
+    }).then(response => response.data),
 };
