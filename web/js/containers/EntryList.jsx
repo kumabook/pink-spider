@@ -1,5 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { Link } from 'react-router';
 import { push, replace } from 'react-router-redux';
 import {
   Table,
@@ -16,13 +17,14 @@ import parseIntOr from '../utils/parseIntOr';
 
 import { DEFAULT_PER_PAGE } from '../api/pagination';
 
+const NO_IMAGE = '/web/no_image.png';
+
 class EntryList extends React.Component {
   static get propTypes() {
     return {
       entries: React.PropTypes.object.isRequired,
       page: React.PropTypes.number,
       fetchEntries: React.PropTypes.func,
-      handleEntryClick: React.PropTypes.func,
       handlePageChange: React.PropTypes.func,
     };
   }
@@ -36,18 +38,24 @@ class EntryList extends React.Component {
     const rows = this.props.entries.items.map(entry => (
       <TableRow key={entry.id}>
         <TableRowColumn>
-          <a
-            href={`/web/entries/${entry.id}/tracks`}
-            onClick={this.props.handleEntryClick}
-          >
-            <img id={entry.id} src={entry.visual_url} className="entry-list-thumb" />
+          <a href={entry.url}>
+            <img
+              src={entry.visual_url || NO_IMAGE}
+              role="presentation"
+              className="entry-list-thumb"
+            />
           </a>
         </TableRowColumn>
         <TableRowColumn>
-          <a href={entry.url}>{entry.url}</a>
+          {entry.title || `No title: ${entry.url}`}
         </TableRowColumn>
         <TableRowColumn>
-          {entry.title}
+          {entry.description}
+        </TableRowColumn>
+        <TableRowColumn>
+          <Link to={`entries/${entry.id}/tracks`}>
+            {`${entry.tracks.length} tracks`}
+          </Link>
         </TableRowColumn>
       </TableRow>
     ));
@@ -76,9 +84,10 @@ class EntryList extends React.Component {
               </TableHeaderColumn>
             </TableRow>
             <TableRow>
-              <TableHeaderColumn>ID</TableHeaderColumn>
-              <TableHeaderColumn>url</TableHeaderColumn>
+              <TableHeaderColumn>thumbnail</TableHeaderColumn>
               <TableHeaderColumn>title</TableHeaderColumn>
+              <TableHeaderColumn>description</TableHeaderColumn>
+              <TableHeaderColumn>tracks</TableHeaderColumn>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -100,12 +109,6 @@ function mapStateToProps(state, ownProps) {
 function mapDispatchToProps(dispatch, ownProps) {
   return {
     fetchEntries: (page, perPage) => dispatch(fetchEntries(page, perPage)),
-    handleEntryClick: (e) => {
-      e.preventDefault();
-      const id = e.target.id;
-      const location = { pathname: `entries/${id}/tracks` };
-      dispatch(push(location));
-    },
     handlePageChange: (data) => {
       const perPage = parseIntOr(ownProps.location.query.per_page, DEFAULT_PER_PAGE);
       const location = { pathname: 'entries', query: { page: data.selected, per_page: perPage } };

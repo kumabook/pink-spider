@@ -15,6 +15,8 @@ import { Status } from '../reducers/tracks';
 import parseIntOr from '../utils/parseIntOr';
 import { DEFAULT_PER_PAGE } from '../api/pagination';
 
+const NO_IMAGE = '/web/no_image.png';
+
 class TrackList extends React.Component {
   static get propTypes() {
     return {
@@ -34,13 +36,22 @@ class TrackList extends React.Component {
     const rows = this.props.tracks.items.map(track => (
       <TableRow key={track.id}>
         <TableRowColumn>
-          {track.id}
+          <a href={track.url}>
+            <img
+              src={track.thumbnail_url || NO_IMAGE}
+              role="presentation"
+              className="track-list-thumb"
+            />
+          </a>
         </TableRowColumn>
         <TableRowColumn>
-          <a href={track.url}>{track.url}</a>
+          {track.title || `${track.provider} id: ${track.identifier}`}
         </TableRowColumn>
         <TableRowColumn>
-          {track.title}
+          {track.description}
+        </TableRowColumn>
+        <TableRowColumn>
+          {track.artist}
         </TableRowColumn>
       </TableRow>
     ));
@@ -69,9 +80,10 @@ class TrackList extends React.Component {
               </TableHeaderColumn>
             </TableRow>
             <TableRow>
-              <TableHeaderColumn>ID</TableHeaderColumn>
-              <TableHeaderColumn>url</TableHeaderColumn>
+              <TableHeaderColumn>thumbnail</TableHeaderColumn>
               <TableHeaderColumn>title</TableHeaderColumn>
+              <TableHeaderColumn>description</TableHeaderColumn>
+              <TableHeaderColumn>artist</TableHeaderColumn>
             </TableRow>
           </TableHeader>
           <TableBody>
