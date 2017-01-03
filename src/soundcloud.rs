@@ -22,7 +22,6 @@ lazy_static! {
     };
 }
 
-#[allow(non_snake_case)]
 #[derive(Debug, RustcDecodable, RustcEncodable)]
 pub struct Playlist {
     pub id:            i32,
@@ -35,27 +34,37 @@ pub struct Playlist {
     pub tracks:        Vec<Track>,
 }
 
-#[allow(non_snake_case)]
 #[derive(Debug, RustcDecodable, RustcEncodable)]
 pub struct Track {
     pub id:            i32,
     pub created_at:    String,
     pub user_id:       i32,
     pub title:         String,
+    pub description:   String,
+    pub artist:        Option<String>,
     pub permalink:     String,
     pub permalink_url: String,
     pub uri:           String,
     pub artwork_url:   Option<String>,
-    pub description:   String,
     pub duration:      i32,
     pub stream_url:    String,
 }
 
+pub fn fetch_track(id: &str) -> DecodeResult<Track> {
+    let params = format!("client_id={}", *API_KEY);
+    let url    = format!("{}/tracks/{}?{}", BASE_URL, id, params);
+    let client = Client::new();
+    let mut res = client.get(&url)
+                        .header(Connection::close())
+                        .send().unwrap();
+    let mut body = String::new();
+    res.read_to_string(&mut body).unwrap();
+    return json::decode::<Track>(&body)
+}
 
 pub fn fetch_playlist(id: &str) -> DecodeResult<Playlist> {
     let params = format!("client_id={}", *API_KEY);
     let url    = format!("{}/playlists/{}?{}", BASE_URL, id, params);
-    println!("{}", url);
     let client = Client::new();
     let mut res = client.get(&url)
                         .header(Connection::close())

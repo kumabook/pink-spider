@@ -31,6 +31,8 @@ use pink_spider::error::Error;
 use pink_spider::scraper::extract;
 use pink_spider::model::{Track, Entry, Provider, PaginatedCollection};
 use rustc_serialize::json::{ToJson, Json};
+use pink_spider::youtube;
+use pink_spider::soundcloud;
 
 pub fn index_entries(req: &mut Request) -> IronResult<Response> {
     let (page, per_page) = pagination_params(req);
