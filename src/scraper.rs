@@ -10,7 +10,6 @@ use html5ever::rcdom::{RcDom, Handle};
 use html5ever::{parse_document, Attribute};
 use tendril::stream::TendrilSink;
 use std::default::Default;
-use uuid::Uuid;
 
 use regex::Regex;
 use hyper::Client;
@@ -173,13 +172,7 @@ fn extract_tracks_from_url(url: String) -> Vec<Track> {
     let decoded = percent_decode(url.as_bytes()).decode_utf8_lossy().into_owned();
     match extract_identifier(&decoded, YOUTUBE_WATCH) {
         Some(identifier) => {
-            return vec![Track {
-                        id: Uuid::new_v4(),
-                  provider: Provider::YouTube,
-                     title: "".to_string(),
-                       url: url.to_string(),
-                identifier: identifier
-            }]
+            return vec![Track::new(Provider::YouTube, identifier)]
         },
         None => ()
     }
@@ -196,25 +189,13 @@ fn extract_tracks_from_url(url: String) -> Vec<Track> {
     }
     match extract_identifier(&decoded, YOUTUBE_EMBED) {
         Some(identifier) => {
-            return vec![Track {
-                        id: Uuid::new_v4(),
-                  provider: Provider::YouTube,
-                     title: "".to_string(),
-                       url: url.to_string(),
-                identifier: identifier
-            }]
+            return vec![Track::new(Provider::YouTube, identifier)]
         },
         None => ()
     }
     match extract_identifier(&decoded, SOUNDCLOUD_TRACK) {
         Some(identifier) => {
-            return vec![Track {
-                        id: Uuid::new_v4(),
-                  provider: Provider::SoundCloud,
-                     title: "".to_string(),
-                       url: url.to_string(),
-                identifier: identifier
-            }]
+            return vec![Track::new(Provider::SoundCloud, identifier)]
         },
         None => ()
     }

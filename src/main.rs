@@ -114,10 +114,20 @@ pub fn playlistify_entry(entry: Entry) -> Result<Entry, Error> {
         None => (),
     }
     for t in product.tracks {
-        let track = try!(Track::find_or_create(t.provider,
-                                               t.title,
-                                               t.url,
-                                               t.identifier));
+        let mut track = try!(Track::find_or_create(t.provider, t.identifier.to_string()));
+        track.title = t.title;
+        let track = match t.provider {
+            Provider::YouTube => match youtube::fetch_video(&t.identifier) {
+                Ok(video) => track.update_with_yt_video(&video),
+                Err(_)    => track.disable(),
+            },
+            Provider::SoundCloud => match soundcloud::fetch_track(&t.identifier) {
+                Ok(sc_track) => track.update_with_sc_track(&sc_track),
+                Err(_)       => track.disable(),
+            },
+            _ => &mut track,
+        };
+        try!(track.save());
         match entry.tracks.iter().find(|&t| t.id == track.id) {
             Some(_) => (),
             None    => e.add_track(track.clone())
