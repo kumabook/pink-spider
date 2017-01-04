@@ -9,6 +9,7 @@ extern crate url;
 extern crate urlencoded;
 extern crate uuid;
 extern crate postgres;
+extern crate chrono;
 
 #[macro_use]
 extern crate lazy_static;

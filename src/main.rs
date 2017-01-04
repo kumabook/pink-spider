@@ -8,6 +8,7 @@ extern crate rustc_serialize;
 extern crate html5ever;
 extern crate regex;
 extern crate uuid;
+extern crate chrono;
 
 use std::net::SocketAddrV4;
 use std::net::Ipv4Addr;
