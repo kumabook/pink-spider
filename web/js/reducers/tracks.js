@@ -14,6 +14,8 @@ const status = (state = Status.Dirty, action) => {
       return Status.Fetching;
     case 'RECEIVE_TRACKS':
       return Status.Normal;
+    case 'UPDATE_TRACK':
+      return Status.Dirty;
     case LOCATION_CHANGE:
       if (state !== Status.Fetching) {
         return Status.Dirty;

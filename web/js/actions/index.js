@@ -31,7 +31,9 @@ export const fetchTracks = (page = 0, perPage = 10, entryId = null) =>
     dispatch({ type: 'FETCH_TRACKS', page, perPage, entryId });
     const promise = entryId ? track.indexByEntry(entryId, page, perPage) :
                               track.index(page, perPage);
-    promise.then((tracks) => {
-      dispatch(receiveTracks(tracks));
-    });
+    promise.then(tracks => dispatch(receiveTracks(tracks)));
   };
+
+export const updateTrack = trackId =>
+  dispatch => track.update(trackId).then(() =>
+                                         dispatch({ type: 'UPDATE_TRACK' }));

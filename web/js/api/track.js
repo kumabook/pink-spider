@@ -15,4 +15,5 @@ export default {
         per_page: perPage,
       },
     }).then(response => response.data),
+  update: trackId => axios.post(`/tracks/${trackId}`),
 };

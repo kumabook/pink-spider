@@ -9,8 +9,12 @@ import {
   TableRow,
   TableRowColumn,
 } from 'material-ui/Table';
+import RaisedButton from 'material-ui/RaisedButton';
 import ReactPaginate from 'react-paginate';
-import { fetchTracks } from '../actions';
+import {
+  fetchTracks,
+  updateTrack,
+} from '../actions';
 import { Status } from '../reducers/tracks';
 import parseIntOr from '../utils/parseIntOr';
 import { DEFAULT_PER_PAGE } from '../api/pagination';
@@ -23,6 +27,7 @@ class TrackList extends React.Component {
       tracks: React.PropTypes.object.isRequired,
       page: React.PropTypes.number,
       fetchTracks: React.PropTypes.func,
+      handleClick: React.PropTypes.func,
       handlePageChange: React.PropTypes.func,
     };
   }
@@ -52,6 +57,9 @@ class TrackList extends React.Component {
         </TableRowColumn>
         <TableRowColumn>
           {track.artist}
+        </TableRowColumn>
+        <TableRowColumn>
+          <RaisedButton label="Update" primary onClick={() => this.props.handleClick(track)} />
         </TableRowColumn>
       </TableRow>
     ));
@@ -84,6 +92,7 @@ class TrackList extends React.Component {
               <TableHeaderColumn>title</TableHeaderColumn>
               <TableHeaderColumn>description</TableHeaderColumn>
               <TableHeaderColumn>artist</TableHeaderColumn>
+              <TableHeaderColumn>button</TableHeaderColumn>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -109,6 +118,7 @@ function mapDispatchToProps(dispatch, ownProps) {
   const entryId = ownProps.params.entry_id;
   return {
     fetchTracks: () => dispatch(fetchTracks(page, undefined, entryId)),
+    handleClick: track => dispatch(updateTrack(track.id)),
     handlePageChange: (data) => {
       const path = entryId ? `entries/${entryId}/tracks` : 'tracks';
       const location = { pathname: path, query: { page: data.selected, per_page: perPage } };
