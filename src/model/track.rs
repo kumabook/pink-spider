@@ -11,6 +11,26 @@ use soundcloud;
 use error::Error;
 use super::{conn, PaginatedCollection};
 
+static PROPS: [&'static str; 12]  = ["id",
+                                     "provider",
+                                     "identifier",
+                                     "url",
+                                     "title",
+                                     "description",
+                                     "artist",
+                                     "thumbnail_url",
+                                     "artwork_url",
+                                     "duration",
+                                     "published_at",
+                                     "state"];
+
+fn props_str(prefix: &str) -> String {
+    PROPS
+        .iter()
+        .map(|&p| format!("{}{}", prefix, p))
+        .collect::<Vec<String>>().join(",")
+}
+
 #[derive(Debug, Copy, Clone)]
 pub enum Provider {
     YouTube,
@@ -260,10 +280,9 @@ impl Track {
 
     pub fn find_by_id(id: &str) -> Result<Track, Error> {
         let conn = conn().unwrap();
-        let stmt = conn.prepare("SELECT id, provider, identifier, url, title, description,
-                                        artist, thumbnail_url, artwork_url, duration,
-                                        published_at, state
-                                 FROM tracks WHERE id = $1").unwrap();
+        let stmt = conn.prepare(
+            &format!("SELECT {} FROM tracks
+                        WHERE id = $1", props_str(""))).unwrap();
         let uuid   = try!(Uuid::parse_str(id).map_err(|_| Error::Unprocessable));
         let rows   = stmt.query(&[&uuid]).unwrap();
         let tracks = Track::rows_to_tracks(rows);
@@ -275,12 +294,10 @@ impl Track {
 
     pub fn find_by(provider: &Provider, identifier: &str) -> Result<Track, Error> {
         let conn = conn().unwrap();
-        let stmt = conn.prepare("SELECT id, provider, identifier, url, title, description,
-                                        artist, thumbnail_url, artwork_url, duration,
-                                        published_at, state
-                                 FROM tracks
-                                 WHERE provider = $1 AND identifier = $2
-                                 ORDER BY published_at DESC").unwrap();
+        let stmt = conn.prepare(
+            &format!("SELECT {} FROM tracks
+                     WHERE provider = $1 AND identifier = $2
+                     ORDER BY published_at DESC", props_str(""))).unwrap();
         let rows = stmt.query(&[&(*provider).to_string(), &identifier]).unwrap();
         let tracks = Track::rows_to_tracks(rows);
         if tracks.len() > 0 {
@@ -291,26 +308,20 @@ impl Track {
 
     pub fn find_by_entry_id(entry_id: Uuid) -> Vec<Track> {
         let conn = conn().unwrap();
-        let stmt = conn.prepare("SELECT t.id, t.provider, t.identifier, t.url, t.title, t.description,
-                                        t.artist, t.thumbnail_url, t.artwork_url,
-                                        t.duration, t.published_at, t.state
-                                 FROM tracks t LEFT JOIN track_entries te
-                                 ON t.id = te.track_id
-                                 WHERE te.entry_id = $1
-                                 ORDER BY t.published_at DESC").unwrap();
+        let stmt = conn.prepare(
+            &format!("SELECT {} FROM tracks t LEFT JOIN track_entries te
+                        ON t.id = te.track_id
+                        WHERE te.entry_id = $1
+                        ORDER BY t.published_at DESC", props_str("t."))).unwrap();
         let rows = stmt.query(&[&entry_id]).unwrap();
         Track::rows_to_tracks(rows)
     }
 
     pub fn find(page: i64, per_page: i64) -> PaginatedCollection<Track> {
         let conn = conn().unwrap();
-        let stmt = conn.prepare("SELECT id, provider, identifier, url, title, description,
-                                        artist, thumbnail_url, artwork_url, duration,
-                                        published_at, state
-                                 FROM tracks
-                                 ORDER BY published_at DESC
-                                 LIMIT $2 OFFSET $1
-                                 ").unwrap();
+        let stmt = conn.prepare(&format!("SELECT {}  FROM tracks
+                                            ORDER BY published_at DESC
+                                            LIMIT $2 OFFSET $1", props_str(""))).unwrap();
         let offset = page * per_page;
         let rows   = stmt.query(&[&offset, &per_page]).unwrap();
         let tracks = Track::rows_to_tracks(rows);

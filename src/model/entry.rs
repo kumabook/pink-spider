@@ -1,9 +1,21 @@
 use std::collections::BTreeMap;
 use rustc_serialize::json::{ToJson, Json};
+use postgres;
 use uuid::Uuid;
 use error::Error;
 use super::{conn, PaginatedCollection};
 use Track;
+
+static PROPS: [&'static str; 6]  = ["id",
+                                    "url",
+                                    "title",
+                                    "description",
+                                    "visual_url",
+                                    "locale"];
+
+fn props_str() -> String {
+    PROPS.join(",")
+}
 
 #[derive(Debug, Clone)]
 pub struct Entry {
@@ -32,46 +44,9 @@ impl ToJson for Entry {
 }
 
 impl Entry {
-    pub fn find_by_id(id: String) -> Result<Entry, Error> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare("SELECT id, url, title, description, visual_url, locale FROM entries WHERE id = $1").unwrap();
-        for row in stmt.query(&[&id]).unwrap().iter() {
-            return Ok(Entry {
-                    id: row.get(0),
-                   url: row.get(1),
-                 title: row.get(2),
-           description: row.get(3),
-            visual_url: row.get(4),
-                locale: row.get(5),
-                tracks: Track::find_by_entry_id(row.get(0)),
-            });
-        }
-        return Err(Error::NotFound)
-    }
-
-    pub fn find_by_url(url: &str) -> Result<Entry, Error> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare("SELECT id, url, title, description, visual_url, locale FROM entries WHERE url = $1").unwrap();
-        for row in stmt.query(&[&url]).unwrap().iter() {
-            return Ok(Entry {
-                    id: row.get(0),
-                   url: row.get(1),
-                 title: row.get(2),
-           description: row.get(3),
-            visual_url: row.get(4),
-                locale: row.get(5),
-                tracks: Track::find_by_entry_id(row.get(0)),
-            });
-        }
-        return Err(Error::NotFound)
-    }
-
-    pub fn find(page: i64, per_page: i64) -> PaginatedCollection<Entry> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare("SELECT id, url, title, description, visual_url, locale FROM entries LIMIT $2 OFFSET $1").unwrap();
-        let offset = page * per_page;
+    fn rows_to_entries(rows: postgres::rows::Rows) -> Vec<Entry> {
         let mut entries = Vec::new();
-        for row in stmt.query(&[&offset, &per_page]).unwrap().iter() {
+        for row in rows.iter() {
             entries.push(Entry {
                     id: row.get(0),
                    url: row.get(1),
@@ -82,6 +57,42 @@ impl Entry {
                 tracks: Track::find_by_entry_id(row.get(0)),
             })
         }
+        entries
+    }
+
+    pub fn find_by_id(id: String) -> Result<Entry, Error> {
+        let conn = conn().unwrap();
+        let stmt = conn.prepare(
+            &format!("SELECT {} FROM entries
+                        WHERE id = $1", props_str())).unwrap();
+        let rows = stmt.query(&[&id]).unwrap();
+        let entries = Entry::rows_to_entries(rows);
+        if entries.len() > 0 {
+            return Ok(entries[0].clone());
+        }
+        return Err(Error::NotFound)
+    }
+
+    pub fn find_by_url(url: &str) -> Result<Entry, Error> {
+        let conn = conn().unwrap();
+        let stmt = conn.prepare(
+            &format!("SELECT {} FROM entries
+                        WHERE url = $1", props_str())).unwrap();
+        let rows = stmt.query(&[&url]).unwrap();
+        let entries = Entry::rows_to_entries(rows);
+        if entries.len() > 0 {
+            return Ok(entries[0].clone());
+        }
+        return Err(Error::NotFound)
+    }
+
+    pub fn find(page: i64, per_page: i64) -> PaginatedCollection<Entry> {
+        let conn = conn().unwrap();
+        let stmt = conn.prepare(
+            &format!("SELECT {} FROM entries LIMIT $2 OFFSET $1", props_str())).unwrap();
+        let offset = page * per_page;
+        let rows = stmt.query(&[&offset, &per_page]).unwrap();
+        let entries = Entry::rows_to_entries(rows);
         let mut total: i64 = 0;
         for row in conn.query("SELECT COUNT(*) FROM entries", &[]).unwrap().iter() {
             total = row.get(0);
