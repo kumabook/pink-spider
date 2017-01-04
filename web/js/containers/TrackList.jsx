@@ -19,7 +19,8 @@ import { Status } from '../reducers/tracks';
 import parseIntOr from '../utils/parseIntOr';
 import { DEFAULT_PER_PAGE } from '../api/pagination';
 
-const NO_IMAGE = '/web/no_image.png';
+const NO_IMAGE   = '/web/no_image.png';
+const DEAD_IMAGE = '/web/dead_image.png';
 
 class TrackList extends React.Component {
   static get propTypes() {
@@ -30,6 +31,12 @@ class TrackList extends React.Component {
       handleClick: React.PropTypes.func,
       handlePageChange: React.PropTypes.func,
     };
+  }
+  static getThumbnailUrl(track) {
+    if (track.state === 'alive') {
+      return track.thumbnail_url || NO_IMAGE;
+    }
+    return DEAD_IMAGE;
   }
   componentDidUpdate() {
     if (this.props.tracks.status === Status.Dirty) {
@@ -43,7 +50,7 @@ class TrackList extends React.Component {
         <TableRowColumn>
           <a href={track.url}>
             <img
-              src={track.thumbnail_url || NO_IMAGE}
+              src={TrackList.getThumbnailUrl(track)}
               role="presentation"
               className="track-list-thumb"
             />
