@@ -10,6 +10,8 @@ import {
   TableRow,
   TableRowColumn,
 } from 'material-ui/Table';
+import Dialog from 'material-ui/Dialog';
+import CircularProgress from 'material-ui/CircularProgress';
 import ReactPaginate from 'react-paginate';
 import { fetchEntries } from '../actions';
 import { Status } from '../reducers/entries';
@@ -94,6 +96,15 @@ class EntryList extends React.Component {
             {rows}
           </TableBody>
         </Table>
+        <Dialog
+          modal
+          title="Loading..."
+          titleStyle={{ textAlign: 'center' }}
+          bodyStyle={{ textAlign: 'center' }}
+          open={this.props.entries.status === Status.Dirty}
+        >
+          <CircularProgress mode="indeterminate" />
+        </Dialog>
       </div>
     );
   }

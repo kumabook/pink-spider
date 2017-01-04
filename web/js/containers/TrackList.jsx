@@ -10,6 +10,8 @@ import {
   TableRowColumn,
 } from 'material-ui/Table';
 import RaisedButton from 'material-ui/RaisedButton';
+import Dialog from 'material-ui/Dialog';
+import CircularProgress from 'material-ui/CircularProgress';
 import ReactPaginate from 'react-paginate';
 import {
   fetchTracks,
@@ -106,6 +108,15 @@ class TrackList extends React.Component {
             {rows}
           </TableBody>
         </Table>
+        <Dialog
+          modal
+          title="Loading..."
+          titleStyle={{ textAlign: 'center' }}
+          bodyStyle={{ textAlign: 'center' }}
+          open={this.props.tracks.status === Status.Dirty}
+        >
+          <CircularProgress mode="indeterminate" />
+        </Dialog>
       </div>
     );
   }
