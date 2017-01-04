@@ -3,8 +3,10 @@ use rustc_serialize::json::{ToJson, Json};
 use postgres;
 use uuid::Uuid;
 use std::fmt;
+use chrono::{NaiveDateTime, UTC, DateTime};
 
 use youtube;
+use youtube::HasThumbnail;
 use soundcloud;
 use error::Error;
 use super::{conn, PaginatedCollection};
@@ -15,6 +17,7 @@ pub enum Provider {
     SoundCloud,
     Raw
 }
+
 impl PartialEq for Provider {
     fn eq(&self, p: &Provider) -> bool {
         match *self {
@@ -24,6 +27,7 @@ impl PartialEq for Provider {
         }
     }
 }
+
 impl Provider {
     fn to_string(&self) -> String {
         match *self {
@@ -55,6 +59,49 @@ impl fmt::Display for Provider {
     }
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum State {
+    Alive,
+    Dead,
+}
+
+impl PartialEq for State {
+    fn eq(&self, p: &State) -> bool {
+        match *self {
+            State::Alive => match *p { State::Alive => true, _ => false },
+            State::Dead  => match *p { State::Dead  => true, _ => false },
+        }
+    }
+}
+
+impl State {
+    fn to_string(&self) -> String {
+        match *self {
+            State::Alive   => "alive",
+            State::Dead => "dead",
+        }.to_string()
+    }
+    pub fn new(str: String) -> State {
+        match str.as_ref() {
+            "alive" => State::Alive,
+            "dead"  => State::Dead,
+            _       => State::Dead,
+        }
+    }
+}
+
+impl ToJson for State {
+    fn to_json(&self) -> Json {
+        self.to_string().to_json()
+    }
+}
+
+impl fmt::Display for State {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "({})", self.to_string())
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Track {
     pub id:            Uuid,
@@ -67,6 +114,8 @@ pub struct Track {
     pub thumbnail_url: Option<String>,
     pub artwork_url:   Option<String>,
     pub duration:      i32,
+    pub published_at:  NaiveDateTime,
+    pub state:         State,
 }
 
 impl PartialEq for Track {
@@ -77,6 +126,7 @@ impl PartialEq for Track {
 
 impl ToJson for Track {
     fn to_json(&self) -> Json {
+        let published_at = DateTime::<UTC>::from_utc(self.published_at, UTC);
         let mut d = BTreeMap::new();
         d.insert("id".to_string()           , self.id.to_string().to_json());
         d.insert("provider".to_string()     , self.provider.to_json());
@@ -88,6 +138,8 @@ impl ToJson for Track {
         d.insert("thumbnail_url".to_string(), self.thumbnail_url.to_json());
         d.insert("artwork_url".to_string()  , self.artwork_url.to_json());
         d.insert("duration".to_string()     , self.duration.to_json());
+        d.insert("published_at".to_string() , published_at.to_rfc3339().to_json());
+        d.insert("state".to_string()        , self.state.to_json());
         Json::Object(d)
     }
 }
@@ -111,6 +163,8 @@ impl Track {
             thumbnail_url: None,
             artwork_url:   None,
             duration:      0,
+            published_at:  UTC::now().naive_utc(),
+            state:         State::Alive,
         }
     }
     pub fn from_yt_playlist_item(item: &youtube::PlaylistItem) -> Track {
@@ -132,8 +186,13 @@ impl Track {
         self.title         = video.snippet.title.to_string();
         self.description   = Some(video.snippet.description.to_string());
         self.artist        = Some(video.snippet.channelTitle.to_string());
-        self.thumbnail_url = Some(video.snippet.thumbnails["default"].url.to_string());
-        self.artwork_url   = Some(video.snippet.thumbnails["maxres"].url.to_string());
+        self.thumbnail_url = video.snippet.get_thumbnail_url();
+        self.artwork_url   = video.snippet.get_artwork_url();
+        match DateTime::parse_from_rfc3339(&video.snippet.publishedAt) {
+            Ok(published_at) => self.published_at = published_at.naive_utc(),
+            Err(_)           => (),
+        }
+        self.state = State::Alive;
         self
     }
 
@@ -144,8 +203,13 @@ impl Track {
         self.title         = item.snippet.title.to_string();
         self.description   = Some(item.snippet.description.to_string());
         self.artist        = Some(item.snippet.channelTitle.to_string());
-        self.thumbnail_url = Some(item.snippet.thumbnails["default"].url.to_string());
-        self.artwork_url   = Some(item.snippet.thumbnails["maxres"].url.to_string());
+        self.thumbnail_url = item.snippet.get_thumbnail_url();
+        self.artwork_url   = item.snippet.get_artwork_url();
+        match DateTime::parse_from_rfc3339(&item.snippet.publishedAt) {
+            Ok(published_at) => self.published_at = published_at.naive_utc(),
+            Err(_)           => (),
+        }
+        self.state = State::Alive;
         self
     }
 
@@ -156,9 +220,19 @@ impl Track {
         self.url           = track.permalink_url.to_string();
         self.title         = track.title.to_string();
         self.description   = Some(track.description.to_string());
-        self.artist        = track.artist.clone();
+        self.artist        = Some(track.user.username.clone());
         self.thumbnail_url = track.artwork_url.clone();
         self.artwork_url   = track.artwork_url.clone();
+        match DateTime::parse_from_str(&track.created_at, "%Y/%m/%d %H:%M:%S %z") {
+            Ok(published_at) => self.published_at = published_at.naive_utc(),
+            Err(_)           => (),
+        }
+        self.state = State::Alive;
+        self
+    }
+
+    pub fn disable(&mut self) -> &mut Track {
+        self.state = State::Dead;
         self
     }
 
@@ -175,7 +249,9 @@ impl Track {
                 artist:        row.get(6),
                 thumbnail_url: row.get(7),
                 artwork_url:   row.get(8),
-                duration:      row.get(9)
+                duration:      row.get(9),
+                published_at:  row.get(10),
+                state:         State::new(row.get(11)),
             };
             tracks.push(track)
         }
@@ -185,7 +261,8 @@ impl Track {
     pub fn find_by_id(id: &str) -> Result<Track, Error> {
         let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT id, provider, identifier, url, title, description,
-                                        artist, thumbnail_url, artwork_url, duration
+                                        artist, thumbnail_url, artwork_url, duration,
+                                        published_at, state
                                  FROM tracks WHERE id = $1").unwrap();
         let uuid   = try!(Uuid::parse_str(id).map_err(|_| Error::Unprocessable));
         let rows   = stmt.query(&[&uuid]).unwrap();
@@ -199,9 +276,11 @@ impl Track {
     pub fn find_by(provider: &Provider, identifier: &str) -> Result<Track, Error> {
         let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT id, provider, identifier, url, title, description,
-                                        artist, thumbnail_url, artwork_url, duration
-                                 FROM tracks WHERE provider = $1
-                                 AND identifier = $2").unwrap();
+                                        artist, thumbnail_url, artwork_url, duration,
+                                        published_at, state
+                                 FROM tracks
+                                 WHERE provider = $1 AND identifier = $2
+                                 ORDER BY published_at DESC").unwrap();
         let rows = stmt.query(&[&(*provider).to_string(), &identifier]).unwrap();
         let tracks = Track::rows_to_tracks(rows);
         if tracks.len() > 0 {
@@ -213,10 +292,12 @@ impl Track {
     pub fn find_by_entry_id(entry_id: Uuid) -> Vec<Track> {
         let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT t.id, t.provider, t.identifier, t.url, t.title, t.description,
-                                        t.artist, t.thumbnail_url, t.artwork_url, t.duration
+                                        t.artist, t.thumbnail_url, t.artwork_url,
+                                        t.duration, t.published_at, t.state
                                  FROM tracks t LEFT JOIN track_entries te
                                  ON t.id = te.track_id
-                                 WHERE te.entry_id = $1").unwrap();
+                                 WHERE te.entry_id = $1
+                                 ORDER BY t.published_at DESC").unwrap();
         let rows = stmt.query(&[&entry_id]).unwrap();
         Track::rows_to_tracks(rows)
     }
@@ -224,8 +305,12 @@ impl Track {
     pub fn find(page: i64, per_page: i64) -> PaginatedCollection<Track> {
         let conn = conn().unwrap();
         let stmt = conn.prepare("SELECT id, provider, identifier, url, title, description,
-                                        artist, thumbnail_url, artwork_url, duration
-                                 FROM tracks LIMIT $2 OFFSET $1").unwrap();
+                                        artist, thumbnail_url, artwork_url, duration,
+                                        published_at, state
+                                 FROM tracks
+                                 ORDER BY published_at DESC
+                                 LIMIT $2 OFFSET $1
+                                 ").unwrap();
         let offset = page * per_page;
         let rows   = stmt.query(&[&offset, &per_page]).unwrap();
         let tracks = Track::rows_to_tracks(rows);
@@ -271,7 +356,9 @@ impl Track {
                                  artist        = $7,
                                  thumbnail_url = $8,
                                  artwork_url   = $9,
-                                 duration      = $10
+                                 duration      = $10,
+                                 published_at  = $11,
+                                 state         = $12
                                  WHERE id = $1").unwrap();
         let result = stmt.query(&[&self.id,
                                   &self.provider.to_string(),
@@ -282,7 +369,10 @@ impl Track {
                                   &self.artist,
                                   &self.thumbnail_url,
                                   &self.artwork_url,
-                                  &self.duration]);
+                                  &self.duration,
+                                  &self.published_at,
+                                  &self.state.to_string(),
+        ]);
         match result {
             Ok(_)  => Ok(()),
             Err(_) => Err(Error::Unexpected)
