@@ -76,7 +76,7 @@ class TrackList extends React.Component {
     const breakLabel = <a href="">...</a>;
     return (
       <div>
-        <Table>
+        <Table selectable={false}>
           <TableHeader>
             <TableRow>
               <TableHeaderColumn colSpan="3" style={{ textAlign: 'center' }}>
