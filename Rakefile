@@ -45,7 +45,7 @@ namespace :db do
   desc "normalize track"
   task :normalize_tracks => :environment do
     Track.find_each do |track|
-      track.identifier.match /[a-zA-Z0-9\-\_]+/ do |md|
+      track.identifier.match(/[a-zA-Z0-9\-\_]+/) do |md|
         if md[0] != track.identifier
           puts "#{track.provider} id: #{track.identifier} -> #{md[0]}"
           track.update! identifier: md[0]
