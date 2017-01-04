@@ -38,16 +38,26 @@ pub struct Playlist {
 pub struct Track {
     pub id:            i32,
     pub created_at:    String,
-    pub user_id:       i32,
     pub title:         String,
     pub description:   String,
-    pub artist:        Option<String>,
+    pub user_id:       i32,
+    pub user:          User,
     pub permalink:     String,
     pub permalink_url: String,
     pub uri:           String,
     pub artwork_url:   Option<String>,
     pub duration:      i32,
     pub stream_url:    String,
+}
+
+#[derive(Debug, RustcDecodable, RustcEncodable)]
+pub struct User {
+    pub id:            i32,
+    pub username:      String,
+    pub permalink:     String,
+    pub uri:           String,
+    pub permalink_url: String,
+    pub avatar_url:    String,
 }
 
 pub fn fetch_track(id: &str) -> DecodeResult<Track> {
@@ -78,7 +88,6 @@ pub fn fetch_playlist(id: &str) -> DecodeResult<Playlist> {
 pub fn fetch_user_tracks(id: &str) -> DecodeResult<Vec<Track>> {
     let params = format!("client_id={}", *API_KEY);
     let url    = format!("{}/users/{}/tracks?{}", BASE_URL, id, params);
-    println!("{}", url);
     let client = Client::new();
     let mut res = client.get(&url)
                         .header(Connection::close())
