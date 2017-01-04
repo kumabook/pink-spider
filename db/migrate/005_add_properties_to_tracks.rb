@@ -1,4 +1,4 @@
-class AddPropertiesToTracks < ActiveRecord::Migration
+class AddPropertiesToTracks < ActiveRecord::Migration[4.2]
   def change
     add_column :tracks, :description  , :text
     add_column :tracks, :artist       , :string

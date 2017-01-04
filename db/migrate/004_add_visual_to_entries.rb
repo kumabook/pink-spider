@@ -1,4 +1,4 @@
-class AddVisualToEntries < ActiveRecord::Migration
+class AddVisualToEntries < ActiveRecord::Migration[4.2]
   def change
     add_column :entries, :title      , :string
     add_column :entries, :description, :string

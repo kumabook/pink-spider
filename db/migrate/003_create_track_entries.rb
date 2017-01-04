@@ -1,4 +1,4 @@
-class CreateTrackEntries < ActiveRecord::Migration
+class CreateTrackEntries < ActiveRecord::Migration[4.2]
   def self.up
     create_table :track_entries do |t|
       t.uuid :track_id, :null => false
