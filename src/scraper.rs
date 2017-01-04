@@ -155,12 +155,9 @@ fn extract_open_graph_prop<'a>(attr_name: &str, attrs: &Vec<Attribute>) -> Optio
 fn extract_identifier(value: &str, regex_str: &str) -> Option<String> {
     match Regex::new(regex_str) {
         Ok(re) => match re.captures(value) {
-            Some(cap) => match cap.at(1) {
-                Some(str) => {
-                    let strs: Vec<&str> = str.split('?').collect();
-                    return Some(strs[0].to_string())
-                },
-                None => None
+            Some(cap) => {
+                let strs: Vec<&str> = cap[1].split('?').collect();
+                return Some(strs[0].to_string())
             },
             None => None
         },
