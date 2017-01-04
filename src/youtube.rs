@@ -96,7 +96,7 @@ pub struct VideoSnippet {
     pub channelId:            String,
     pub channelTitle:         String,
     pub thumbnails:           BTreeMap<String, Thumbnail>,
-    pub tags:                 Vec<String>,
+    pub tags:                 Option<Vec<String>>,
     pub categoryId:           String,
     pub liveBroadcastContent: String,
 }
