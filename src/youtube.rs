@@ -22,6 +22,23 @@ lazy_static! {
     };
 }
 
+pub trait HasThumbnail {
+    fn get_thumbnails(&self) -> &BTreeMap<String, Thumbnail>;
+    fn get_thumbnail_url(&self) -> Option<String> {
+        self.get_thumbnails().get(        "default" ).map(|t| t.url.to_string())
+            .or(self.get_thumbnails().get("medium"  ).map(|t| t.url.to_string()))
+            .or(self.get_thumbnails().get("high"    ).map(|t| t.url.to_string()))
+            .or(self.get_thumbnails().get("standard").map(|t| t.url.to_string()))
+            .or(self.get_thumbnails().get("maxres"  ).map(|t| t.url.to_string()))
+    }
+    fn get_artwork_url(&self) -> Option<String> {
+        self.get_thumbnails().get(        "maxres"  ).map(|t| t.url.to_string())
+            .or(self.get_thumbnails().get("standard").map(|t| t.url.to_string()))
+            .or(self.get_thumbnails().get("high"    ).map(|t| t.url.to_string()))
+            .or(self.get_thumbnails().get("medium"  ).map(|t| t.url.to_string()))
+            .or(self.get_thumbnails().get("default" ).map(|t| t.url.to_string()))
+    }
+}
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct Thumbnail {
@@ -99,6 +116,18 @@ pub struct VideoSnippet {
     pub tags:                 Option<Vec<String>>,
     pub categoryId:           String,
     pub liveBroadcastContent: String,
+}
+
+impl HasThumbnail for PlaylistItemSnippet {
+    fn get_thumbnails(&self) -> &BTreeMap<String, Thumbnail> {
+        &self.thumbnails
+    }
+}
+
+impl HasThumbnail for VideoSnippet {
+    fn get_thumbnails(&self) -> &BTreeMap<String, Thumbnail> {
+        &self.thumbnails
+    }
 }
 
 pub fn fetch_playlist(id: &str) -> json::DecodeResult<PlaylistItemResponse> {
