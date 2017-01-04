@@ -170,12 +170,23 @@ pub fn update_track(req: &mut Request) -> IronResult<Response> {
     let mut track = try!(Track::find_by_id(&query_as_string(req, "track_id")));
     match param_as_string(req, "title") {
         Some(title) => track.title = title,
-        None        => println!("no title")
+        None        => (),
     }
     match param_as_string(req, "url") {
         Some(url) => track.url = url,
-        None      => println!("no url")
+        None      => (),
     }
+    let track = match track.provider {
+        Provider::YouTube => match youtube::fetch_video(&track.identifier) {
+            Ok(video) => track.update_with_yt_video(&video),
+            Err(_)    => track.disable(),
+        },
+        Provider::SoundCloud => match soundcloud::fetch_track(&track.identifier) {
+            Ok(sc_track) => track.update_with_sc_track(&sc_track),
+            Err(_)       => track.disable(),
+        },
+        _ => &mut track,
+    };
     try!(track.save());
     let res = track.to_json().to_string();
     Ok(Response::with((status::Ok, application_json(), res)))
