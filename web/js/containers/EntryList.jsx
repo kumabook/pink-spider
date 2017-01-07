@@ -1,6 +1,6 @@
-import React from 'react';
-import { connect } from 'react-redux';
-import { Link } from 'react-router';
+import React             from 'react';
+import { connect }       from 'react-redux';
+import { Link }          from 'react-router';
 import { push, replace } from 'react-router-redux';
 import {
   Table,
@@ -10,12 +10,13 @@ import {
   TableRow,
   TableRowColumn,
 } from 'material-ui/Table';
-import Dialog from 'material-ui/Dialog';
+import Dialog           from 'material-ui/Dialog';
 import CircularProgress from 'material-ui/CircularProgress';
-import ReactPaginate from 'react-paginate';
+import ReactPaginate    from 'react-paginate';
 import { fetchEntries } from '../actions';
-import { Status } from '../reducers/entries';
-import parseIntOr from '../utils/parseIntOr';
+import { Status }       from '../reducers/entries';
+import parseIntOr       from '../utils/parseIntOr';
+import datePrettify     from '../utils/datePrettify';
 
 import { DEFAULT_PER_PAGE } from '../api/pagination';
 
@@ -55,6 +56,9 @@ class EntryList extends React.Component {
           {entry.description}
         </TableRowColumn>
         <TableRowColumn>
+          {datePrettify(entry.updated_at)}
+        </TableRowColumn>
+        <TableRowColumn>
           <Link to={`entries/${entry.id}/tracks`}>
             {`${entry.tracks.length} tracks`}
           </Link>
@@ -68,7 +72,7 @@ class EntryList extends React.Component {
         <Table selectable={false}>
           <TableHeader>
             <TableRow>
-              <TableHeaderColumn colSpan="3" style={{ textAlign: 'center' }}>
+              <TableHeaderColumn colSpan="5" style={{ textAlign: 'center' }}>
                 <ReactPaginate
                   initialPage={this.props.page}
                   previousLabel={'previous'}
@@ -89,6 +93,7 @@ class EntryList extends React.Component {
               <TableHeaderColumn>thumbnail</TableHeaderColumn>
               <TableHeaderColumn>title</TableHeaderColumn>
               <TableHeaderColumn>description</TableHeaderColumn>
+              <TableHeaderColumn>updated at</TableHeaderColumn>
               <TableHeaderColumn>tracks</TableHeaderColumn>
             </TableRow>
           </TableHeader>
@@ -121,7 +126,7 @@ function mapDispatchToProps(dispatch, ownProps) {
   return {
     fetchEntries: (page, perPage) => dispatch(fetchEntries(page, perPage)),
     handlePageChange: (data) => {
-      const perPage = parseIntOr(ownProps.location.query.per_page, DEFAULT_PER_PAGE);
+      const perPage  = parseIntOr(ownProps.location.query.per_page, DEFAULT_PER_PAGE);
       const location = { pathname: 'entries', query: { page: data.selected, per_page: perPage } };
       if (parseIntOr(ownProps.location.query.page, 0) === data.selected) {
         dispatch(replace(location));
