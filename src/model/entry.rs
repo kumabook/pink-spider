@@ -3,15 +3,18 @@ use rustc_serialize::json::{ToJson, Json};
 use postgres;
 use uuid::Uuid;
 use error::Error;
+use chrono::{NaiveDateTime, UTC, DateTime};
 use super::{conn, PaginatedCollection};
 use Track;
 
-static PROPS: [&'static str; 6]  = ["id",
+static PROPS: [&'static str; 8]  = ["id",
                                     "url",
                                     "title",
                                     "description",
                                     "visual_url",
-                                    "locale"];
+                                    "locale",
+                                    "created_at",
+                                    "updated_at"];
 
 fn props_str() -> String {
     PROPS.join(",")
@@ -25,11 +28,15 @@ pub struct Entry {
     pub description: Option<String>,
     pub visual_url:  Option<String>,
     pub locale:      Option<String>,
+    pub created_at:  NaiveDateTime,
+    pub updated_at:  NaiveDateTime,
     pub tracks:      Vec<Track>,
 }
 
 impl ToJson for Entry {
     fn to_json(&self) -> Json {
+        let created_at   = DateTime::<UTC>::from_utc(self.created_at  , UTC);
+        let updated_at   = DateTime::<UTC>::from_utc(self.updated_at  , UTC);
         let mut d = BTreeMap::new();
         let tracks = Json::Array(self.tracks.iter().map(|x| x.to_json()).collect());
         d.insert("id".to_string()         , self.id.to_string().to_json());
@@ -38,6 +45,8 @@ impl ToJson for Entry {
         d.insert("description".to_string(), self.description.to_json());
         d.insert("visual_url".to_string() , self.visual_url.to_json());
         d.insert("locale".to_string()     , self.locale.to_json());
+        d.insert("created_at".to_string() , created_at.to_rfc3339().to_json());
+        d.insert("updated_at".to_string() , updated_at.to_rfc3339().to_json());
         d.insert("tracks".to_string()     , tracks);
         Json::Object(d)
     }
@@ -48,12 +57,14 @@ impl Entry {
         let mut entries = Vec::new();
         for row in rows.iter() {
             entries.push(Entry {
-                    id: row.get(0),
-                   url: row.get(1),
-                 title: row.get(2),
-           description: row.get(3),
-            visual_url: row.get(4),
-                locale: row.get(5),
+                id:          row.get(0),
+                url:         row.get(1),
+                title:       row.get(2),
+                description: row.get(3),
+                visual_url:  row.get(4),
+                locale:      row.get(5),
+                created_at:  row.get(6),
+                updated_at:  row.get(7),
                 tracks: Track::find_by_entry_id(row.get(0)),
             })
         }
@@ -89,7 +100,9 @@ impl Entry {
     pub fn find(page: i64, per_page: i64) -> PaginatedCollection<Entry> {
         let conn = conn().unwrap();
         let stmt = conn.prepare(
-            &format!("SELECT {} FROM entries LIMIT $2 OFFSET $1", props_str())).unwrap();
+            &format!("SELECT {} FROM entries
+                        ORDER BY updated_at DESC
+                        LIMIT $2 OFFSET $1", props_str())).unwrap();
         let offset = page * per_page;
         let rows = stmt.query(&[&offset, &per_page]).unwrap();
         let entries = Entry::rows_to_entries(rows);
@@ -117,13 +130,15 @@ impl Entry {
         let stmt = conn.prepare("INSERT INTO entries (url) VALUES ($1) RETURNING id").unwrap();
         for row in stmt.query(&[&url]).unwrap().iter() {
             let entry = Entry {
-                      id: row.get(0),
-                     url: url,
-                   title: None,
-             description: None,
-              visual_url: None,
-                  locale: None,
-                  tracks: Vec::new(),
+                id:          row.get(0),
+                url:         url,
+                title:       None,
+                description: None,
+                visual_url:  None,
+                locale:      None,
+                created_at:  UTC::now().naive_utc(),
+                updated_at:  UTC::now().naive_utc(),
+                tracks:      Vec::new(),
             };
             return Ok(entry);
         }
@@ -138,15 +153,26 @@ impl Entry {
         self.tracks.push(track);
     }
 
-    pub fn save(&self) -> Result<(), Error> {
+    pub fn save(&mut self) -> Result<(), Error> {
+        self.updated_at = UTC::now().naive_utc();
         let conn = conn().unwrap();
-        let stmt = conn.prepare("UPDATE entries SET url=$2, title=$3, description=$4, visual_url=$5, locale=$6 WHERE id = $1").unwrap();
+        let stmt = conn.prepare("UPDATE entries SET
+                                   url         = $2,
+                                   title       = $3,
+                                   description = $4,
+                                   visual_url  = $5,
+                                   locale      = $6,
+                                   created_at  = $7,
+                                   updated_at  = $8
+                                 WHERE id = $1").unwrap();
         let result = stmt.query(&[&self.id,
                                   &self.url,
                                   &self.title,
                                   &self.description,
                                   &self.visual_url,
-                                  &self.locale]);
+                                  &self.locale,
+                                  &self.created_at,
+                                  &self.updated_at]);
         try!(result);
         Ok(())
     }

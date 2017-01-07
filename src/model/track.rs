@@ -11,7 +11,7 @@ use soundcloud;
 use error::Error;
 use super::{conn, PaginatedCollection};
 
-static PROPS: [&'static str; 12]  = ["id",
+static PROPS: [&'static str; 14]  = ["id",
                                      "provider",
                                      "identifier",
                                      "url",
@@ -22,6 +22,8 @@ static PROPS: [&'static str; 12]  = ["id",
                                      "artwork_url",
                                      "duration",
                                      "published_at",
+                                     "created_at",
+                                     "updated_at",
                                      "state"];
 
 fn props_str(prefix: &str) -> String {
@@ -135,6 +137,8 @@ pub struct Track {
     pub artwork_url:   Option<String>,
     pub duration:      i32,
     pub published_at:  NaiveDateTime,
+    pub created_at:    NaiveDateTime,
+    pub updated_at:    NaiveDateTime,
     pub state:         State,
 }
 
@@ -147,6 +151,8 @@ impl PartialEq for Track {
 impl ToJson for Track {
     fn to_json(&self) -> Json {
         let published_at = DateTime::<UTC>::from_utc(self.published_at, UTC);
+        let created_at   = DateTime::<UTC>::from_utc(self.created_at  , UTC);
+        let updated_at   = DateTime::<UTC>::from_utc(self.updated_at  , UTC);
         let mut d = BTreeMap::new();
         d.insert("id".to_string()           , self.id.to_string().to_json());
         d.insert("provider".to_string()     , self.provider.to_json());
@@ -159,6 +165,8 @@ impl ToJson for Track {
         d.insert("artwork_url".to_string()  , self.artwork_url.to_json());
         d.insert("duration".to_string()     , self.duration.to_json());
         d.insert("published_at".to_string() , published_at.to_rfc3339().to_json());
+        d.insert("created_at".to_string()   , created_at.to_rfc3339().to_json());
+        d.insert("updated_at".to_string()   , updated_at.to_rfc3339().to_json());
         d.insert("state".to_string()        , self.state.to_json());
         Json::Object(d)
     }
@@ -184,6 +192,8 @@ impl Track {
             artwork_url:   None,
             duration:      0,
             published_at:  UTC::now().naive_utc(),
+            created_at:    UTC::now().naive_utc(),
+            updated_at:    UTC::now().naive_utc(),
             state:         State::Alive,
         }
     }
@@ -208,11 +218,11 @@ impl Track {
         self.artist        = Some(video.snippet.channelTitle.to_string());
         self.thumbnail_url = video.snippet.get_thumbnail_url();
         self.artwork_url   = video.snippet.get_artwork_url();
+        self.state         = State::Alive;
         match DateTime::parse_from_rfc3339(&video.snippet.publishedAt) {
             Ok(published_at) => self.published_at = published_at.naive_utc(),
             Err(_)           => (),
         }
-        self.state = State::Alive;
         self
     }
 
@@ -225,11 +235,11 @@ impl Track {
         self.artist        = Some(item.snippet.channelTitle.to_string());
         self.thumbnail_url = item.snippet.get_thumbnail_url();
         self.artwork_url   = item.snippet.get_artwork_url();
+        self.state         = State::Alive;
         match DateTime::parse_from_rfc3339(&item.snippet.publishedAt) {
             Ok(published_at) => self.published_at = published_at.naive_utc(),
             Err(_)           => (),
         }
-        self.state = State::Alive;
         self
     }
 
@@ -243,11 +253,11 @@ impl Track {
         self.artist        = Some(track.user.username.clone());
         self.thumbnail_url = track.artwork_url.clone();
         self.artwork_url   = track.artwork_url.clone();
+        self.state         = State::Alive;
         match DateTime::parse_from_str(&track.created_at, "%Y/%m/%d %H:%M:%S %z") {
             Ok(published_at) => self.published_at = published_at.naive_utc(),
             Err(_)           => (),
         }
-        self.state = State::Alive;
         self
     }
 
@@ -271,7 +281,9 @@ impl Track {
                 artwork_url:   row.get(8),
                 duration:      row.get(9),
                 published_at:  row.get(10),
-                state:         State::new(row.get(11)),
+                created_at:    row.get(11),
+                updated_at:    row.get(12),
+                state:         State::new(row.get(13)),
             };
             tracks.push(track)
         }
@@ -356,7 +368,8 @@ impl Track {
         }
     }
 
-    pub fn save(&self) -> Result<(), Error> {
+    pub fn save(&mut self) -> Result<(), Error> {
+        self.updated_at = UTC::now().naive_utc();
         let conn = conn().unwrap();
         let stmt = conn.prepare("UPDATE tracks SET
                                  provider      = $2,
@@ -369,7 +382,9 @@ impl Track {
                                  artwork_url   = $9,
                                  duration      = $10,
                                  published_at  = $11,
-                                 state         = $12
+                                 created_at    = $12,
+                                 updated_at    = $13,
+                                 state         = $14
                                  WHERE id = $1").unwrap();
         let result = stmt.query(&[&self.id,
                                   &self.provider.to_string(),
@@ -382,6 +397,8 @@ impl Track {
                                   &self.artwork_url,
                                   &self.duration,
                                   &self.published_at,
+                                  &self.created_at,
+                                  &self.updated_at,
                                   &self.state.to_string(),
         ]);
         match result {
