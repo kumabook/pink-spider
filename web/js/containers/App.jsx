@@ -1,9 +1,9 @@
-import React from 'react';
-import AppBar from 'material-ui/AppBar';
-import Drawer from 'material-ui/Drawer';
-import MenuItem from 'material-ui/MenuItem';
-import { connect } from 'react-redux';
-import { push } from 'react-router-redux';
+import React             from 'react';
+import AppBar            from 'material-ui/AppBar';
+import Drawer            from 'material-ui/Drawer';
+import MenuItem          from 'material-ui/MenuItem';
+import { connect }       from 'react-redux';
+import { push }          from 'react-router-redux';
 import { toggleDrawler } from '../actions';
 
 class App extends React.Component {

@@ -1,17 +1,24 @@
-import React    from 'react';
-import ReactDOM from 'react-dom';
-import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
-import { applyMiddleware, createStore } from 'redux';
-import { Provider } from 'react-redux';
+import React                   from 'react';
+import ReactDOM                from 'react-dom';
+import MuiThemeProvider        from 'material-ui/styles/MuiThemeProvider';
+import { Provider }            from 'react-redux';
 import { Router, hashHistory } from 'react-router';
-import thunk from 'redux-thunk';
-import { syncHistoryWithStore, routerMiddleware } from 'react-router-redux';
-import injectTapEventPlugin from 'react-tap-event-plugin';
+import thunk                   from 'redux-thunk';
+import injectTapEventPlugin    from 'react-tap-event-plugin';
+import {
+  applyMiddleware,
+  createStore,
+} from 'redux';
+import {
+  syncHistoryWithStore,
+  routerMiddleware,
+} from 'react-router-redux';
 
-import App       from './containers/App';
-import EntryList  from './containers/EntryList';
-import TrackList from './containers/TrackList';
-import reducers  from './reducers';
+import App         from './containers/App';
+import EntryList   from './containers/EntryList';
+import TrackList   from './containers/TrackList';
+import TrackDetail from './containers/TrackDetail';
+import reducers    from './reducers';
 
 injectTapEventPlugin();
 
