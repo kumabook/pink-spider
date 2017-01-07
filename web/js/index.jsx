@@ -23,6 +23,7 @@ const routes = [{
   path: '/',
   component: App,
   childRoutes: [
+    { path: 'tracks/:track_id', component: TrackDetail },
     { path: 'tracks', component: TrackList },
     { path: 'entries', component: EntryList },
     { path: 'entries/:entry_id/tracks', component: TrackList },
