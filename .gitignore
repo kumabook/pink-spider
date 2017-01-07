@@ -11,4 +11,13 @@
 /target/
 
 *~
+.DS_Store
 node_modules
+public/bundle.js
+public/bundle.js.map
+
+youtube.txt
+soundcloud.txt
+
+*.dump
+*.log
