@@ -15,9 +15,12 @@ import { fetchTrack, updateTrack } from '../actions';
 import tryGet                      from '../utils/tryGet';
 import datePrettify                from '../utils/datePrettify';
 
-const NO_IMAGE      = '/web/no_image.png';
-const DEAD_IMAGE    = '/web/dead_image.png';
-const YOUTUBE_IMAGE = '/web/youtube.png';
+const NO_IMAGE        = '/web/no_image.png';
+const DEAD_IMAGE      = '/web/dead_image.png';
+const images = {
+  YouTube: '/web/youtube.png',
+  SoundCloud: '/web/soundcloud.png',
+};
 
 class TrackDetail extends React.Component {
   static get propTypes() {
@@ -58,8 +61,8 @@ class TrackDetail extends React.Component {
       <Card>
         <CardHeader
           title={tryGet(this.props.item, 'artist', 'No Artist')}
-          subtitle={tryGet(this.props.item, 'provider', 'No Service')}
-          avatar={YOUTUBE_IMAGE}
+          subtitle={provider}
+          avatar={images[provider]}
         />
         <CardMedia style={style} overlay={overlay} >
           <img role="presentation" src={state === 'alive' ? artworkUrl : DEAD_IMAGE} />
