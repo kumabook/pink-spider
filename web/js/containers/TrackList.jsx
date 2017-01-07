@@ -1,5 +1,5 @@
-import React from 'react';
-import { connect } from 'react-redux';
+import React             from 'react';
+import { connect }       from 'react-redux';
 import { push, replace } from 'react-router-redux';
 import {
   Table,
@@ -9,17 +9,15 @@ import {
   TableRow,
   TableRowColumn,
 } from 'material-ui/Table';
-import RaisedButton from 'material-ui/RaisedButton';
-import Dialog from 'material-ui/Dialog';
-import CircularProgress from 'material-ui/CircularProgress';
-import ReactPaginate from 'react-paginate';
-import {
-  fetchTracks,
-  updateTrack,
-} from '../actions';
-import { Status } from '../reducers/tracks';
-import parseIntOr from '../utils/parseIntOr';
-import { DEFAULT_PER_PAGE } from '../api/pagination';
+import RaisedButton                 from 'material-ui/RaisedButton';
+import Dialog                       from 'material-ui/Dialog';
+import CircularProgress             from 'material-ui/CircularProgress';
+import ReactPaginate                from 'react-paginate';
+import { fetchTracks, updateTrack } from '../actions';
+import { Status }                   from '../reducers/tracks';
+import parseIntOr                   from '../utils/parseIntOr';
+import datePrettify                 from '../utils/datePrettify';
+import { DEFAULT_PER_PAGE }         from '../api/pagination';
 
 const NO_IMAGE   = '/web/no_image.png';
 const DEAD_IMAGE = '/web/dead_image.png';
@@ -30,7 +28,8 @@ class TrackList extends React.Component {
       tracks: React.PropTypes.object.isRequired,
       page: React.PropTypes.number,
       fetchTracks: React.PropTypes.func,
-      handleClick: React.PropTypes.func,
+      handleDetailButtonClick: React.PropTypes.func,
+      handleUpdateButtonClick: React.PropTypes.func,
       handlePageChange: React.PropTypes.func,
     };
   }
@@ -62,13 +61,24 @@ class TrackList extends React.Component {
           {track.title || `${track.provider} id: ${track.identifier}`}
         </TableRowColumn>
         <TableRowColumn>
-          {track.description}
-        </TableRowColumn>
-        <TableRowColumn>
           {track.artist}
         </TableRowColumn>
         <TableRowColumn>
-          <RaisedButton label="Update" primary onClick={() => this.props.handleClick(track)} />
+          {datePrettify(track.published_at)}
+        </TableRowColumn>
+        <TableRowColumn>
+          <RaisedButton
+            label="Detail"
+            primary
+            onClick={() => this.props.handleDetailButtonClick(track)}
+          />
+          <br />
+          <br />
+          <RaisedButton
+            label="Update"
+            primary
+            onClick={() => this.props.handleUpdateButtonClick(track)}
+          />
         </TableRowColumn>
       </TableRow>
     ));
@@ -79,7 +89,7 @@ class TrackList extends React.Component {
         <Table selectable={false}>
           <TableHeader>
             <TableRow>
-              <TableHeaderColumn colSpan="3" style={{ textAlign: 'center' }}>
+              <TableHeaderColumn colSpan="5" style={{ textAlign: 'center' }}>
                 <ReactPaginate
                   initialPage={this.props.page}
                   previousLabel={'previous'}
@@ -99,9 +109,9 @@ class TrackList extends React.Component {
             <TableRow>
               <TableHeaderColumn>thumbnail</TableHeaderColumn>
               <TableHeaderColumn>title</TableHeaderColumn>
-              <TableHeaderColumn>description</TableHeaderColumn>
               <TableHeaderColumn>artist</TableHeaderColumn>
-              <TableHeaderColumn>button</TableHeaderColumn>
+              <TableHeaderColumn>published at</TableHeaderColumn>
+              <TableHeaderColumn>buttons</TableHeaderColumn>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -136,7 +146,8 @@ function mapDispatchToProps(dispatch, ownProps) {
   const entryId = ownProps.params.entry_id;
   return {
     fetchTracks: () => dispatch(fetchTracks(page, undefined, entryId)),
-    handleClick: track => dispatch(updateTrack(track.id)),
+    handleDetailButtonClick: track => dispatch(push({ pathname: `tracks/${track.id}` })),
+    handleUpdateButtonClick: track => dispatch(updateTrack(track.id)),
     handlePageChange: (data) => {
       const path = entryId ? `entries/${entryId}/tracks` : 'tracks';
       const location = { pathname: path, query: { page: data.selected, per_page: perPage } };
