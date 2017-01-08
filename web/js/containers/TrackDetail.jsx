@@ -18,16 +18,16 @@ import datePrettify                from '../utils/datePrettify';
 const NO_IMAGE        = '/web/no_image.png';
 const DEAD_IMAGE      = '/web/dead_image.png';
 const images = {
-  YouTube: '/web/youtube.png',
+  YouTube:    '/web/youtube.png',
   SoundCloud: '/web/soundcloud.png',
 };
 
 class TrackDetail extends React.Component {
   static get propTypes() {
     return {
-      item: React.PropTypes.object.isRequired,
-      status: React.PropTypes.string.isRequired,
-      fetchTrackIfNeeded: React.PropTypes.func,
+      item:                    React.PropTypes.object.isRequired,
+      status:                  React.PropTypes.string.isRequired,
+      fetchTrackIfNeeded:      React.PropTypes.func,
       handleUpdateButtonClick: React.PropTypes.func,
     };
   }
@@ -55,7 +55,7 @@ class TrackDetail extends React.Component {
     );
     const style = {
       margin: 'auto',
-      width: 'calc(75vh)',
+      width:  'calc(75vh)',
     };
     return (
       <Card>

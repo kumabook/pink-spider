@@ -3,8 +3,8 @@ import { LOCATION_CHANGE } from 'react-router-redux';
 import parseIntOr          from '../utils/parseIntOr';
 
 export const Status = {
-  Normal: 'Normal',
-  Dirty: 'Dirty',
+  Normal:   'Normal',
+  Dirty:    'Dirty',
   Fetching: 'Fetching',
 };
 

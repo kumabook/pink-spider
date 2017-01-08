@@ -25,9 +25,9 @@ const NO_IMAGE = '/web/no_image.png';
 class EntryList extends React.Component {
   static get propTypes() {
     return {
-      entries: React.PropTypes.object.isRequired,
-      page: React.PropTypes.number,
-      fetchEntries: React.PropTypes.func,
+      entries:          React.PropTypes.object.isRequired,
+      page:             React.PropTypes.number,
+      fetchEntries:     React.PropTypes.func,
       handlePageChange: React.PropTypes.func,
     };
   }
@@ -118,13 +118,13 @@ class EntryList extends React.Component {
 function mapStateToProps(state, ownProps) {
   return {
     entries: state.entries,
-    page: parseIntOr(ownProps.location.query.page, 0),
+    page:    parseIntOr(ownProps.location.query.page, 0),
   };
 }
 
 function mapDispatchToProps(dispatch, ownProps) {
   return {
-    fetchEntries: (page, perPage) => dispatch(fetchEntries(page, perPage)),
+    fetchEntries:     (page, perPage) => dispatch(fetchEntries(page, perPage)),
     handlePageChange: (data) => {
       const perPage  = parseIntOr(ownProps.location.query.per_page, DEFAULT_PER_PAGE);
       const location = { pathname: 'entries', query: { page: data.selected, per_page: perPage } };

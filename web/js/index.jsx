@@ -27,8 +27,8 @@ const store = createStore(reducers, applyMiddleware(middleware, thunk));
 
 const history = syncHistoryWithStore(hashHistory, store);
 const routes = [{
-  path: '/',
-  component: App,
+  path:        '/',
+  component:   App,
   childRoutes: [
     { path: 'tracks/:track_id', component: TrackDetail },
     { path: 'tracks', component: TrackList },

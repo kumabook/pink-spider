@@ -3,8 +3,8 @@ import { LOCATION_CHANGE } from 'react-router-redux';
 import parseIntOr          from '../utils/parseIntOr';
 
 export const Status = {
-  Normal: 'Normal',
-  Dirty: 'Dirty',
+  Normal:   'Normal',
+  Dirty:    'Dirty',
   Fetching: 'Fetching',
 };
 
@@ -26,10 +26,12 @@ const status = (state = Status.Dirty, action) => {
   }
 };
 
-const entryId = (state = 0, action) => {
+const entryId = (state = '', action) => {
   switch (action.type) {
     case 'FETCH_TRACKS':
       return action.entryId;
+    case 'RECEIVE_TRACKS':
+      return state;
     default:
       return state;
   }

@@ -2,8 +2,8 @@ import { combineReducers } from 'redux';
 import { LOCATION_CHANGE } from 'react-router-redux';
 
 export const Status = {
-  Normal: 'Normal',
-  Dirty: 'Dirty',
+  Normal:   'Normal',
+  Dirty:    'Dirty',
   Fetching: 'Fetching',
 };
 

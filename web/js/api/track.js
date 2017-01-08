@@ -2,7 +2,7 @@ import axios from 'axios';
 import { DEFAULT_PAGE, DEFAULT_PER_PAGE } from './pagination';
 
 export default {
-  show: id => axios.get(`/tracks/${id}`).then(response => response.data),
+  show:  id => axios.get(`/tracks/${id}`).then(response => response.data),
   index: (page = DEFAULT_PAGE, perPage = DEFAULT_PER_PAGE) => axios.get('/tracks', {
     params: {
       page,

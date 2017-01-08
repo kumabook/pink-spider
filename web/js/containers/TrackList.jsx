@@ -25,12 +25,12 @@ const DEAD_IMAGE = '/web/dead_image.png';
 class TrackList extends React.Component {
   static get propTypes() {
     return {
-      tracks: React.PropTypes.object.isRequired,
-      page: React.PropTypes.number,
-      fetchTracks: React.PropTypes.func,
+      tracks:                  React.PropTypes.object.isRequired,
+      page:                    React.PropTypes.number,
+      fetchTracks:             React.PropTypes.func,
       handleDetailButtonClick: React.PropTypes.func,
       handleUpdateButtonClick: React.PropTypes.func,
-      handlePageChange: React.PropTypes.func,
+      handlePageChange:        React.PropTypes.func,
     };
   }
   static getThumbnailUrl(track) {
@@ -134,8 +134,8 @@ class TrackList extends React.Component {
 
 function mapStateToProps(state, ownProps) {
   return {
-    tracks: state.tracks,
-    page: parseIntOr(ownProps.location.query.page, 0),
+    tracks:   state.tracks,
+    page:     parseIntOr(ownProps.location.query.page, 0),
     entry_id: ownProps.params.entry_id,
   };
 }
@@ -145,10 +145,10 @@ function mapDispatchToProps(dispatch, ownProps) {
   const perPage = parseIntOr(ownProps.location.query.per_page, DEFAULT_PER_PAGE);
   const entryId = ownProps.params.entry_id;
   return {
-    fetchTracks: () => dispatch(fetchTracks(page, undefined, entryId)),
+    fetchTracks:             () => dispatch(fetchTracks(page, undefined, entryId)),
     handleDetailButtonClick: track => dispatch(push({ pathname: `tracks/${track.id}` })),
     handleUpdateButtonClick: track => dispatch(updateTrack(track.id)),
-    handlePageChange: (data) => {
+    handlePageChange:        (data) => {
       const path = entryId ? `entries/${entryId}/tracks` : 'tracks';
       const location = { pathname: path, query: { page: data.selected, per_page: perPage } };
       if (parseIntOr(ownProps.location.query.page, 0) === data.selected) {
