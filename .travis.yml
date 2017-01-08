@@ -8,7 +8,7 @@ matrix:
 script:
   - cargo build --verbose
   - cargo test --verbose
-  - nvm install 7.2.0
+  - nvm install 7.4.0
   - npm install -g yarn
   - yarn install
   - npm run lint
