@@ -31,7 +31,7 @@ const entryId = (state = '', action) => {
     case 'FETCH_TRACKS':
       return action.entryId;
     case 'RECEIVE_TRACKS':
-      return state;
+      return action.entryId;
     default:
       return state;
   }
