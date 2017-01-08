@@ -6,9 +6,13 @@ default: &default
 development:
   <<: *default
   database: pink_spider_development
+  username: pink_spider
+  password: pink_spider
 test:
   <<: *default
   database: pink_spider_test
+  username: pink_spider
+  password: pink_spider
 
 production:
   <<: *default
