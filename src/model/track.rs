@@ -11,13 +11,14 @@ use soundcloud;
 use error::Error;
 use super::{conn, PaginatedCollection};
 
-static PROPS: [&'static str; 14]  = ["id",
+static PROPS: [&'static str; 15]  = ["id",
                                      "provider",
                                      "identifier",
+                                     "owner_id",
+                                     "owner_name",
                                      "url",
                                      "title",
                                      "description",
-                                     "artist",
                                      "thumbnail_url",
                                      "artwork_url",
                                      "duration",
@@ -129,10 +130,11 @@ pub struct Track {
     pub id:            Uuid,
     pub provider:      Provider,
     pub identifier:    String,
+    pub owner_id:      Option<String>,
+    pub owner_name:    Option<String>,
     pub url:           String,
     pub title:         String,
     pub description:   Option<String>,
-    pub artist:        Option<String>,
     pub thumbnail_url: Option<String>,
     pub artwork_url:   Option<String>,
     pub duration:      i32,
@@ -157,10 +159,11 @@ impl ToJson for Track {
         d.insert("id".to_string()           , self.id.to_string().to_json());
         d.insert("provider".to_string()     , self.provider.to_json());
         d.insert("identifier".to_string()   , self.identifier.to_json());
+        d.insert("owner_id".to_string()     , self.owner_id.to_json());
+        d.insert("owner_name".to_string()   , self.owner_name.to_json());
         d.insert("url".to_string()          , self.url.to_json());
         d.insert("title".to_string()        , self.title.to_json());
         d.insert("description".to_string()  , self.description.to_json());
-        d.insert("artist".to_string()       , self.artist.to_json());
         d.insert("thumbnail_url".to_string(), self.thumbnail_url.to_json());
         d.insert("artwork_url".to_string()  , self.artwork_url.to_json());
         d.insert("duration".to_string()     , self.duration.to_json());
@@ -184,10 +187,11 @@ impl Track {
             id:            Uuid::new_v4(),
             provider:      provider,
             identifier:    identifier,
+            owner_id:      None,
+            owner_name:    None,
             url:           "".to_string(),
             title:         "".to_string(),
             description:   None,
-            artist:        None,
             thumbnail_url: None,
             artwork_url:   None,
             duration:      0,
@@ -212,10 +216,11 @@ impl Track {
     pub fn update_with_yt_video(&mut self, video: &youtube::Video) -> &mut Track {
         self.provider      = Provider::YouTube;
         self.identifier    = video.id.to_string();
+        self.owner_id      = Some(video.snippet.channelId.to_string());
+        self.owner_name    = Some(video.snippet.channelTitle.to_string());
         self.url           = format!("https://www.youtube.com/watch/?v={}", video.id);
         self.title         = video.snippet.title.to_string();
         self.description   = Some(video.snippet.description.to_string());
-        self.artist        = Some(video.snippet.channelTitle.to_string());
         self.thumbnail_url = video.snippet.get_thumbnail_url();
         self.artwork_url   = video.snippet.get_artwork_url();
         self.state         = State::Alive;
@@ -229,10 +234,11 @@ impl Track {
     pub fn update_with_yt_playlist_item(&mut self, item: &youtube::PlaylistItem) -> &mut Track {
         self.provider      = Provider::YouTube;
         self.identifier    = item.id.to_string();
+        self.owner_id      = Some(item.snippet.channelId.to_string());
+        self.owner_name    = Some(item.snippet.channelTitle.to_string());
         self.url           = format!("https://www.youtube.com/watch/?v={}", item.id);
         self.title         = item.snippet.title.to_string();
         self.description   = Some(item.snippet.description.to_string());
-        self.artist        = Some(item.snippet.channelTitle.to_string());
         self.thumbnail_url = item.snippet.get_thumbnail_url();
         self.artwork_url   = item.snippet.get_artwork_url();
         self.state         = State::Alive;
@@ -247,10 +253,11 @@ impl Track {
     pub fn update_with_sc_track(&mut self, track: &soundcloud::Track) -> &mut Track {
         self.provider      = Provider::SoundCloud;
         self.identifier    = track.id.to_string();
+        self.owner_id      = Some(track.user.id.to_string());
+        self.owner_name    = Some(track.user.username.clone());
         self.url           = track.permalink_url.to_string();
         self.title         = track.title.to_string();
         self.description   = Some(track.description.to_string());
-        self.artist        = Some(track.user.username.clone());
         self.thumbnail_url = track.artwork_url.clone();
         self.artwork_url   = track.artwork_url.clone();
         self.state         = State::Alive;
@@ -273,17 +280,18 @@ impl Track {
                 id:            row.get(0),
                 provider:      Provider::new(row.get(1)),
                 identifier:    row.get(2),
-                url:           row.get(3),
-                title:         row.get(4),
-                description:   row.get(5),
-                artist:        row.get(6),
-                thumbnail_url: row.get(7),
-                artwork_url:   row.get(8),
-                duration:      row.get(9),
-                published_at:  row.get(10),
-                created_at:    row.get(11),
-                updated_at:    row.get(12),
-                state:         State::new(row.get(13)),
+                owner_id:      row.get(3),
+                owner_name:    row.get(4),
+                url:           row.get(5),
+                title:         row.get(6),
+                description:   row.get(7),
+                thumbnail_url: row.get(8),
+                artwork_url:   row.get(9),
+                duration:      row.get(10),
+                published_at:  row.get(11),
+                created_at:    row.get(12),
+                updated_at:    row.get(13),
+                state:         State::new(row.get(14)),
             };
             tracks.push(track)
         }
@@ -374,25 +382,27 @@ impl Track {
         let stmt = conn.prepare("UPDATE tracks SET
                                  provider      = $2,
                                  identifier    = $3,
-                                 url           = $4,
-                                 title         = $5,
-                                 description   = $6,
-                                 artist        = $7,
-                                 thumbnail_url = $8,
-                                 artwork_url   = $9,
-                                 duration      = $10,
-                                 published_at  = $11,
-                                 created_at    = $12,
-                                 updated_at    = $13,
-                                 state         = $14
+                                 owner_id      = $4,
+                                 owner_name    = $5,
+                                 url           = $6,
+                                 title         = $7,
+                                 description   = $8,
+                                 thumbnail_url = $9,
+                                 artwork_url   = $10,
+                                 duration      = $11,
+                                 published_at  = $12,
+                                 created_at    = $13,
+                                 updated_at    = $14,
+                                 state         = $15
                                  WHERE id = $1").unwrap();
         let result = stmt.query(&[&self.id,
                                   &self.provider.to_string(),
                                   &self.identifier,
+                                  &self.owner_id,
+                                  &self.owner_name,
                                   &self.url,
                                   &self.title,
                                   &self.description,
-                                  &self.artist,
                                   &self.thumbnail_url,
                                   &self.artwork_url,
                                   &self.duration,

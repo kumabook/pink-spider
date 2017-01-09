@@ -1,7 +1,8 @@
 class AddPropertiesToTracks < ActiveRecord::Migration[4.2]
   def change
     add_column :tracks, :description  , :text
-    add_column :tracks, :artist       , :string
+    add_column :tracks, :owner_id     , :string
+    add_column :tracks, :owner_name   , :string
     add_column :tracks, :thumbnail_url, :string
     add_column :tracks, :artwork_url  , :string
     add_column :tracks, :duration     , :integer, null: false, default: 0
