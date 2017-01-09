@@ -12,6 +12,7 @@ import RaisedButton                from 'material-ui/RaisedButton';
 import { connect }                 from 'react-redux';
 import { Status }                  from '../reducers/track';
 import { fetchTrack, updateTrack } from '../actions';
+import { getUrl, getOwnerUrl }     from '../model/Track';
 import tryGet                      from '../utils/tryGet';
 import datePrettify                from '../utils/datePrettify';
 
@@ -40,9 +41,12 @@ class TrackDetail extends React.Component {
   render() {
     const id          = tryGet(this.props.item, 'id', 'unknown id');
     const state       = tryGet(this.props.item, 'state', 'unknown state');
+    const ownerId     = tryGet(this.props.item, 'owner_id', 'unknown');
+    const ownerName   = tryGet(this.props.item, 'owner_name', 'unknown');
     const title       = tryGet(this.props.item, 'title', 'No Title');
     const description = tryGet(this.props.item, 'description', 'No Description');
     const provider    = tryGet(this.props.item, 'provider', 'No Service');
+    const identifier  = tryGet(this.props.item, 'identifier', 'No ID');
     const artworkUrl  = tryGet(this.props.item, 'artwork_url', NO_IMAGE);
     const publishedAt = datePrettify(tryGet(this.props.item, 'published_at', null));
     const createdAt   = datePrettify(tryGet(this.props.item, 'created_at', null));
@@ -57,11 +61,13 @@ class TrackDetail extends React.Component {
       margin: 'auto',
       width:  'calc(75vh)',
     };
+    const ownerUrl = getOwnerUrl(this.props.item);
+    const ownerLink = <a href={ownerUrl}>{tryGet(this.props.item, 'owner_name', 'Unknown')}</a>;
     return (
       <Card>
         <CardHeader
-          title={tryGet(this.props.item, 'artist', 'No Artist')}
-          subtitle={provider}
+          title={ownerLink}
+          subtitle={tryGet(this.props.item, 'owner_id', 'Unknown')}
           avatar={images[provider]}
         />
         <CardMedia style={style} overlay={overlay} >
@@ -72,7 +78,7 @@ class TrackDetail extends React.Component {
           <RaisedButton
             primary
             label={`View on ${provider}`}
-            href={this.props.item.url}
+            href={getUrl(this.props.item)}
           />
           <RaisedButton
             primary
@@ -83,7 +89,12 @@ class TrackDetail extends React.Component {
         <CardText>
           <List>
             <ListItem primaryText="id" secondaryText={id} />
+            <ListItem primaryText="title" secondaryText={title} />
             <ListItem primaryText="state" secondaryText={state} />
+            <ListItem primaryText="provider" secondaryText={provider} />
+            <ListItem primaryText="identifier" secondaryText={identifier} />
+            <ListItem primaryText="owner id" secondaryText={ownerId} />
+            <ListItem primaryText="owner name" secondaryText={ownerName} />
             <ListItem primaryText="published" secondaryText={publishedAt} />
             <ListItem primaryText="created" secondaryText={createdAt} />
             <ListItem primaryText="updated" secondaryText={updatedAt} />
