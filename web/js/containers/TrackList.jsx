@@ -18,6 +18,7 @@ import { Status }                   from '../reducers/tracks';
 import parseIntOr                   from '../utils/parseIntOr';
 import datePrettify                 from '../utils/datePrettify';
 import { DEFAULT_PER_PAGE }         from '../api/pagination';
+import { getUrl }                   from '../model/Track';
 
 const NO_IMAGE   = '/web/no_image.png';
 const DEAD_IMAGE = '/web/dead_image.png';
@@ -49,7 +50,7 @@ class TrackList extends React.Component {
     const rows = this.props.tracks.items.map(track => (
       <TableRow key={track.id}>
         <TableRowColumn>
-          <a href={track.url}>
+          <a href={getUrl(track.url)}>
             <img
               src={TrackList.getThumbnailUrl(track)}
               role="presentation"
