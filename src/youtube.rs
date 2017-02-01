@@ -7,6 +7,7 @@ use rustc_serialize::json;
 use std::fs::File;
 
 static BASE_URL:    &'static str = "https://www.googleapis.com/youtube/v3";
+static MAX_RESULTS: i32          = 50;
 lazy_static! {
     static ref API_KEY: String = {
         let opt_key = env::var("YOUTUBE_API_KEY");
@@ -58,7 +59,7 @@ impl PartialEq for Thumbnail {
 pub struct PlaylistItemResponse {
     pub kind:          String,
     pub etag:          String,
-    pub nextPageToken: String,
+    pub nextPageToken: Option<String>,
     pub pageInfo:      BTreeMap<String, i32>,
     pub items:         Vec<PlaylistItem>,
 }
@@ -131,13 +132,15 @@ impl HasThumbnail for VideoSnippet {
 }
 
 pub fn fetch_playlist(id: &str) -> json::DecodeResult<PlaylistItemResponse> {
-    let params = format!("key={}&part=snippet&playlistId={}", *API_KEY, id);
+    let params = format!("key={}&part=snippet&playlistId={}&maxResults={}",
+                         *API_KEY,
+                         id,
+                         MAX_RESULTS);
     let url    = format!("{}/{}?{}", BASE_URL, "playlistItems", params);
     let client = Client::new();
     let mut res = client.get(&url)
                         .header(Connection::close())
                         .send().unwrap();
-
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
     json::decode::<PlaylistItemResponse>(&body)
