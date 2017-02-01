@@ -225,7 +225,9 @@ fn extract_tracks_from_url(url: String) -> Vec<Track> {
 
 #[cfg(test)]
 mod test {
+    use super::extract;
     use super::extract_identifier;
+    use Provider;
 
     #[test]
     fn test_extract_identifier() {
@@ -251,5 +253,15 @@ mod test {
             Some(identifier) => assert_eq!(identifier, "PLy8LZ8FM-o0ViuGAF68RAaXkQ8V-3dbTX".to_string()),
             None             => assert!(false)
         }
+    }
+    #[test]
+    fn test_extract() {
+        let url = "http://spincoaster.com/spincoaster-breakout-2017";
+        let product = extract(url).unwrap();
+        for track in product.tracks.iter() {
+            assert_eq!(track.provider, Provider::YouTube)
+        }
+        assert_eq!(product.tracks.len(), 15);
+        assert!(true);
     }
 }
