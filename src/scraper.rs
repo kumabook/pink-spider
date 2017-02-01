@@ -210,7 +210,6 @@ fn extract_tracks_from_url(url: String) -> Vec<Track> {
     }
     match extract_identifier(&decoded, SOUNDCLOUD_USER) {
         Some(identifier) => {
-            print!("user {}", identifier);
             return match soundcloud::fetch_user_tracks(&identifier) {
                 Ok(tracks) => tracks.iter()
                                     .map(|ref t| Track::from_sc_track(t))
