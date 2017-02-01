@@ -13,3 +13,5 @@ script:
   - yarn install
   - npm run lint
   - npm test
+env:
+  secure: arNYn6yIGZnbEJGy9WhpKlhWyOT22ZF8hjBqCXNl8itFv4qBgl8WKvn4erx+T45vLTe95FNCZKoDdmg386yAwhy6FEbdDj1DTudP4zU0go5yAH28LNmcN2cpnjFoP/sFOmYnttoEXGMRnF0aFil65f+v0f4xviOzz0Pdbzx8dpw=
