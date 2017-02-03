@@ -26,15 +26,18 @@ use error::Error;
 
 use url::percent_encoding::{percent_decode};
 
-static YOUTUBE_EMBED:       &'static str = r"www.youtube.com/embed/([a-zA-Z0-9_-].+)";
-static YOUTUBE_LIST:        &'static str = r"www.youtube.com/embed/videoseries\?list=([a-zA-Z0-9_-]+)";
-static YOUTUBE_WATCH:       &'static str = r"www.youtube.com/watch\?v=([a-zA-Z0-9_-]+)";
-static SOUNDCLOUD_TRACK:    &'static str = r"api.soundcloud.com/tracks/([a-zA-Z0-9_-]+)";
-static SOUNDCLOUD_PLAYLIST: &'static str = r"api.soundcloud.com/playlists/([a-zA-Z0-9_-]+)";
-static SOUNDCLOUD_USER:     &'static str = r"api.soundcloud.com/users/([a-zA-Z0-9_-]+)";
-static SPOTIFY_TRACK:       &'static str = r"open.spotify.com/track/([a-zA-Z0-9_-]+)";
-static SPOTIFY_TRACK_OPEN:  &'static str = r"spotify:track:([a-zA-Z0-9_-]+)";
-static SPOTIFY_PLAYLIST:    &'static str = r"(spotify:user:[a-zA-Z0-9_-]+:playlist:[a-zA-Z0-9_-]+)";
+static APPLE_MUSIC_SONG:     &'static str = r"tools.applemusic.com/embed/v1/song/([a-zA-Z0-9_-]+)";
+static APPLE_MUSIC_ALBUM:    &'static str = r"tools.applemusic.com/embed/v1/album/([a-zA-Z0-9_-]+)";
+static APPLE_MUSIC_PLAYLIST: &'static str = r"tools.applemusic.com/embed/v1/playlist/pl.([a-zA-Z0-9_-]+)";
+static YOUTUBE_EMBED:        &'static str = r"www.youtube.com/embed/([a-zA-Z0-9_-].+)";
+static YOUTUBE_LIST:         &'static str = r"www.youtube.com/embed/videoseries\?list=([a-zA-Z0-9_-]+)";
+static YOUTUBE_WATCH:        &'static str = r"www.youtube.com/watch\?v=([a-zA-Z0-9_-]+)";
+static SOUNDCLOUD_TRACK:     &'static str = r"api.soundcloud.com/tracks/([a-zA-Z0-9_-]+)";
+static SOUNDCLOUD_PLAYLIST:  &'static str = r"api.soundcloud.com/playlists/([a-zA-Z0-9_-]+)";
+static SOUNDCLOUD_USER:      &'static str = r"api.soundcloud.com/users/([a-zA-Z0-9_-]+)";
+static SPOTIFY_TRACK:        &'static str = r"open.spotify.com/track/([a-zA-Z0-9_-]+)";
+static SPOTIFY_TRACK_OPEN:   &'static str = r"spotify:track:([a-zA-Z0-9_-]+)";
+static SPOTIFY_PLAYLIST:     &'static str = r"(spotify:user:[a-zA-Z0-9_-]+:playlist:[a-zA-Z0-9_-]+)";
 
 #[derive(Debug)]
 pub struct ScraperProduct {
@@ -203,6 +206,27 @@ fn fetch_spotify_track(identifier: String) -> Vec<Track> {
 
 fn extract_tracks_from_url(url: String) -> Vec<Track> {
     let decoded = percent_decode(url.as_bytes()).decode_utf8_lossy().into_owned();
+
+    match extract_identifier(&decoded, APPLE_MUSIC_SONG) {
+        Some(identifier) => {
+            return vec![Track::new(Provider::AppleMusic, identifier)]
+        },
+        None => ()
+    }
+    match extract_identifier(&decoded, APPLE_MUSIC_ALBUM) {
+        Some(identifier) => {
+            // todo: fetch songs
+            return vec![]
+        },
+        None => ()
+    }
+    match extract_identifier(&decoded, APPLE_MUSIC_PLAYLIST) {
+        Some(identifier) => {
+            // todo: fetch songs
+            return vec![]
+        },
+        None => ()
+    }
     match extract_identifier(&decoded, YOUTUBE_WATCH) {
         Some(identifier) => {
             return vec![Track::new(Provider::YouTube, identifier)]
