@@ -24,20 +24,22 @@ lazy_static! {
 }
 
 pub trait HasThumbnail {
-    fn get_thumbnails(&self) -> &BTreeMap<String, Thumbnail>;
+    fn get_thumbnails(&self) -> BTreeMap<String, Thumbnail>;
     fn get_thumbnail_url(&self) -> Option<String> {
-        self.get_thumbnails().get(        "default" ).map(|t| t.url.to_string())
-            .or(self.get_thumbnails().get("medium"  ).map(|t| t.url.to_string()))
-            .or(self.get_thumbnails().get("high"    ).map(|t| t.url.to_string()))
-            .or(self.get_thumbnails().get("standard").map(|t| t.url.to_string()))
-            .or(self.get_thumbnails().get("maxres"  ).map(|t| t.url.to_string()))
+        let thumbs = self.get_thumbnails();
+        thumbs.get(         "default").map(|t| t.url.to_string())
+            .or(thumbs.get("medium"  ).map(|t| t.url.to_string()))
+            .or(thumbs.get("high"    ).map(|t| t.url.to_string()))
+            .or(thumbs.get("standard").map(|t| t.url.to_string()))
+            .or(thumbs.get("maxres"  ).map(|t| t.url.to_string()))
     }
     fn get_artwork_url(&self) -> Option<String> {
-        self.get_thumbnails().get(        "maxres"  ).map(|t| t.url.to_string())
-            .or(self.get_thumbnails().get("standard").map(|t| t.url.to_string()))
-            .or(self.get_thumbnails().get("high"    ).map(|t| t.url.to_string()))
-            .or(self.get_thumbnails().get("medium"  ).map(|t| t.url.to_string()))
-            .or(self.get_thumbnails().get("default" ).map(|t| t.url.to_string()))
+        let thumbs = self.get_thumbnails();
+        thumbs.get(          "maxres").map(|t| t.url.to_string())
+            .or(thumbs.get("standard").map(|t| t.url.to_string()))
+            .or(thumbs.get("high"    ).map(|t| t.url.to_string()))
+            .or(thumbs.get("medium"  ).map(|t| t.url.to_string()))
+            .or(thumbs.get("default" ).map(|t| t.url.to_string()))
     }
 }
 
@@ -81,7 +83,7 @@ pub struct PlaylistItemSnippet {
     pub publishedAt:   String,
     pub channelId:     String,
     pub channelTitle:  String,
-    pub thumbnails:    BTreeMap<String, Thumbnail>,
+    pub thumbnails:    Option<BTreeMap<String, Thumbnail>>,
     pub position:      i32,
     pub playlistId:    String,
     pub resourceId:    BTreeMap<String, String>
@@ -113,21 +115,21 @@ pub struct VideoSnippet {
     pub publishedAt:          String,
     pub channelId:            String,
     pub channelTitle:         String,
-    pub thumbnails:           BTreeMap<String, Thumbnail>,
+    pub thumbnails:           Option<BTreeMap<String, Thumbnail>>,
     pub tags:                 Option<Vec<String>>,
     pub categoryId:           String,
     pub liveBroadcastContent: String,
 }
 
 impl HasThumbnail for PlaylistItemSnippet {
-    fn get_thumbnails(&self) -> &BTreeMap<String, Thumbnail> {
-        &self.thumbnails
+    fn get_thumbnails(&self) -> BTreeMap<String, Thumbnail> {
+        self.thumbnails.clone().unwrap_or(BTreeMap::new())
     }
 }
 
 impl HasThumbnail for VideoSnippet {
-    fn get_thumbnails(&self) -> &BTreeMap<String, Thumbnail> {
-        &self.thumbnails
+    fn get_thumbnails(&self) -> BTreeMap<String, Thumbnail> {
+        self.thumbnails.clone().unwrap_or(BTreeMap::new())
     }
 }
 
