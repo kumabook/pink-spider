@@ -67,3 +67,23 @@ pub struct TrackLink {
 //  pub type:            String, TODO Use serde instead of rustc_serialize
     pub uri:           String,
 }
+
+/// This function fetches a track info with spotify api.
+///
+/// # Examples
+///
+/// ```
+/// let track = pink_spider::spotify::fetch_track("3n3Ppam7vgaVa1iaRUc9Lp").unwrap();
+///
+/// assert_eq!(track.id, "3n3Ppam7vgaVa1iaRUc9Lp");
+/// ```
+pub fn fetch_track(id: &str) -> json::DecodeResult<Track> {
+    let url    = format!("{}/tracks/{}", BASE_URL, id);
+    let client = Client::new();
+    let mut res = client.get(&url)
+                        .header(Connection::close())
+                        .send().unwrap();
+    let mut body = String::new();
+    res.read_to_string(&mut body).unwrap();
+    json::decode::<Track>(&body)
+}
