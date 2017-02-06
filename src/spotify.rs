@@ -1,10 +1,29 @@
+extern crate rustc_serialize;
+
 use std::io::Read;
+use std::env;
 use std::collections::BTreeMap;
 use rustc_serialize::json;
 use hyper::Client;
-use hyper::header::Connection;
+use hyper::header::{Headers, Authorization, Bearer, Connection};
+use std::fs::File;
 
 static BASE_URL: &'static str = "https://api.spotify.com/v1";
+lazy_static! {
+    static ref TOKEN: String = {
+        let opt_key = env::var("SPOTIFY_OAUTH_TOKEN");
+        match opt_key {
+            Ok(key) => key,
+            Err(_) => {
+                let mut f = File::open("spotify.txt").unwrap();
+                let mut s = String::new();
+                let _ = f.read_to_string(&mut s);
+                s
+            }
+        }
+    };
+}
+
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct Track {
@@ -132,12 +151,42 @@ pub struct PagingObject<T> {
 /// assert_eq!(track.id, "3n3Ppam7vgaVa1iaRUc9Lp");
 /// ```
 pub fn fetch_track(id: &str) -> json::DecodeResult<Track> {
-    let url    = format!("{}/tracks/{}", BASE_URL, id);
+    let path = format!("/tracks/{}", id);
+    fetch(&path)
+}
+
+/// This function fetches a playlist info with spotify api.
+///
+/// # Examples
+///
+/// ```
+/// let playlist = pink_spider::spotify::fetch_playlist("spincoaster", "182jSXyIDGLOYwE7PLhxjI").unwrap();
+///
+/// assert_eq!(playlist.id, "182jSXyIDGLOYwE7PLhxjI");
+/// assert_eq!(playlist.tracks.total, 100);
+/// ```
+pub fn fetch_playlist(user_id: &str, id: &str) -> json::DecodeResult<Playlist> {
+    let path = format!("/users/{}/playlists/{}", user_id, id);
+    fetch(&path)
+}
+
+fn fetch<T>(path: &str) -> json::DecodeResult<T>
+    where T: rustc_serialize::Decodable {
+    let url    = format!("{}{}", BASE_URL, path);
     let client = Client::new();
+    let mut headers = Headers::new();
+    headers.set(
+        Authorization(
+            Bearer {
+                token: TOKEN.to_string()
+            }
+        )
+    );
+    headers.set(Connection::close());
     let mut res = client.get(&url)
-                        .header(Connection::close())
+                        .headers(headers)
                         .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    json::decode::<Track>(&body)
+    json::decode::<T>(&body)
 }
