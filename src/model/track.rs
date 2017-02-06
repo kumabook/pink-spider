@@ -38,6 +38,7 @@ fn props_str(prefix: &str) -> String {
 pub enum Provider {
     YouTube,
     SoundCloud,
+    Spotify,
     Raw
 }
 
@@ -46,6 +47,7 @@ impl PartialEq for Provider {
         match *self {
             Provider::YouTube    => match *p { Provider::YouTube    => true, _ => false },
             Provider::SoundCloud => match *p { Provider::SoundCloud => true, _ => false },
+            Provider::Spotify    => match *p { Provider::Spotify    => true, _ => false },
             Provider::Raw        => match *p { Provider::Raw        => true, _ => false }
         }
     }
@@ -56,6 +58,7 @@ impl Provider {
         match *self {
             Provider::YouTube    => "YouTube",
             Provider::SoundCloud => "SoundCloud",
+            Provider::Spotify    => "Spotify",
             Provider::Raw        => "Raw",
         }.to_string()
     }
@@ -65,6 +68,8 @@ impl Provider {
             "youtube"    => Provider::YouTube,
             "SoundCloud" => Provider::SoundCloud,
             "soundcloud" => Provider::SoundCloud,
+            "Spotify"    => Provider::Spotify,
+            "spotify"    => Provider::Spotify,
             _            => Provider::Raw,
         }
     }
