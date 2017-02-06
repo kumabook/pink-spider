@@ -29,6 +29,35 @@ pub struct Track {
 }
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+pub struct Playlist {
+    pub collaborative: bool,
+    pub description:   Option<String>,
+    pub external_urls: BTreeMap<String, String>,
+    pub followers:     Followers,
+    pub href:          Option<String>,
+    pub id:            String,
+    pub images:        Vec<Image>,
+    pub name:          String,
+    pub owner:         User,
+    pub public:        Option<bool>,
+    pub snapshot_id:   String,
+    pub tracks:        PagingObject<PlaylistTrack>,
+//  pub type           String, TODO Use serde instead of rustc_serialize
+    pub uri:           String,
+}
+
+#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+pub struct User {
+    pub display_name:  Option<String>,
+    pub external_urls: BTreeMap<String, String>,
+    pub followers:     Option<Followers>,
+    pub href:          String,
+    pub id:            String,
+    pub images:        Option<Vec<Image>>,
+    pub uri:           String,
+}
+
+#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct Album {
     pub album_type: String,
     pub artists:    Vec<Artist>,
@@ -54,9 +83,9 @@ pub struct Artist {
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct Image {
-    pub height: i32,
+    pub height: Option<i32>,
     pub url:    String,
-    pub width:  i32,
+    pub width:  Option<i32>,
 }
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
@@ -66,6 +95,31 @@ pub struct TrackLink {
     pub id:            String,
 //  pub type:            String, TODO Use serde instead of rustc_serialize
     pub uri:           String,
+}
+
+#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+pub struct Followers {
+    pub href:  Option<String>,
+    pub total: i32,
+}
+
+#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+pub struct PlaylistTrack {
+    pub added_at: String,
+    pub added_by: User,
+    pub is_local: bool,
+    pub track:    Track,
+}
+
+#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+pub struct PagingObject<T> {
+    pub href:     String,
+    pub items:    Vec<T>,
+    pub limit:    i32,
+    pub next:     Option<String>,
+    pub offset:   i32,
+    pub previous: Option<String>,
+    pub total:    i32,
 }
 
 /// This function fetches a track info with spotify api.
