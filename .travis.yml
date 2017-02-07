@@ -14,4 +14,7 @@ script:
   - npm run lint
   - npm test
 env:
-  secure: arNYn6yIGZnbEJGy9WhpKlhWyOT22ZF8hjBqCXNl8itFv4qBgl8WKvn4erx+T45vLTe95FNCZKoDdmg386yAwhy6FEbdDj1DTudP4zU0go5yAH28LNmcN2cpnjFoP/sFOmYnttoEXGMRnF0aFil65f+v0f4xviOzz0Pdbzx8dpw=
+  global:
+  - secure: S1scCqP3oLWhF2/t2FBxmyluE0PUKMyNvMhKz+NfDstwV3kqdD2MCa0XTP/zW6bB7rd1BOeKM7Ofa8brFafkMM2Gt0/r1upG0m1Rf3nKdsIliJSY4uc4RMc/8k75dFlqT94Tah8t6fAIukwy/DlYo98pauJAqq0YHb2dzBAvq+0=
+  - secure: V3xd6SmedlaFZaypwx2Cn/nr37I+pCXMOtOKkrtYA59Ci/H4lgMZg1sDMLsLmb+r71ZpYOwm9NrfYeIgng+PHfKEaAnf0I0t4g6VbDtnTpmGKc+qav4bDl/FYTbGbfeqPE9PoAZDYzRKDG1bbB5y2oWJmuTdIU6CTsoAjF6NONI=
+  - secure: DeNLhCa1B9Y3/CcVNQQ89ydUAWprqQS349PiiEsqjcV+p7a/u8mkeFsn9yqVqq3HC6na8lQgIEbjzOCfPXlGpldasZZf0j/5yrlyx2ERMhmWIce1o0w68hYQzI1bSTDbBdJsNNAUgtWoQ3U6nFnlRf+73PWDtkL7s5LiF7znK98=
