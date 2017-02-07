@@ -233,7 +233,7 @@ impl Track {
 
     pub fn update_with_yt_playlist_item(&mut self, item: &youtube::PlaylistItem) -> &mut Track {
         self.provider      = Provider::YouTube;
-        self.identifier    = item.id.to_string();
+        self.identifier    = item.snippet.resourceId["videoId"].to_string();
         self.owner_id      = Some(item.snippet.channelId.to_string());
         self.owner_name    = Some(item.snippet.channelTitle.to_string());
         self.url           = format!("https://www.youtube.com/watch/?v={}", item.id);
