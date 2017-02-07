@@ -25,3 +25,4 @@ pub mod scraper;
 pub mod model;
 pub mod youtube;
 pub mod soundcloud;
+pub mod spotify;

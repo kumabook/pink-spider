@@ -19,8 +19,9 @@ use hyper::header::ConnectionOption;
 use Provider;
 use Track;
 use open_graph;
-use soundcloud;
 use youtube;
+use soundcloud;
+use spotify;
 use error::Error;
 
 use url::percent_encoding::{percent_decode};
@@ -31,6 +32,9 @@ static YOUTUBE_WATCH:       &'static str = r"www.youtube.com/watch\?v=([a-zA-Z0-
 static SOUNDCLOUD_TRACK:    &'static str = r"api.soundcloud.com/tracks/([a-zA-Z0-9_-]+)";
 static SOUNDCLOUD_PLAYLIST: &'static str = r"api.soundcloud.com/playlists/([a-zA-Z0-9_-]+)";
 static SOUNDCLOUD_USER:     &'static str = r"api.soundcloud.com/users/([a-zA-Z0-9_-]+)";
+static SPOTIFY_TRACK:       &'static str = r"open.spotify.com/track/([a-zA-Z0-9_-]+)";
+static SPOTIFY_TRACK_OPEN:  &'static str = r"spotify:track:([a-zA-Z0-9_-]+)";
+static SPOTIFY_PLAYLIST:    &'static str = r"(spotify:user:[a-zA-Z0-9_-]+:playlist:[a-zA-Z0-9_-]+)";
 
 #[derive(Debug)]
 pub struct ScraperProduct {
@@ -165,6 +169,38 @@ fn extract_identifier(value: &str, regex_str: &str) -> Option<String> {
     }
 }
 
+fn fetch_spotify_playlist(uri: &str) -> Vec<Track> {
+    match Regex::new(r"spotify:user:([a-zA-Z0-9_-]+):playlist:([a-zA-Z0-9_-]+)") {
+        Ok(re) => match re.captures(uri) {
+            Some(cap) => {
+                let strs: Vec<&str> = cap[1].split('?').collect();
+                let user_id         = strs[0].to_string();
+                let strs: Vec<&str> = cap[2].split('?').collect();
+                let playlist_id     = strs[0].to_string();
+                return match spotify::fetch_playlist(&user_id, &playlist_id) {
+                    Ok(playlist) => playlist.tracks.items.iter()
+                                                   .map(|ref i| Track::from_sp_track(&i.track))
+                                                   .collect::<Vec<_>>(),
+                    Err(_)       => vec![]
+                }
+            },
+            None => vec![]
+        },
+        Err(_) => vec![]
+    }
+}
+
+fn fetch_spotify_track(identifier: String) -> Vec<Track> {
+    match spotify::fetch_track(&identifier) {
+        Ok(t) => {
+            let ref mut track = Track::new(Provider::Spotify, identifier);
+            track.update_with_sp_track(&t);
+            vec![track.clone()]
+        },
+        Err(_) => vec![Track::new(Provider::Spotify, identifier)],
+    }
+}
+
 fn extract_tracks_from_url(url: String) -> Vec<Track> {
     let decoded = percent_decode(url.as_bytes()).decode_utf8_lossy().into_owned();
     match extract_identifier(&decoded, YOUTUBE_WATCH) {
@@ -219,6 +255,24 @@ fn extract_tracks_from_url(url: String) -> Vec<Track> {
         },
         None => ()
     }
+    match extract_identifier(&decoded, SPOTIFY_TRACK) {
+        Some(identifier) => {
+            return fetch_spotify_track(identifier)
+        },
+        None => ()
+    }
+    match extract_identifier(&decoded, SPOTIFY_TRACK_OPEN) {
+        Some(identifier) => {
+            return fetch_spotify_track(identifier)
+        },
+        None => ()
+    }
+    match extract_identifier(&decoded, SPOTIFY_PLAYLIST) {
+        Some(uri) => {
+            return fetch_spotify_playlist(&uri)
+        },
+        None => ()
+    }
     return vec![]
 }
 
@@ -227,6 +281,7 @@ mod test {
     use super::extract;
     use super::extract_identifier;
     use Provider;
+    use Track;
 
     #[test]
     fn test_extract_identifier() {
@@ -256,11 +311,10 @@ mod test {
     #[test]
     fn test_extract() {
         let url = "http://spincoaster.com/spincoaster-breakout-2017";
-        let product = extract(url).unwrap();
-        for track in product.tracks.iter() {
-            assert_eq!(track.provider, Provider::YouTube)
-        }
-        assert_eq!(product.tracks.len(), 15);
-        assert!(true);
+        let tracks = extract(url).unwrap().tracks;
+        let youtube_tracks: Vec<&Track> = tracks.iter().filter(|&x| x.provider == Provider::YouTube).collect();
+        let spotify_tracks: Vec<&Track> = tracks.iter().filter(|&x| x.provider == Provider::Spotify).collect();
+        assert_eq!(youtube_tracks.len(), 15);
+        assert_eq!(spotify_tracks.len(), 30);
     }
 }

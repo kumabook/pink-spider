@@ -8,6 +8,7 @@ use chrono::{NaiveDateTime, UTC, DateTime};
 use youtube;
 use youtube::HasThumbnail;
 use soundcloud;
+use spotify;
 use error::Error;
 use super::{conn, PaginatedCollection};
 
@@ -217,6 +218,11 @@ impl Track {
             .update_with_sc_track(track)
             .clone()
     }
+    pub fn from_sp_track(track: &spotify::Track) -> Track {
+        Track::new(Provider::Spotify, (*track).id.to_string())
+            .update_with_sp_track(track)
+            .clone()
+    }
 
     pub fn update_with_yt_video(&mut self, video: &youtube::Video) -> &mut Track {
         self.provider      = Provider::YouTube;
@@ -269,6 +275,28 @@ impl Track {
         match DateTime::parse_from_str(&track.created_at, "%Y/%m/%d %H:%M:%S %z") {
             Ok(published_at) => self.published_at = published_at.naive_utc(),
             Err(_)           => (),
+        }
+        self
+    }
+
+    pub fn update_with_sp_track(&mut self, track: &spotify::Track) -> &mut Track {
+        self.provider       = Provider::Spotify;
+        self.identifier     = track.id.to_string();
+        if track.artists.len() > 0 {
+            self.owner_id   = Some(track.artists[0].id.clone());
+            self.owner_name = Some(track.artists[0].name.clone());
+        }
+        self.url            = track.uri.clone();
+        self.title          = track.name.clone();
+        self.description    = None;
+        self.state          = State::Alive;
+        self.published_at   = UTC::now().naive_utc();
+        if track.album.images.len() > 0 {
+            self.artwork_url   = Some(track.album.images[0].url.clone());
+            self.thumbnail_url = Some(track.album.images[0].url.clone());
+        }
+        if track.album.images.len() > 1 {
+            self.thumbnail_url = Some(track.album.images[1].url.clone());
         }
         self
     }

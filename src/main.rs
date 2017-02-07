@@ -115,8 +115,9 @@ pub fn playlistify_entry(entry: Entry) -> Result<Entry, Error> {
         None => (),
     }
     for t in product.tracks {
-        let mut track = try!(Track::find_or_create(t.provider, t.identifier.to_string()));
-        track.title = t.title;
+        let new_track = try!(Track::find_or_create(t.provider, t.identifier.to_string()));
+        let mut track = t.clone();
+        track.id      = new_track.id;
         let track = match t.provider {
             Provider::YouTube => match youtube::fetch_video(&t.identifier) {
                 Ok(video) => track.update_with_yt_video(&video),
