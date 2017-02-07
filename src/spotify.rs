@@ -3,27 +3,48 @@ extern crate rustc_serialize;
 use std::io::Read;
 use std::env;
 use std::collections::BTreeMap;
+use std::fs::File;
+use std::sync::Mutex;
+use chrono::{NaiveDateTime, UTC, Duration};
 use rustc_serialize::json;
 use hyper::Client;
-use hyper::header::{Headers, Authorization, Bearer, Connection};
-use std::fs::File;
+use hyper::header::{
+    Headers,
+    Authorization,
+    Bearer,
+    Basic,
+    Connection,
+    ContentType
+};
 
 static BASE_URL: &'static str = "https://api.spotify.com/v1";
 lazy_static! {
-    static ref TOKEN: String = {
-        let opt_key = env::var("SPOTIFY_OAUTH_TOKEN");
+    static ref CLIENT_ID: String = {
+        let opt_key = env::var("SPOTIFY_CLIENT_ID");
         match opt_key {
             Ok(key) => key,
             Err(_) => {
-                let mut f = File::open("spotify.txt").unwrap();
+                let mut f = File::open("spotify_client_id.txt").unwrap();
                 let mut s = String::new();
                 let _ = f.read_to_string(&mut s);
                 s
             }
         }
     };
+    static ref CLIENT_SECRET: String = {
+        let opt_key = env::var("SPOTIFY_CLIENT_SECRET");
+        match opt_key {
+            Ok(key) => key,
+            Err(_) => {
+                let mut f = File::open("spotify_client_secret.txt").unwrap();
+                let mut s = String::new();
+                let _ = f.read_to_string(&mut s);
+                s
+            }
+        }
+    };
+    static ref TOKEN: Mutex<Option<Token>> = Mutex::new(None);
 }
-
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct Track {
@@ -141,6 +162,14 @@ pub struct PagingObject<T> {
     pub total:    i32,
 }
 
+#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+pub struct Token {
+    pub access_token: String,
+    pub token_type:   String,
+    pub expires_in:   i64,
+    pub expires_at:   Option<NaiveDateTime>,
+}
+
 /// This function fetches a track info with spotify api.
 ///
 /// # Examples
@@ -172,13 +201,14 @@ pub fn fetch_playlist(user_id: &str, id: &str) -> json::DecodeResult<Playlist> {
 
 fn fetch<T>(path: &str) -> json::DecodeResult<T>
     where T: rustc_serialize::Decodable {
+    let token  = try!(update_token_if_needed());
     let url    = format!("{}{}", BASE_URL, path);
     let client = Client::new();
     let mut headers = Headers::new();
     headers.set(
         Authorization(
             Bearer {
-                token: TOKEN.to_string()
+                token: token.access_token
             }
         )
     );
@@ -189,4 +219,69 @@ fn fetch<T>(path: &str) -> json::DecodeResult<T>
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
     json::decode::<T>(&body)
+}
+
+/// This function fetches a oauth token info with spotify api.
+///
+/// # Examples
+///
+/// ```
+/// let token = pink_spider::spotify::fetch_token();
+/// assert!(token.is_ok());
+/// ```
+pub fn fetch_token() -> json::DecodeResult<Token> {
+    let url         = "https://accounts.spotify.com/api/token";
+    let client      = Client::new();
+    let mut headers = Headers::new();
+    headers.set(
+        Authorization(
+            Basic {
+                username: CLIENT_ID.to_string(),
+                password: Some(CLIENT_SECRET.to_string()),
+            }
+        )
+    );
+    headers.set(ContentType("application/x-www-form-urlencoded".parse().unwrap()));
+    headers.set(Connection::close());
+    let mut res = client.post(url)
+                        .body("grant_type=client_credentials")
+                        .headers(headers)
+                        .send().unwrap();
+    let mut body = String::new();
+    res.read_to_string(&mut body).unwrap();
+    json::decode::<Token>(&body)
+}
+
+pub fn get_valid_token() -> Option<Token> {
+    TOKEN.lock().unwrap().clone().and_then(
+        |t|
+        if let Some(expires_at) = t.expires_at {
+            if expires_at > UTC::now().naive_utc() {
+                Some(t)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    )
+}
+
+pub fn update_token_if_needed() -> json::DecodeResult<Token> {
+    match get_valid_token() {
+        Some(token) => Ok(token),
+        None => match fetch_token() {
+            Ok(token) => {
+                let mut t        = TOKEN.lock().unwrap();
+                let mut token    = token.clone();
+                let now          = UTC::now().naive_utc();
+                let exires_at    = now + Duration::seconds(token.expires_in);
+                token.expires_at = Some(exires_at);
+                *t = Some(token.clone());
+                Ok(token)
+            },
+            Err(_) =>
+                Err(json::DecoderError::ApplicationError("missing token".to_string()))
+        },
+    }
 }
