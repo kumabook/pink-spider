@@ -9,7 +9,8 @@
       exceptions: {
         "VariableDeclarator": true,
         "ImportDeclaration": true,
-        "Property": true
+        "Property": true,
+        "AssignmentExpression": true,
       }
     }],
     "key-spacing":  ["error", { align: "value" }],
