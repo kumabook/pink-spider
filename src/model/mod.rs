@@ -1,4 +1,4 @@
-pub use self::track::{Track, Playlist};
+pub use self::track::Track;
 pub use self::provider::Provider;
 pub use self::entry::Entry;
 pub use self::feed::Feed;

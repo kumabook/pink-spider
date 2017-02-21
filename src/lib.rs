@@ -17,7 +17,6 @@ extern crate lazy_static;
 
 pub use self::model::Feed;
 pub use self::model::Track;
-pub use self::model::Playlist;
 pub use self::model::Provider;
 pub use self::model::open_graph;
 

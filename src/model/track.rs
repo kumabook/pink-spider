@@ -377,9 +377,3 @@ impl Track {
         }
     }
 }
-
-pub struct Playlist {
-    pub title:  String,
-    pub tracks: Vec<Track>,
-}
-
