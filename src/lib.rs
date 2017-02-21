@@ -3,6 +3,7 @@ extern crate iron;
 extern crate rustc_serialize;
 extern crate html5ever;
 extern crate tendril;
+extern crate scraper as scraping;
 extern crate regex;
 extern crate string_cache;
 extern crate url;

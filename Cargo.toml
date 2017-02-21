@@ -22,6 +22,7 @@ urlencoded      = "*"
 rustc-serialize = "*"
 tendril         = "*"
 html5ever       = "*"
+scraper         = "*"
 url             = "*"
 lazy_static     = "*"
 uuid            = { version = "*", features = ["v4"] }
