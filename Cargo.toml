@@ -25,7 +25,7 @@ html5ever       = "*"
 scraper         = "*"
 url             = "*"
 lazy_static     = "*"
-uuid            = { version = "*", features = ["v4"] }
+uuid            = { version = "*", features = ["v4", "rustc-serialize", "serde"] }
 staticfile      = "*"
 chrono          = { version = "*", features = ["serde", "rustc-serialize"] }
 [dependencies.mount]
