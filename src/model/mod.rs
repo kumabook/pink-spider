@@ -7,6 +7,7 @@ mod track;
 mod entry;
 mod feed;
 mod provider;
+mod state;
 pub mod open_graph;
 
 use rustc_serialize::json::{ToJson, Json};

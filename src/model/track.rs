@@ -13,6 +13,7 @@ use spotify;
 use error::Error;
 use super::{conn, PaginatedCollection};
 use model::provider::Provider;
+use model::state::State;
 
 static PROPS: [&'static str; 15]  = ["id",
                                      "provider",
@@ -35,49 +36,6 @@ fn props_str(prefix: &str) -> String {
         .iter()
         .map(|&p| format!("{}{}", prefix, p))
         .collect::<Vec<String>>().join(",")
-}
-
-#[derive(Debug, Copy, Clone)]
-pub enum State {
-    Alive,
-    Dead,
-}
-
-impl PartialEq for State {
-    fn eq(&self, p: &State) -> bool {
-        match *self {
-            State::Alive => match *p { State::Alive => true, _ => false },
-            State::Dead  => match *p { State::Dead  => true, _ => false },
-        }
-    }
-}
-
-impl State {
-    fn to_string(&self) -> String {
-        match *self {
-            State::Alive   => "alive",
-            State::Dead => "dead",
-        }.to_string()
-    }
-    pub fn new(str: String) -> State {
-        match str.as_ref() {
-            "alive" => State::Alive,
-            "dead"  => State::Dead,
-            _       => State::Dead,
-        }
-    }
-}
-
-impl ToJson for State {
-    fn to_json(&self) -> Json {
-        self.to_string().to_json()
-    }
-}
-
-impl fmt::Display for State {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({})", self.to_string())
-    }
 }
 
 #[derive(Debug, Clone)]
