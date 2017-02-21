@@ -62,7 +62,7 @@ pub struct Track {
     pub linked_from:       Option<TrackLink>,
     pub name:              String,
     pub popularity:        i32,
-    pub preview_url:       String,
+    pub preview_url:       Option<String>,
     pub track_number:      i32,
 //  pub type:            String, TODO Use serde instead of rustc_serialize
     pub uri:               String,
