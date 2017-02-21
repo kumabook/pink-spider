@@ -15,10 +15,12 @@ use regex::Regex;
 use hyper::Client;
 use hyper::header::Connection;
 use hyper::header::ConnectionOption;
+use url::Url;
 
 use Provider;
 use Track;
 use open_graph;
+use apple_music;
 use youtube;
 use soundcloud;
 use spotify;
@@ -172,14 +174,23 @@ fn extract_identifier(value: &str, regex_str: &str) -> Option<String> {
     }
 }
 
+fn country_param(url: &str) -> String {
+    let url = Url::parse(&url).unwrap();
+    if let Some(q) = url.query() {
+        let strs: Vec<&str> = q.split('=').collect();
+        if strs[0] == "country" {
+            return strs[1].to_string();
+        }
+    };
+    "en".to_string()
+}
+
 fn fetch_spotify_playlist(uri: &str) -> Vec<Track> {
     match Regex::new(r"spotify:user:([a-zA-Z0-9_-]+):playlist:([a-zA-Z0-9_-]+)") {
         Ok(re) => match re.captures(uri) {
             Some(cap) => {
-                let strs: Vec<&str> = cap[1].split('?').collect();
-                let user_id         = strs[0].to_string();
-                let strs: Vec<&str> = cap[2].split('?').collect();
-                let playlist_id     = strs[0].to_string();
+                let user_id     = cap[1].to_string();
+                let playlist_id = cap[2].to_string();
                 return match spotify::fetch_playlist(&user_id, &playlist_id) {
                     Ok(playlist) => playlist.tracks.items.iter()
                                                    .map(|ref i| Track::from_sp_track(&i.track))
@@ -209,13 +220,15 @@ fn extract_tracks_from_url(url: String) -> Vec<Track> {
 
     match extract_identifier(&decoded, APPLE_MUSIC_SONG) {
         Some(identifier) => {
-            return vec![Track::new(Provider::AppleMusic, identifier)]
+            let country = country_param(&url);
+            if let Ok(song) = apple_music::fetch_song(&identifier, &country) {
+                return vec![Track::from_am_song(&song)]
+            };
         },
         None => ()
     }
     match extract_identifier(&decoded, APPLE_MUSIC_ALBUM) {
         Some(identifier) => {
-            // todo: fetch songs
             return vec![]
         },
         None => ()

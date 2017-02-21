@@ -24,6 +24,8 @@ pub use self::model::open_graph;
 pub mod error;
 pub mod scraper;
 pub mod model;
+pub mod apple_music;
+pub mod itunes;
 pub mod youtube;
 pub mod soundcloud;
 pub mod spotify;

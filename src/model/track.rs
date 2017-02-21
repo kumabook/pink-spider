@@ -5,6 +5,7 @@ use uuid::Uuid;
 use std::fmt;
 use chrono::{NaiveDateTime, UTC, DateTime};
 
+use apple_music;
 use youtube;
 use youtube::HasThumbnail;
 use soundcloud;
@@ -212,6 +213,12 @@ impl Track {
             state:         State::Alive,
         }
     }
+    pub fn from_am_song(song: &apple_music::Song) -> Track {
+        let identifier = (*song).id.to_string();
+        Track::new(Provider::AppleMusic, identifier.to_string())
+            .update_with_am_song(song)
+            .clone()
+    }
     pub fn from_yt_playlist_item(item: &youtube::PlaylistItem) -> Track {
         let identifier = (*item).snippet.resourceId["videoId"].to_string();
         Track::new(Provider::YouTube, identifier.to_string())
@@ -227,6 +234,20 @@ impl Track {
         Track::new(Provider::Spotify, (*track).id.to_string())
             .update_with_sp_track(track)
             .clone()
+    }
+
+    pub fn update_with_am_song(&mut self, song: &apple_music::Song) -> &mut Track {
+        self.provider      = Provider::AppleMusic;
+        self.identifier    = song.id.to_string();
+        self.owner_id      = Some(song.artist.to_string());
+        self.owner_name    = Some(song.artist.to_string());
+        self.url           = song.music_url.to_string();
+        self.title         = song.title.to_string();
+        self.description   = None;
+        self.thumbnail_url = Some(song.artwork_url.to_string());
+        self.artwork_url   = Some(song.artwork_url.to_string());
+        self.state         = State::Alive;
+        self
     }
 
     pub fn update_with_yt_video(&mut self, video: &youtube::Video) -> &mut Track {
