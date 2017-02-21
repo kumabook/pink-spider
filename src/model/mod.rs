@@ -1,10 +1,12 @@
-pub use self::track::{Track, Provider, Playlist};
+pub use self::track::{Track, Playlist};
+pub use self::provider::Provider;
 pub use self::entry::Entry;
 pub use self::feed::Feed;
 
 mod track;
 mod entry;
 mod feed;
+mod provider;
 pub mod open_graph;
 
 use rustc_serialize::json::{ToJson, Json};
