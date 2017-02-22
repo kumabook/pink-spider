@@ -4,6 +4,8 @@ import app                 from './app';
 import entries             from './entries';
 import track               from './track';
 import tracks              from './tracks';
+import playlist            from './playlist';
+import playlists           from './playlists';
 
 const rootReducer = combineReducers({
   routing: routerReducer,
@@ -11,6 +13,8 @@ const rootReducer = combineReducers({
   entries,
   track,
   tracks,
+  playlist,
+  playlists,
 });
 
 export default rootReducer;
