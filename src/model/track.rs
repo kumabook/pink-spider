@@ -136,7 +136,19 @@ impl Track {
             .update_with_sp_track(track)
             .clone()
     }
-
+    pub fn fetch_detail(&mut self) -> &mut Track {
+        match self.provider {
+            Provider::YouTube => match youtube::fetch_video(&self.identifier) {
+                Ok(video) => self.update_with_yt_video(&video),
+                Err(_)    => self.disable(),
+            },
+            Provider::SoundCloud => match soundcloud::fetch_track(&self.identifier) {
+                Ok(sc_track) => self.update_with_sc_track(&sc_track),
+                Err(_)       => self.disable(),
+            },
+            _ => self,
+        }
+    }
     pub fn update_with_am_song(&mut self, song: &apple_music::Song) -> &mut Track {
         self.provider      = Provider::AppleMusic;
         self.identifier    = song.id.to_string();
