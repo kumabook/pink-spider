@@ -14,11 +14,13 @@ import {
   routerMiddleware,
 } from 'react-router-redux';
 
-import App         from './containers/App';
-import EntryList   from './containers/EntryList';
-import TrackList   from './containers/TrackList';
-import TrackDetail from './containers/TrackDetail';
-import reducers    from './reducers';
+import App            from './containers/App';
+import EntryList      from './containers/EntryList';
+import TrackList      from './containers/TrackList';
+import TrackDetail    from './containers/TrackDetail';
+import PlaylistList   from './containers/PlaylistList';
+import PlaylistDetail from './containers/PlaylistDetail';
+import reducers       from './reducers';
 
 injectTapEventPlugin();
 
@@ -32,8 +34,11 @@ const routes = [{
   childRoutes: [
     { path: 'tracks/:track_id', component: TrackDetail },
     { path: 'tracks', component: TrackList },
+    { path: 'playlists/:playlist_id', component: PlaylistDetail },
+    { path: 'playlists', component: PlaylistList },
     { path: 'entries', component: EntryList },
     { path: 'entries/:entry_id/tracks', component: TrackList },
+    { path: 'entries/:entry_id/playlists', component: PlaylistList },
     { path: '*', component: EntryList },
   ],
 }];

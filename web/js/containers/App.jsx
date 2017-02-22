@@ -9,11 +9,12 @@ import { toggleDrawler } from '../actions';
 class App extends React.Component {
   static get propTypes() {
     return {
-      children:               React.PropTypes.element,
-      handleClick:            React.PropTypes.func,
-      handleEntriesMenuClick: React.PropTypes.func,
-      handleTracksMenuClick:  React.PropTypes.func,
-      drawlerIsOpen:          React.PropTypes.bool,
+      children:                 React.PropTypes.element,
+      handleClick:              React.PropTypes.func,
+      handleEntriesMenuClick:   React.PropTypes.func,
+      handlePlaylistsMenuClick: React.PropTypes.func,
+      handleTracksMenuClick:    React.PropTypes.func,
+      drawlerIsOpen:            React.PropTypes.bool,
     };
   }
   render() {
@@ -30,6 +31,7 @@ class App extends React.Component {
             onLeftIconButtonTouchTap={this.props.handleClick}
           />
           <MenuItem onTouchTap={this.props.handleEntriesMenuClick}>Entries</MenuItem>
+          <MenuItem onTouchTap={this.props.handlePlaylistsMenuClick}>Playlists</MenuItem>
           <MenuItem onTouchTap={this.props.handleTracksMenuClick}>Tracks</MenuItem>
         </Drawer>
         {this.props.children}
@@ -49,6 +51,10 @@ function mapDispatchToProps(dispatch) {
     handleClick:            () => dispatch(toggleDrawler()),
     handleEntriesMenuClick: () => {
       dispatch(push({ pathname: 'entries', query: { page: 0 } }));
+      dispatch(toggleDrawler());
+    },
+    handlePlaylistsMenuClick: () => {
+      dispatch(push({ pathname: 'playlists', query: { page: 0 } }));
       dispatch(toggleDrawler());
     },
     handleTracksMenuClick: () => {
