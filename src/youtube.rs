@@ -58,6 +58,37 @@ impl PartialEq for Thumbnail {
 
 #[allow(non_snake_case)]
 #[derive(Debug, RustcDecodable, RustcEncodable)]
+pub struct PlaylistResponse {
+    pub kind:          String,
+    pub etag:          String,
+    pub nextPageToken: Option<String>,
+    pub pageInfo:      BTreeMap<String, i32>,
+    pub items:         Vec<Playlist>,
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, RustcDecodable, RustcEncodable)]
+pub struct Playlist {
+    pub kind:    String,
+    pub etag:    String,
+    pub id:      String,
+    pub snippet: PlaylistSnippet,
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, RustcDecodable, RustcEncodable)]
+pub struct PlaylistSnippet {
+    pub title:         String,
+    pub description:   String,
+    pub publishedAt:   String,
+    pub channelId:     String,
+    pub channelTitle:  String,
+    pub thumbnails:    Option<BTreeMap<String, Thumbnail>>,
+    pub tags:          Option<Vec<String>>,
+}
+
+#[allow(non_snake_case)]
+#[derive(Debug, RustcDecodable, RustcEncodable)]
 pub struct PlaylistItemResponse {
     pub kind:          String,
     pub etag:          String,
@@ -121,6 +152,12 @@ pub struct VideoSnippet {
     pub liveBroadcastContent: String,
 }
 
+impl HasThumbnail for PlaylistSnippet {
+    fn get_thumbnails(&self) -> BTreeMap<String, Thumbnail> {
+        self.thumbnails.clone().unwrap_or(BTreeMap::new())
+    }
+}
+
 impl HasThumbnail for PlaylistItemSnippet {
     fn get_thumbnails(&self) -> BTreeMap<String, Thumbnail> {
         self.thumbnails.clone().unwrap_or(BTreeMap::new())
@@ -133,7 +170,22 @@ impl HasThumbnail for VideoSnippet {
     }
 }
 
-pub fn fetch_playlist(id: &str) -> json::DecodeResult<PlaylistItemResponse> {
+pub fn fetch_playlist(id: &str) -> json::DecodeResult<PlaylistResponse> {
+    let params = format!("key={}&part=snippet&id={}&maxResults={}",
+                         *API_KEY,
+                         id,
+                         MAX_RESULTS);
+    let url    = format!("{}/{}?{}", BASE_URL, "playlists", params);
+    let client = Client::new();
+    let mut res = client.get(&url)
+                        .header(Connection::close())
+                        .send().unwrap();
+    let mut body = String::new();
+    res.read_to_string(&mut body).unwrap();
+    json::decode::<PlaylistResponse>(&body)
+}
+
+pub fn fetch_playlist_items(id: &str) -> json::DecodeResult<PlaylistItemResponse> {
     let params = format!("key={}&part=snippet&playlistId={}&maxResults={}",
                          *API_KEY,
                          id,
