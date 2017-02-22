@@ -7,21 +7,15 @@ import {
   TableHeader,
   TableHeaderColumn,
   TableRow,
-  TableRowColumn,
 } from 'material-ui/Table';
-import RaisedButton                 from 'material-ui/RaisedButton';
 import Dialog                       from 'material-ui/Dialog';
 import CircularProgress             from 'material-ui/CircularProgress';
 import ReactPaginate                from 'react-paginate';
 import { fetchTracks, updateTrack } from '../actions';
 import { Status }                   from '../reducers/tracks';
 import parseIntOr                   from '../utils/parseIntOr';
-import datePrettify                 from '../utils/datePrettify';
 import { DEFAULT_PER_PAGE }         from '../api/pagination';
-import { getUrl }                   from '../model/Track';
-
-const NO_IMAGE   = '/web/no_image.png';
-const DEAD_IMAGE = '/web/dead_image.png';
+import TrackListTableRow            from '../components/TrackListTableRow';
 
 class TrackList extends React.Component {
   static get propTypes() {
@@ -34,12 +28,6 @@ class TrackList extends React.Component {
       handlePageChange:        React.PropTypes.func,
     };
   }
-  static getThumbnailUrl(track) {
-    if (track.state === 'alive') {
-      return track.thumbnail_url || NO_IMAGE;
-    }
-    return DEAD_IMAGE;
-  }
   componentDidUpdate() {
     if (this.props.tracks.status === Status.Dirty) {
       this.props.fetchTracks(this.props.tracks.page,
@@ -48,40 +36,11 @@ class TrackList extends React.Component {
   }
   render() {
     const rows = this.props.tracks.items.map(track => (
-      <TableRow key={track.id}>
-        <TableRowColumn>
-          <a href={getUrl(track.url)}>
-            <img
-              src={TrackList.getThumbnailUrl(track)}
-              role="presentation"
-              className="track-list-thumb"
-            />
-          </a>
-        </TableRowColumn>
-        <TableRowColumn>
-          {track.title || `${track.provider} id: ${track.identifier}`}
-        </TableRowColumn>
-        <TableRowColumn>
-          {track.artist}
-        </TableRowColumn>
-        <TableRowColumn>
-          {datePrettify(track.published_at)}
-        </TableRowColumn>
-        <TableRowColumn>
-          <RaisedButton
-            label="Detail"
-            primary
-            onClick={() => this.props.handleDetailButtonClick(track)}
-          />
-          <br />
-          <br />
-          <RaisedButton
-            label="Update"
-            primary
-            onClick={() => this.props.handleUpdateButtonClick(track)}
-          />
-        </TableRowColumn>
-      </TableRow>
+      <TrackListTableRow
+        track={track}
+        onDetailButtonClick={this.props.handleDetailButtonClick}
+        onUpdateButtonClick={this.props.handleUpdateButtonClick}
+      />
     ));
     const pageCount = this.props.tracks.total / this.props.tracks.perPage;
     const breakLabel = <a href="">...</a>;
