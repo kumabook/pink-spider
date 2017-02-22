@@ -1,10 +1,3 @@
-extern crate html5ever;
-extern crate tendril;
-extern crate regex;
-extern crate hyper;
-extern crate string_cache;
-extern crate url;
-
 use html5ever::rcdom::{Document, Doctype, Text, Comment, Element};
 use html5ever::rcdom::{RcDom, Handle};
 use html5ever::{parse_document, Attribute};
@@ -28,6 +21,7 @@ use spotify;
 use error::Error;
 
 use url::percent_encoding::{percent_decode};
+use queryst::parse;
 
 static APPLE_MUSIC_SONG:     &'static str = r"tools.applemusic.com/embed/v1/song/([a-zA-Z0-9_-]+)";
 static APPLE_MUSIC_ALBUM:    &'static str = r"tools.applemusic.com/embed/v1/album/([a-zA-Z0-9_-]+)";
