@@ -1,5 +1,6 @@
-import entry from '../api/entry';
-import track from '../api/track';
+import entry    from '../api/entry';
+import track    from '../api/track';
+import playlist from '../api/playlist';
 
 export const toggleDrawler = () => ({ type: 'TOGGLE_DRAWLER' });
 
@@ -41,3 +42,24 @@ export const fetchTrack = trackId => (dispatch) => {
 
 export const updateTrack = trackId => dispatch =>
   track.update(trackId).then(() => dispatch({ type: 'UPDATE_TRACK' }));
+
+export const fetchPlaylist = playlistId => (dispatch) => {
+  dispatch({ type: 'FETCH_PLAYLIST' });
+  return playlist.show(playlistId).then(item => dispatch({ type: 'RECEIVE_PLAYLIST', item }));
+};
+
+export const receivePlaylists = (playlists, entryId) => ({
+  type:    'RECEIVE_PLAYLISTS',
+  entryId,
+  page:    playlists.page,
+  perPage: playlists.per_page,
+  total:   playlists.total,
+  items:   playlists.items,
+});
+
+export const fetchPlaylists = (page = 0, perPage = 10, entryId = null) => (dispatch) => {
+  dispatch({ type: 'FETCH_PLAYLISTS', page, perPage, entryId });
+  const promise = entryId ? playlist.indexByEntry(entryId, page, perPage) :
+        playlist.index(page, perPage);
+  return promise.then(playlists => dispatch(receivePlaylists(playlists, entryId)));
+};
