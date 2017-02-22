@@ -16,12 +16,11 @@ import { getUrl, getOwnerUrl }     from '../model/Track';
 import tryGet                      from '../utils/tryGet';
 import datePrettify                from '../utils/datePrettify';
 
-const NO_IMAGE        = '/web/no_image.png';
-const DEAD_IMAGE      = '/web/dead_image.png';
-const images = {
-  YouTube:    '/web/youtube.png',
-  SoundCloud: '/web/soundcloud.png',
-};
+import {
+  NO_IMAGE,
+  DEAD_IMAGE,
+  getImageOfProvider,
+} from '../utils/thumbnail';
 
 class TrackDetail extends React.Component {
   static get propTypes() {
@@ -68,7 +67,7 @@ class TrackDetail extends React.Component {
         <CardHeader
           title={ownerLink}
           subtitle={tryGet(this.props.item, 'owner_id', 'Unknown')}
-          avatar={images[provider]}
+          avatar={getImageOfProvider(provider)}
         />
         <CardMedia style={style} overlay={overlay} >
           <img role="presentation" src={state === 'alive' ? artworkUrl : DEAD_IMAGE} />

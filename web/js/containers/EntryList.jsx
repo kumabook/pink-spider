@@ -19,8 +19,7 @@ import datePrettify     from '../utils/datePrettify';
 import Paginate         from '../components/Paginate';
 
 import { DEFAULT_PER_PAGE } from '../api/pagination';
-
-const NO_IMAGE = '/web/no_image.png';
+import { NO_IMAGE }         from '../utils/thumbnail';
 
 class EntryList extends React.Component {
   static get propTypes() {
