@@ -12,11 +12,11 @@ import {
 } from 'material-ui/Table';
 import Dialog           from 'material-ui/Dialog';
 import CircularProgress from 'material-ui/CircularProgress';
-import ReactPaginate    from 'react-paginate';
 import { fetchEntries } from '../actions';
 import { Status }       from '../reducers/entries';
 import parseIntOr       from '../utils/parseIntOr';
 import datePrettify     from '../utils/datePrettify';
+import Paginate         from '../components/Paginate';
 
 import { DEFAULT_PER_PAGE } from '../api/pagination';
 
@@ -60,32 +60,23 @@ class EntryList extends React.Component {
         </TableRowColumn>
         <TableRowColumn>
           <Link to={`entries/${entry.id}/tracks`}>
+            {`${entry.playlists.length} playlists`}
+            <br />
             {`${entry.tracks.length} tracks`}
           </Link>
         </TableRowColumn>
       </TableRow>
     ));
-    const pageCount = this.props.entries.total / this.props.entries.perPage;
-    const breakLabel = <a href="">...</a>;
     return (
       <div>
         <Table selectable={false}>
           <TableHeader displaySelectAll={false}>
             <TableRow>
               <TableHeaderColumn colSpan="5" style={{ textAlign: 'center' }}>
-                <ReactPaginate
-                  initialPage={this.props.page}
-                  previousLabel={'previous'}
-                  nextLabel={'next'}
-                  breakLabel={breakLabel}
-                  breakClassName={'break-me'}
-                  pageCount={pageCount}
-                  marginPagesDisplayed={2}
-                  pageRangeDisplayed={5}
-                  containerClassName={'pagination'}
-                  subContainerClassName={'pages pagination'}
-                  activeClassName={'active'}
-                  onPageChange={this.props.handlePageChange}
+                <Paginate
+                  page={this.props.page}
+                  pageCount={this.props.entries.total / this.props.entries.perPage}
+                  onChange={this.props.handlePageChange}
                 />
               </TableHeaderColumn>
             </TableRow>

@@ -10,12 +10,12 @@ import {
 } from 'material-ui/Table';
 import Dialog                       from 'material-ui/Dialog';
 import CircularProgress             from 'material-ui/CircularProgress';
-import ReactPaginate                from 'react-paginate';
 import { fetchTracks, updateTrack } from '../actions';
 import { Status }                   from '../reducers/tracks';
 import parseIntOr                   from '../utils/parseIntOr';
 import { DEFAULT_PER_PAGE }         from '../api/pagination';
 import TrackListTableRow            from '../components/TrackListTableRow';
+import Paginate                     from '../components/Paginate';
 
 class TrackList extends React.Component {
   static get propTypes() {
@@ -42,27 +42,16 @@ class TrackList extends React.Component {
         onUpdateButtonClick={this.props.handleUpdateButtonClick}
       />
     ));
-    const pageCount = this.props.tracks.total / this.props.tracks.perPage;
-    const breakLabel = <a href="">...</a>;
     return (
       <div>
         <Table selectable={false}>
           <TableHeader>
             <TableRow>
               <TableHeaderColumn colSpan="5" style={{ textAlign: 'center' }}>
-                <ReactPaginate
-                  initialPage={this.props.page}
-                  previousLabel={'previous'}
-                  nextLabel={'next'}
-                  breakLabel={breakLabel}
-                  breakClassName={'break-me'}
-                  pageCount={pageCount}
-                  marginPagesDisplayed={2}
-                  pageRangeDisplayed={5}
-                  containerClassName={'pagination'}
-                  subContainerClassName={'pages pagination'}
-                  activeClassName={'active'}
-                  onPageChange={this.props.handlePageChange}
+                <Paginate
+                  page={this.props.page}
+                  pageCount={this.props.tracks.total / this.props.tracks.perPage}
+                  onChange={this.props.handlePageChange}
                 />
               </TableHeaderColumn>
             </TableRow>
