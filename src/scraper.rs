@@ -183,15 +183,20 @@ fn extract_identifier(value: &str, regex_str: &str) -> Option<String> {
     }
 }
 
-fn country_param(url: &str) -> String {
-    let url = Url::parse(&url).unwrap();
+fn country_param(url_str: &str) -> String {
+    let url_str = if url_str.starts_with("http") || url_str.starts_with("https") {
+        url_str.to_string()
+    } else {
+        "https://".to_string() + url_str
+    };
+    let url = Url::parse(&url_str).unwrap();
     if let Some(q) = url.query() {
         let strs: Vec<&str> = q.split('=').collect();
         if strs[0] == "country" {
             return strs[1].to_string();
         }
     };
-    "en".to_string()
+    "us".to_string()
 }
 
 fn fetch_spotify_playlist(uri: &str) -> (Vec<Playlist>, Vec<Track>) {
@@ -268,8 +273,9 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Track>) {
     match extract_identifier(&decoded, APPLE_MUSIC_PLAYLIST) {
         Some(identifier) => {
             let country = country_param(&url);
-            if let Ok(playlist) = apple_music::fetch_playlist(&identifier, &country) {
-                return (vec![Playlist::from_am_playlist(&playlist)], vec![])
+            match apple_music::fetch_playlist(&identifier, &country) {
+                Ok(playlist) => return (vec![Playlist::from_am_playlist(&playlist)], vec![]),
+                Err(_) => (),
             }
             return (vec![], vec![])
         },
