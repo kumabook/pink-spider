@@ -214,6 +214,7 @@ fn extract_description(html: Html) -> ScrapeResult<String> {
         .next()
         .and_then(|div| div.text().next())
         .map(|text| text.trim().to_string())
+        .or(Some("".to_string()))
         .ok_or(ScrapeError { reason: "description is not found".to_string() })
 }
 
