@@ -70,7 +70,7 @@ class EntryList extends React.Component {
     return (
       <div>
         <Table selectable={false}>
-          <TableHeader>
+          <TableHeader displaySelectAll={false}>
             <TableRow>
               <TableHeaderColumn colSpan="5" style={{ textAlign: 'center' }}>
                 <ReactPaginate
@@ -97,7 +97,7 @@ class EntryList extends React.Component {
               <TableHeaderColumn>tracks</TableHeaderColumn>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody displayRowCheckbox={false}>
             {rows}
           </TableBody>
         </Table>
