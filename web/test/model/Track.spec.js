@@ -15,9 +15,10 @@ describe('Track', () => {
         provider: 'SoundCloud',
         identifier: '1234',
       }));
-      assert.equal(null, getUrl({
+      assert.equal('http://open.spotify.com/user/spotify_user/playlist/playlist_id', getUrl({
         provider: 'Spotify',
-        identifier: '1234',
+        identifier: 'playlist_id',
+        url: 'spotify:user:spotify_user:playlist:playlist_id',
       }));
     });
   });

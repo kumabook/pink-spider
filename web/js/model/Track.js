@@ -1,3 +1,8 @@
+import {
+  formatOpenURL,
+  parse,
+} from 'spotify-uri';
+
 export const getOwnerUrl = (track) => {
   if (!track || !track.owner_id) {
     return null;
@@ -14,11 +19,8 @@ export const getOwnerUrl = (track) => {
 };
 
 export const getUrl = (track) => {
-  if (track.url) {
-    return track.url;
-  }
   if (!track || !track.identifier) {
-    return null;
+    return track.url;
   }
   const id = track.identifier;
   switch (track.provider) {
@@ -26,7 +28,9 @@ export const getUrl = (track) => {
       return `https://www.youtube.com/watch/?v=${id}`;
     case 'SoundCloud':
       return `https://soundcloud.com/tracks/${id}`;
+    case 'Spotify':
+      return formatOpenURL(parse(track.url));
     default:
-      return null;
+      return track.url;
   }
 };
