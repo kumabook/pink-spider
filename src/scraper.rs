@@ -19,6 +19,7 @@ use url::Url;
 
 use Provider;
 use Track;
+use Playlist;
 use open_graph;
 use apple_music;
 use youtube;
@@ -43,8 +44,9 @@ static SPOTIFY_PLAYLIST:     &'static str = r"(spotify:user:[a-zA-Z0-9_-]+:playl
 
 #[derive(Debug)]
 pub struct ScraperProduct {
-    pub tracks: Vec<Track>,
-    pub og_obj: Option<open_graph::Object>,
+    pub playlists: Vec<Playlist>,
+    pub tracks:    Vec<Track>,
+    pub og_obj:    Option<open_graph::Object>,
 }
 
 pub fn extract(url: &str) -> Result<ScraperProduct, Error> {
@@ -58,17 +60,19 @@ pub fn extract(url: &str) -> Result<ScraperProduct, Error> {
             .from_utf8()
             .read_from(&mut res)
             .unwrap();
-        let mut tracks   = Vec::new();
-        let mut og_props = Vec::new();
-        walk(0, dom.document, &mut tracks, &mut og_props);
+        let mut playlists = Vec::new();
+        let mut tracks    = Vec::new();
+        let mut og_props  = Vec::new();
+        walk(dom.document, &mut playlists, &mut tracks, &mut og_props);
         let og_obj = if og_props.len() > 0 {
             Some(open_graph::Object::new(&og_props))
         } else {
             None
         };
         Ok(ScraperProduct {
-            tracks: tracks,
-            og_obj: og_obj
+            playlists: playlists,
+            tracks:    tracks,
+            og_obj:    og_obj
         })
     } else {
         println!("Failed to get entry html {}: {}", res.status, url);
@@ -77,10 +81,10 @@ pub fn extract(url: &str) -> Result<ScraperProduct, Error> {
 }
 
 // This is not proper HTML serialization, of course.
-fn walk(indent: usize,
-        handle: Handle,
-        tracks: &mut Vec<Track>,
-        og_props: &mut Vec<(String, String)>) {
+fn walk(handle:    Handle,
+        playlists: &mut Vec<Playlist>,
+        tracks:    &mut Vec<Track>,
+        og_props:  &mut Vec<(String, String)>) {
     let node = handle.borrow();
     match node.node {
         Document         => (),
@@ -91,7 +95,12 @@ fn walk(indent: usize,
             let tag_name = name.local.as_ref();
             let mut ps = extract_open_graph_metadata_from_tag(tag_name, attrs);
             og_props.append(&mut ps);
-            let ts = extract_tracks_from_tag(tag_name, attrs);
+            let (ps, ts) = extract_enclosures_from_tag(tag_name, attrs);
+            for playlist in ps.iter().cloned() {
+                if !(playlists).iter().any(|p| playlist == *p) {
+                    (*playlists).push(playlist)
+                }
+            }
             for track in ts.iter().cloned() {
                 if !(tracks).iter().any(|t| track == *t) {
                     (*tracks).push(track)
@@ -100,7 +109,7 @@ fn walk(indent: usize,
         }
     }
     for child in node.children.iter() {
-        walk(indent+4, child.clone(), tracks, og_props);
+        walk(child.clone(), playlists, tracks, og_props);
     }
 }
 
@@ -113,20 +122,20 @@ fn attr(attr_name: &str, attrs: &Vec<Attribute>) -> Option<String> {
     None
 }
 
-pub fn extract_tracks_from_tag(tag_name: &str,
-                               attrs: &Vec<Attribute>) -> Vec<Track> {
+pub fn extract_enclosures_from_tag(tag_name: &str,
+                                   attrs: &Vec<Attribute>) -> (Vec<Playlist>, Vec<Track>) {
     if tag_name == "iframe" {
         match attr("src", attrs) {
-            Some(ref src) => extract_tracks_from_url(src.to_string()),
-            None => vec![]
+            Some(ref src) => extract_enclosures_from_url(src.to_string()),
+            None => (vec![], vec![])
         }
     } else if tag_name == "a" || tag_name == "link" {
         match attr("href", attrs) {
-            Some(ref href) => extract_tracks_from_url(href.to_string()),
-            None => vec![]
+            Some(ref href) => extract_enclosures_from_url(href.to_string()),
+            None => (vec![], vec![])
         }
     } else {
-        vec![]
+        (vec![], vec![])
     }
 }
 
@@ -185,22 +194,26 @@ fn country_param(url: &str) -> String {
     "en".to_string()
 }
 
-fn fetch_spotify_playlist(uri: &str) -> Vec<Track> {
+fn fetch_spotify_playlist(uri: &str) -> (Vec<Playlist>, Vec<Track>) {
     match Regex::new(r"spotify:user:([a-zA-Z0-9_-]+):playlist:([a-zA-Z0-9_-]+)") {
         Ok(re) => match re.captures(uri) {
             Some(cap) => {
                 let user_id     = cap[1].to_string();
                 let playlist_id = cap[2].to_string();
                 return match spotify::fetch_playlist(&user_id, &playlist_id) {
-                    Ok(playlist) => playlist.tracks.items.iter()
-                                                   .map(|ref i| Track::from_sp_track(&i.track))
-                                                   .collect::<Vec<_>>(),
-                    Err(_)       => vec![]
+                    Ok(playlist) => {
+                        let tracks = playlist.tracks.items
+                            .iter()
+                            .map(|ref i| Track::from_sp_track(&i.track))
+                            .collect::<Vec<_>>();
+                        return (vec![Playlist::from_sp_playlist(&playlist)], tracks);
+                    },
+                    Err(_)       => (vec![], vec![])
                 }
             },
-            None => vec![]
+            None => (vec![], vec![])
         },
-        Err(_) => vec![]
+        Err(_) => (vec![], vec![])
     }
 }
 
@@ -215,102 +228,108 @@ fn fetch_spotify_track(identifier: String) -> Vec<Track> {
     }
 }
 
-fn extract_tracks_from_url(url: String) -> Vec<Track> {
+fn fetch_youtube_playlist(id: &str) -> (Vec<Playlist>, Vec<Track>) {
+    let playlists = match youtube::fetch_playlist(id) {
+        Ok(res) => res.items
+            .iter()
+            .map(|ref i| Playlist::from_yt_playlist(i))
+            .collect::<Vec<_>>(),
+        Err(_)  => vec![],
+    };
+    let tracks = match youtube::fetch_playlist_items(id) {
+        Ok(res) => res.items
+            .iter()
+            .map(|ref i| Track::from_yt_playlist_item(i))
+            .collect::<Vec<_>>(),
+        Err(_) => vec![],
+    };
+    (playlists, tracks)
+}
+
+fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Track>) {
     let decoded = percent_decode(url.as_bytes()).decode_utf8_lossy().into_owned();
 
     match extract_identifier(&decoded, APPLE_MUSIC_SONG) {
         Some(identifier) => {
             let country = country_param(&url);
             if let Ok(song) = apple_music::fetch_song(&identifier, &country) {
-                return vec![Track::from_am_song(&song)]
+                return (vec![], vec![Track::from_am_song(&song)])
             };
         },
         None => ()
     }
     match extract_identifier(&decoded, APPLE_MUSIC_ALBUM) {
         Some(identifier) => {
-            return vec![]
+            // todo
+            return (vec![], vec![])
         },
         None => ()
     }
     match extract_identifier(&decoded, APPLE_MUSIC_PLAYLIST) {
         Some(identifier) => {
-            // todo: fetch songs
-            return vec![]
+            let country = country_param(&url);
+            if let Ok(playlist) = apple_music::fetch_playlist(&identifier, &country) {
+                return (vec![Playlist::from_am_playlist(&playlist)], vec![])
+            }
+            return (vec![], vec![])
         },
         None => ()
     }
     match extract_identifier(&decoded, YOUTUBE_WATCH) {
-        Some(identifier) => {
-            return vec![Track::new(Provider::YouTube, identifier)]
-        },
-        None => ()
+        Some(identifier) => return (vec![], vec![Track::new(Provider::YouTube, identifier)]),
+        None             => ()
     }
     match extract_identifier(&decoded, YOUTUBE_LIST) {
-        Some(identifier) => {
-            return match youtube::fetch_playlist(&identifier) {
-                Ok(res) => res.items.iter()
-                                    .map(|ref i| Track::from_yt_playlist_item(i))
-                                    .collect::<Vec<_>>(),
-                Err(_)       => vec![]
-            }
-        },
-        None => ()
+        Some(identifier) => return fetch_youtube_playlist(&identifier),
+        None             => ()
     }
     match extract_identifier(&decoded, YOUTUBE_EMBED) {
-        Some(identifier) => {
-            return vec![Track::new(Provider::YouTube, identifier)]
-        },
-        None => ()
+        Some(identifier) => return (vec![], vec![Track::new(Provider::YouTube, identifier)]),
+        None             => ()
     }
     match extract_identifier(&decoded, SOUNDCLOUD_TRACK) {
-        Some(identifier) => {
-            return vec![Track::new(Provider::SoundCloud, identifier)]
-        },
-        None => ()
+        Some(identifier) => return (vec![], vec![Track::new(Provider::SoundCloud, identifier)]),
+        None             => ()
     }
     match extract_identifier(&decoded, SOUNDCLOUD_PLAYLIST) {
-        Some(identifier) => {
-            return match soundcloud::fetch_playlist(&identifier) {
-                Ok(playlist) => playlist.tracks
-                                        .iter()
-                                        .map(|ref t| Track::from_sc_track(t))
-                                        .collect::<Vec<_>>(),
-                Err(_)       => vec![]
-            }
+        Some(identifier) => return match soundcloud::fetch_playlist(&identifier) {
+            Ok(playlist) => {
+                let tracks = playlist.tracks
+                    .iter()
+                    .map(|ref t| Track::from_sc_track(t))
+                    .collect::<Vec<_>>();
+                (vec![Playlist::from_sc_playlist(&playlist)], tracks)
+            },
+            Err(_)       => (vec![], vec![]),
         },
         None => ()
     }
     match extract_identifier(&decoded, SOUNDCLOUD_USER) {
-        Some(identifier) => {
-            return match soundcloud::fetch_user_tracks(&identifier) {
-                Ok(tracks) => tracks.iter()
-                                    .map(|ref t| Track::from_sc_track(t))
-                                    .collect::<Vec<_>>(),
-                Err(_)     => vec![]
-            }
+        Some(identifier) => return match soundcloud::fetch_user_tracks(&identifier) {
+            Ok(tracks) => {
+                let tracks = tracks
+                    .iter()
+                    .map(|ref t| Track::from_sc_track(t))
+                    .collect::<Vec<_>>();
+                (vec![], tracks)
+            },
+            Err(_)       => (vec![], vec![]),
         },
         None => ()
     }
     match extract_identifier(&decoded, SPOTIFY_TRACK) {
-        Some(identifier) => {
-            return fetch_spotify_track(identifier)
-        },
-        None => ()
+        Some(identifier) => return (vec![], fetch_spotify_track(identifier)),
+        None             => ()
     }
     match extract_identifier(&decoded, SPOTIFY_TRACK_OPEN) {
-        Some(identifier) => {
-            return fetch_spotify_track(identifier)
-        },
-        None => ()
+        Some(identifier) => return (vec![], fetch_spotify_track(identifier)),
+        None             => ()
     }
     match extract_identifier(&decoded, SPOTIFY_PLAYLIST) {
-        Some(uri) => {
-            return fetch_spotify_playlist(&uri)
-        },
-        None => ()
+        Some(uri) => return fetch_spotify_playlist(&uri),
+        None      => ()
     }
-    return vec![]
+    return (vec![], vec![])
 }
 
 #[cfg(test)]
@@ -347,8 +366,11 @@ mod test {
     }
     #[test]
     fn test_extract() {
-        let url = "http://spincoaster.com/spincoaster-breakout-2017";
-        let tracks = extract(url).unwrap().tracks;
+        let url       = "http://spincoaster.com/spincoaster-breakout-2017";
+        let product   = extract(url).unwrap();
+        let playlists = product.playlists;
+        let tracks    = product.tracks;
+        assert_eq!(playlists.len(), 2);
         let youtube_tracks: Vec<&Track> = tracks.iter().filter(|&x| x.provider == Provider::YouTube).collect();
         let spotify_tracks: Vec<&Track> = tracks.iter().filter(|&x| x.provider == Provider::Spotify).collect();
         assert_eq!(youtube_tracks.len(), 15);

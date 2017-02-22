@@ -6,6 +6,7 @@ use error::Error;
 use chrono::{NaiveDateTime, UTC, DateTime};
 use super::{conn, PaginatedCollection};
 use Track;
+use Playlist;
 
 static PROPS: [&'static str; 8]  = ["id",
                                     "url",
@@ -31,14 +32,16 @@ pub struct Entry {
     pub created_at:  NaiveDateTime,
     pub updated_at:  NaiveDateTime,
     pub tracks:      Vec<Track>,
+    pub playlists:   Vec<Playlist>,
 }
 
 impl ToJson for Entry {
     fn to_json(&self) -> Json {
-        let created_at   = DateTime::<UTC>::from_utc(self.created_at  , UTC);
-        let updated_at   = DateTime::<UTC>::from_utc(self.updated_at  , UTC);
-        let mut d = BTreeMap::new();
-        let tracks = Json::Array(self.tracks.iter().map(|x| x.to_json()).collect());
+        let created_at = DateTime::<UTC>::from_utc(self.created_at  , UTC);
+        let updated_at = DateTime::<UTC>::from_utc(self.updated_at  , UTC);
+        let mut d      = BTreeMap::new();
+        let tracks     = Json::Array(self.tracks.iter().map(|x| x.to_json()).collect());
+        let playlists  = Json::Array(self.playlists.iter().map(|x| x.to_json()).collect());
         d.insert("id".to_string()         , self.id.to_string().to_json());
         d.insert("url".to_string()        , self.url.to_json());
         d.insert("title".to_string()      , self.title.to_json());
@@ -48,6 +51,7 @@ impl ToJson for Entry {
         d.insert("created_at".to_string() , created_at.to_rfc3339().to_json());
         d.insert("updated_at".to_string() , updated_at.to_rfc3339().to_json());
         d.insert("tracks".to_string()     , tracks);
+        d.insert("playlists".to_string()  , playlists);
         Json::Object(d)
     }
 }
@@ -65,7 +69,8 @@ impl Entry {
                 locale:      row.get(5),
                 created_at:  row.get(6),
                 updated_at:  row.get(7),
-                tracks: Track::find_by_entry_id(row.get(0)),
+                tracks:      Track::find_by_entry_id(row.get(0)),
+                playlists:   Playlist::find_by_entry_id(row.get(0)),
             })
         }
         entries
@@ -139,6 +144,7 @@ impl Entry {
                 created_at:  UTC::now().naive_utc(),
                 updated_at:  UTC::now().naive_utc(),
                 tracks:      Vec::new(),
+                playlists:   Vec::new(),
             };
             return Ok(entry);
         }
@@ -151,6 +157,14 @@ impl Entry {
                                  VALUES ($1, $2)").unwrap();
         stmt.query(&[&track.id, &self.id]).unwrap();
         self.tracks.push(track);
+    }
+
+    pub fn add_playlist(&mut self, playlist: Playlist) {
+        let conn = conn().unwrap();
+        let stmt = conn.prepare("INSERT INTO playlist_entries (playlist_id, entry_id)
+                                 VALUES ($1, $2)").unwrap();
+        stmt.query(&[&playlist.id, &self.id]).unwrap();
+        self.playlists.push(playlist);
     }
 
     pub fn save(&mut self) -> Result<(), Error> {

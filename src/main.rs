@@ -30,7 +30,7 @@ extern crate pink_spider;
 
 use pink_spider::error::Error;
 use pink_spider::scraper::extract;
-use pink_spider::model::{Track, Entry, Provider, PaginatedCollection};
+use pink_spider::model::{Track, Playlist, Entry, Provider, PaginatedCollection};
 use rustc_serialize::json::{ToJson, Json};
 use pink_spider::youtube;
 use pink_spider::soundcloud;
@@ -122,6 +122,16 @@ pub fn playlistify_entry(entry: Entry) -> Result<Entry, Error> {
         match entry.tracks.iter().find(|&t| t.id == track.id) {
             Some(_) => (),
             None    => e.add_track(track.clone())
+        }
+    }
+    for p in product.playlists {
+        let new_playlist = try!(Playlist::find_or_create(p.provider, p.identifier.to_string()));
+        let mut playlist = p.clone();
+        playlist.id      = new_playlist.id;
+        try!(playlist.save());
+        match entry.playlists.iter().find(|&p| p.id == playlist.id) {
+            Some(_) => (),
+            None    => e.add_playlist(playlist.clone())
         }
     }
     try!(e.save());

@@ -1,9 +1,11 @@
 pub use self::track::Track;
+pub use self::playlist::Playlist;
 pub use self::provider::Provider;
 pub use self::entry::Entry;
 pub use self::feed::Feed;
 
 mod track;
+mod playlist;
 mod entry;
 mod feed;
 mod provider;
@@ -19,7 +21,7 @@ use std::env;
 
 static DEFAULT_DATABASE_URL: &'static str = "postgres://pink_spider:pink_spider@localhost/pink_spider_development";
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct PaginatedCollection<I> {
     pub page:     i64,
     pub per_page: i64,
