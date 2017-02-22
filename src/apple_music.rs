@@ -139,7 +139,7 @@ pub fn fetch_album(id: &str, country: &str) -> ScrapeResult<Album> {
 
 pub fn fetch_playlist(id: &str, country: &str) -> ScrapeResult<Playlist> {
     let client = Client::new();
-    let url = format!("{}/playlist/{}?country={}", BASE_URL, id, country);
+    let url = format!("{}/playlist/pl.{}?country={}", BASE_URL, id, country);
     let mut res = client.get(&url)
         .header(Connection(vec![ConnectionOption::Close]))
         .send()
