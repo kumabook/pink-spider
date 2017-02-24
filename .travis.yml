@@ -5,12 +5,21 @@ rust:
 matrix:
   allow_failures:
     - rust: nightly
-script:
-  - cargo build --verbose
-  - RUST_BACKTRACE=1 cargo test --verbose -- --nocapture
+services:
+  - postgresql
+before_script:
   - nvm install 7.4.0
   - npm install -g yarn
   - yarn install
+  - rvm install ruby-2.4.0 --binary --fuzzy
+  - rvm use 2.4.0
+  - gem install bundler
+  - bundle install
+  - rake db:create
+  - rake db:migrate
+script:
+  - cargo build --verbose
+  - RUST_BACKTRACE=1 cargo test --verbose -- --nocapture
   - npm run lint
   - npm test
 env:
