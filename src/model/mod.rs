@@ -19,7 +19,7 @@ use postgres::error::ConnectError;
 use std::env;
 
 
-static DEFAULT_DATABASE_URL: &'static str = "postgres://pink_spider:pink_spider@localhost/pink_spider_development";
+static DEFAULT_DATABASE_URL: &'static str = "postgres://postgres:postgres@localhost/pink_spider_development";
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct PaginatedCollection<I> {

@@ -6,17 +6,17 @@ default: &default
 development:
   <<: *default
   database: pink_spider_development
-  username: pink_spider
-  password: pink_spider
+  username: postgres
+  password: postgres
 test:
   <<: *default
   database: pink_spider_test
-  username: pink_spider
-  password: pink_spider
+  username: postgres
+  password: postgres
 
 production:
   <<: *default
   database: pink_spider_production
-  username: pink_spider
+  username: postgres
   password: <%= ENV['PINK_SPIDER_DATABASE_PASSWORD'] %>
 
