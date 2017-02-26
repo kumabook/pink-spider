@@ -13,6 +13,7 @@ class App extends React.Component {
       handleClick:              React.PropTypes.func,
       handleEntriesMenuClick:   React.PropTypes.func,
       handlePlaylistsMenuClick: React.PropTypes.func,
+      handleAlbumsMenuClick:    React.PropTypes.func,
       handleTracksMenuClick:    React.PropTypes.func,
       drawlerIsOpen:            React.PropTypes.bool,
     };
@@ -32,6 +33,7 @@ class App extends React.Component {
           />
           <MenuItem onTouchTap={this.props.handleEntriesMenuClick}>Entries</MenuItem>
           <MenuItem onTouchTap={this.props.handlePlaylistsMenuClick}>Playlists</MenuItem>
+          <MenuItem onTouchTap={this.props.handleAlbumsMenuClick}>Albums</MenuItem>
           <MenuItem onTouchTap={this.props.handleTracksMenuClick}>Tracks</MenuItem>
         </Drawer>
         {this.props.children}
@@ -55,6 +57,10 @@ function mapDispatchToProps(dispatch) {
     },
     handlePlaylistsMenuClick: () => {
       dispatch(push({ pathname: 'playlists', query: { page: 0 } }));
+      dispatch(toggleDrawler());
+    },
+    handleAlbumsMenuClick: () => {
+      dispatch(push({ pathname: 'albums', query: { page: 0 } }));
       dispatch(toggleDrawler());
     },
     handleTracksMenuClick: () => {
