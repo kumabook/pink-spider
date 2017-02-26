@@ -19,6 +19,7 @@ use youtube;
 use soundcloud;
 use spotify;
 use error::Error;
+use model::Enclosure;
 
 use url::percent_encoding::{percent_decode};
 use queryst::parse;
