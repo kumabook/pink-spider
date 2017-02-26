@@ -1,4 +1,6 @@
 .track-list-thumb,
+.playlist-list-thumb,
+.album-list-thumb,
 .entry-list-thumb {
     display: table-cell;
     height: 100px;
