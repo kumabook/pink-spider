@@ -30,7 +30,7 @@ extern crate pink_spider;
 
 use pink_spider::error::Error;
 use pink_spider::scraper::extract;
-use pink_spider::model::{Track, Playlist, Entry, Provider, PaginatedCollection};
+use pink_spider::model::{Model, Track, Playlist, Album, Entry, Enclosure, Provider, PaginatedCollection};
 use rustc_serialize::json::{ToJson, Json};
 use pink_spider::youtube;
 use pink_spider::soundcloud;
@@ -43,41 +43,18 @@ pub fn index_entries(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, application_json(), json_str)))
 }
 
-pub fn index_tracks(req: &mut Request) -> IronResult<Response> {
+pub fn index<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
     let (page, per_page) = pagination_params(req);
-    let tracks  = Track::find(page, per_page);
-    let json_obj: Json   = tracks.to_json();
+    let enclosures       = T::find(page, per_page);
+    let json_obj: Json   = enclosures.to_json();
     let json_str: String = json_obj.to_string();
     Ok(Response::with((status::Ok, application_json(), json_str)))
 }
 
-pub fn index_tracks_by_entry(req: &mut Request) -> IronResult<Response> {
+pub fn index_by_entry<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
     let ref entry_id = req.extensions.get::<Router>().unwrap().find("entry_id").unwrap();
     let uuid = try!(Uuid::parse_str(entry_id).map_err(|_| Error::Unprocessable));
-    let items = Track::find_by_entry_id(uuid);
-    let col = PaginatedCollection {
-        page:     0,
-        per_page: items.len() as i64,
-        total:    items.len() as i64,
-        items:    items,
-    };
-    let json_obj: Json   = col.to_json();
-    let json_str: String = json_obj.to_string();
-    Ok(Response::with((status::Ok, application_json(), json_str)))
-}
-
-pub fn index_playlists(req: &mut Request) -> IronResult<Response> {
-    let (page, per_page) = pagination_params(req);
-    let playlists  = Playlist::find(page, per_page);
-    let json_obj: Json   = playlists.to_json();
-    let json_str: String = json_obj.to_string();
-    Ok(Response::with((status::Ok, application_json(), json_str)))
-}
-
-pub fn index_playlists_by_entry(req: &mut Request) -> IronResult<Response> {
-    let ref entry_id = req.extensions.get::<Router>().unwrap().find("entry_id").unwrap();
-    let uuid = try!(Uuid::parse_str(entry_id).map_err(|_| Error::Unprocessable));
-    let items = Playlist::find_by_entry_id(uuid);
+    let items = T::find_by_entry_id(uuid);
     let col = PaginatedCollection {
         page:     0,
         per_page: items.len() as i64,
@@ -144,7 +121,7 @@ pub fn playlistify_entry(entry: Entry) -> Result<Entry, Error> {
         try!(track.fetch_detail().save());
         match entry.tracks.iter().find(|&t| t.id == track.id) {
             Some(_) => (),
-            None    => e.add_track(track.clone())
+            None    => try!(e.add_track(track.clone())),
         }
     }
     for p in product.playlists {
@@ -154,40 +131,12 @@ pub fn playlistify_entry(entry: Entry) -> Result<Entry, Error> {
         try!(playlist.save());
         match entry.playlists.iter().find(|&p| p.id == playlist.id) {
             Some(_) => (),
-            None    => e.add_playlist(playlist.clone())
+            None    => try!(e.add_playlist(playlist.clone())),
         }
     }
     try!(e.save());
     Ok(e)
 }
-
-pub fn show_track_by_id(req: &mut Request) -> IronResult<Response> {
-    let ref track_id = req.extensions.get::<Router>().unwrap()
-                          .find("track_id").unwrap();
-    match Track::find_by_id(track_id) {
-        Ok(track) => {
-            Ok(Response::with((status::Ok,
-                               application_json(),
-                               track.to_json().to_string())))
-        },
-        Err(e) => Ok(e.as_response())
-    }
-}
-
-pub fn show_track(req: &mut Request) -> IronResult<Response> {
-    let provider   = req.extensions.get::<Router>().unwrap().find("provider").unwrap();
-    let identifier = req.extensions.get::<Router>().unwrap().find("id").unwrap();
-    let p = &Provider::new(provider.to_string());
-    match Track::find_by(p, identifier) {
-        Ok(track) => {
-            Ok(Response::with((status::Ok,
-                               application_json(),
-                               track.to_json().to_string())))
-        },
-        Err(e) => Ok(e.as_response())
-    }
-}
-
 
 pub fn update_track(req: &mut Request) -> IronResult<Response> {
     let mut track = try!(Track::find_by_id(&query_as_string(req, "track_id")));
@@ -215,28 +164,27 @@ pub fn update_track(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, application_json(), res)))
 }
 
-pub fn show_playlist_by_id(req: &mut Request) -> IronResult<Response> {
-    let ref playlist_id = req.extensions.get::<Router>().unwrap()
-                          .find("playlist_id").unwrap();
-    match Playlist::find_by_id(playlist_id) {
-        Ok(playlist) => {
+pub fn show<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
+    let provider   = req.extensions.get::<Router>().unwrap().find("provider").unwrap();
+    let identifier = req.extensions.get::<Router>().unwrap().find("id").unwrap();
+    let p = &Provider::new(provider.to_string());
+    match T::find_by(p, identifier) {
+        Ok(enclosure) => {
             Ok(Response::with((status::Ok,
                                application_json(),
-                               playlist.to_json().to_string())))
+                               enclosure.to_json().to_string())))
         },
         Err(e) => Ok(e.as_response())
     }
 }
 
-pub fn show_playlist(req: &mut Request) -> IronResult<Response> {
-    let provider   = req.extensions.get::<Router>().unwrap().find("provider").unwrap();
-    let identifier = req.extensions.get::<Router>().unwrap().find("id").unwrap();
-    let p = &Provider::new(provider.to_string());
-    match Playlist::find_by(p, identifier) {
-        Ok(playlist) => {
+pub fn show_by_id<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
+    let ref id = req.extensions.get::<Router>().unwrap().find("id").unwrap();
+    match T::find_by_id(id) {
+        Ok(enclosure) => {
             Ok(Response::with((status::Ok,
                                application_json(),
-                               playlist.to_json().to_string())))
+                               enclosure.to_json().to_string())))
         },
         Err(e) => Ok(e.as_response())
     }
@@ -277,17 +225,20 @@ pub fn main() {
     mount.mount("/web/", Static::new(Path::new(path)));
     let router = router!(
         playlistify:              get  "/playlistify"                 => playlistify,
-        show_track_by_id:         get  "/tracks/:track_id"            => show_track_by_id,
+        show_track_by_id:         get  "/tracks/:id"                  => show_by_id::<Track>,
+        show_track:               get  "/tracks/:provider/:id"        => show::<Track>,
         update_track:             post "/tracks/:track_id"            => update_track,
-        show_track:               get  "/tracks/:provider/:id"        => show_track,
-        show_playlist_by_id:      get  "/playlists/:playlist_id"      => show_playlist_by_id,
-//        update_playlist:          post "/playlists/:playlist_id"      => update_playlist,
-        show_playlist:            get  "/playlist/:provider/:id"      => show_playlist,
+        show_playlist_by_id:      get  "/playlists/:id"               => show_by_id::<Playlist>,
+        show_playlist:            get  "/playlists/:provider/:id"      => show::<Playlist>,
+        show_album_by_id:         get  "/albums/:id"                  => show_by_id::<Album>,
+        show_album:               get  "/albums/:provider/:id"        => show::<Album>,
         index_entries:            get  "/entries"                     => index_entries,
-        index_tracks:             get  "/tracks"                      => index_tracks,
-        index_tracks_by_entry:    get  "/entries/:entry_id/tracks"    => index_tracks_by_entry,
-        index_playlists:          get  "/playlists"                   => index_playlists,
-        index_playlists_by_entry: get  "/entries/:entry_id/playlists" => index_playlists_by_entry,
+        index_tracks:             get  "/tracks"                      => index::<Track>,
+        index_tracks_by_entry:    get  "/entries/:entry_id/tracks"    => index_by_entry::<Track>,
+        index_playlists:          get  "/playlists"                   => index::<Playlist>,
+        index_playlists_by_entry: get  "/entries/:entry_id/playlists" => index_by_entry::<Playlist>,
+        index_albums:             get  "/albums"                      => index::<Album>,
+        index_albums_by_entry:    get  "/entries/:entry_id/albums"    => index_by_entry::<Album>,
         web:                   get  "/*"                        => mount,
     );
     let port_str = match std::env::var("PORT") {
