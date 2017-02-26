@@ -3,6 +3,8 @@ import {
   parse,
 } from 'spotify-uri';
 
+import { getCountryParam } from './Playlist';
+
 export const getOwnerUrl = (track) => {
   if (!track || !track.owner_id) {
     return null;
@@ -30,6 +32,10 @@ export const getUrl = (track) => {
       return `https://soundcloud.com/tracks/${id}`;
     case 'Spotify':
       return formatOpenURL(parse(track.url));
+    case 'AppleMusic': {
+      const country = getCountryParam(track.url);
+      return `http://tools.applemusic.com/embed/v1/song/${id}?country=${country}`;
+    }
     default:
       return track.url;
   }
