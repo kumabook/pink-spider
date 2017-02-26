@@ -327,12 +327,14 @@ impl Track {
         self.description    = None;
         self.state          = State::Alive;
         self.published_at   = UTC::now().naive_utc();
-        if track.album.images.len() > 0 {
-            self.artwork_url   = Some(track.album.images[0].url.clone());
-            self.thumbnail_url = Some(track.album.images[0].url.clone());
-        }
-        if track.album.images.len() > 1 {
-            self.thumbnail_url = Some(track.album.images[1].url.clone());
+        if let Some(album) = track.album.clone() {
+            if album.images.len() > 0 {
+                self.artwork_url   = Some(album.images[0].url.clone());
+                self.thumbnail_url = Some(album.images[0].url.clone());
+            }
+            if album.images.len() > 1 {
+                self.thumbnail_url = Some(album.images[1].url.clone());
+            }
         }
         self
     }

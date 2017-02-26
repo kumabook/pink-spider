@@ -31,6 +31,7 @@ pub struct Album {
     pub album_artist: String,
     pub music_url:    String,
     pub genre:        String,
+    pub tracks:       Option<Vec<Track>>,
 }
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
@@ -134,6 +135,7 @@ pub fn fetch_album(id: &str, country: &str) -> ScrapeResult<Album> {
         artwork_url:  artwork_url,
         music_url:    music_url,
         genre:        count,
+        tracks:       Some(tracks),
     })
 }
 

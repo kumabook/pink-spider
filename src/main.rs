@@ -134,6 +134,16 @@ pub fn playlistify_entry(entry: Entry) -> Result<Entry, Error> {
             None    => try!(e.add_playlist(playlist.clone())),
         }
     }
+    for a in product.albums {
+        let new_album = try!(Album::find_or_create(a.provider, a.identifier.to_string()));
+        let mut album = a.clone();
+        album.id      = new_album.id;
+        try!(album.save());
+        match entry.albums.iter().find(|&a| a.id == album.id) {
+            Some(_) => (),
+            None    => try!(e.add_album(album.clone())),
+        }
+    }
     try!(e.save());
     Ok(e)
 }

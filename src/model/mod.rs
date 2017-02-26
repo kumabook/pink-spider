@@ -16,7 +16,6 @@ mod state;
 mod enclosure;
 pub mod open_graph;
 
-
 use rustc_serialize::json::{ToJson, Json};
 use std;
 use std::collections::BTreeMap;

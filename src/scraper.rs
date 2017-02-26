@@ -13,6 +13,7 @@ use url::Url;
 use Provider;
 use Track;
 use Playlist;
+use Album;
 use open_graph;
 use apple_music;
 use youtube;
@@ -24,18 +25,21 @@ use model::Enclosure;
 use url::percent_encoding::{percent_decode};
 use queryst::parse;
 
-static APPLE_MUSIC_SONG:     &'static str = r"tools.applemusic.com/embed/v1/song/([a-zA-Z0-9_-]+)";
-static APPLE_MUSIC_ALBUM:    &'static str = r"tools.applemusic.com/embed/v1/album/([a-zA-Z0-9_-]+)";
-static APPLE_MUSIC_PLAYLIST: &'static str = r"tools.applemusic.com/embed/v1/playlist/pl.([a-zA-Z0-9_-]+)";
-static YOUTUBE_EMBED:        &'static str = r"www.youtube.com/embed/([a-zA-Z0-9_-].+)";
-static YOUTUBE_LIST:         &'static str = r"www.youtube.com/embed/videoseries\?list=([a-zA-Z0-9_-]+)";
-static YOUTUBE_WATCH:        &'static str = r"www.youtube.com/watch\?v=([a-zA-Z0-9_-]+)";
-static SOUNDCLOUD_TRACK:     &'static str = r"api.soundcloud.com/tracks/([a-zA-Z0-9_-]+)";
-static SOUNDCLOUD_PLAYLIST:  &'static str = r"api.soundcloud.com/playlists/([a-zA-Z0-9_-]+)";
-static SOUNDCLOUD_USER:      &'static str = r"api.soundcloud.com/users/([a-zA-Z0-9_-]+)";
-static SPOTIFY_TRACK:        &'static str = r"open.spotify.com/track/([a-zA-Z0-9_-]+)";
-static SPOTIFY_TRACK_OPEN:   &'static str = r"spotify:track:([a-zA-Z0-9_-]+)";
-static SPOTIFY_PLAYLIST:     &'static str = r"(spotify:user:[a-zA-Z0-9_-]+:playlist:[a-zA-Z0-9_-]+)";
+static APPLE_MUSIC_SONG:      &'static str = r"tools.applemusic.com/embed/v1/song/([a-zA-Z0-9_-]+)";
+static APPLE_MUSIC_ALBUM:     &'static str = r"tools.applemusic.com/embed/v1/album/([a-zA-Z0-9_-]+)";
+static APPLE_MUSIC_PLAYLIST:  &'static str = r"tools.applemusic.com/embed/v1/playlist/pl.([a-zA-Z0-9_-]+)";
+static YOUTUBE_EMBED:         &'static str = r"www.youtube.com/embed/([a-zA-Z0-9_-].+)";
+static YOUTUBE_LIST:          &'static str = r"www.youtube.com/embed/videoseries\?list=([a-zA-Z0-9_-]+)";
+static YOUTUBE_WATCH:         &'static str = r"www.youtube.com/watch\?v=([a-zA-Z0-9_-]+)";
+static SOUNDCLOUD_TRACK:      &'static str = r"api.soundcloud.com/tracks/([a-zA-Z0-9_-]+)";
+static SOUNDCLOUD_PLAYLIST:   &'static str = r"api.soundcloud.com/playlists/([a-zA-Z0-9_-]+)";
+static SOUNDCLOUD_USER:       &'static str = r"api.soundcloud.com/users/([a-zA-Z0-9_-]+)";
+static SPOTIFY_TRACK_OPEN:    &'static str = r"open.spotify.com/track/([a-zA-Z0-9_-]+)";
+static SPOTIFY_TRACK:         &'static str = r"spotify:track:([a-zA-Z0-9_-]+)";
+static SPOTIFY_PLAYLIST_OPEN: &'static str = r"(open.spotify.com/user/([a-zA-Z0-9_-]+)/playlist/([a-zA-Z0-9_-]+))";
+static SPOTIFY_PLAYLIST:      &'static str = r"(spotify:user:([a-zA-Z0-9_-]+):playlist:([a-zA-Z0-9_-]+))";
+static SPOTIFY_ALBUM_OPEN:    &'static str = r"open.spotify.com/album/([a-zA-Z0-9_-]+)";
+static SPOTIFY_ALBUM:         &'static str = r"spotify:album:([a-zA-Z0-9_-]+)";
 
 static APPLE_MUSIC_ALBUM_LINK:    &'static str = r"itunes.apple.com/([a-zA-Z0-9_-]+)/album/([a-zA-Z0-9_-]+)/id([a-zA-Z0-9_-]+)";
 static APPLE_MUSIC_PLAYLIST_LINK: &'static str = r"itunes.apple.com/([a-zA-Z0-9_-]+)/playlist/([a-zA-Z0-9_-]+)/idpl.([a-zA-Z0-9_-]+)";
@@ -43,6 +47,7 @@ static APPLE_MUSIC_PLAYLIST_LINK: &'static str = r"itunes.apple.com/([a-zA-Z0-9_
 #[derive(Debug)]
 pub struct ScraperProduct {
     pub playlists: Vec<Playlist>,
+    pub albums:    Vec<Album>,
     pub tracks:    Vec<Track>,
     pub og_obj:    Option<open_graph::Object>,
 }
@@ -60,8 +65,9 @@ pub fn extract(url: &str) -> Result<ScraperProduct, Error> {
             .unwrap();
         let mut playlists = Vec::new();
         let mut tracks    = Vec::new();
+        let mut albums    = Vec::new();
         let mut og_props  = Vec::new();
-        walk(dom.document, &mut playlists, &mut tracks, &mut og_props);
+        walk(dom.document, &mut playlists, &mut albums, &mut tracks, &mut og_props);
         let og_obj = if og_props.len() > 0 {
             Some(open_graph::Object::new(&og_props))
         } else {
@@ -69,6 +75,7 @@ pub fn extract(url: &str) -> Result<ScraperProduct, Error> {
         };
         Ok(ScraperProduct {
             playlists: playlists,
+            albums:    albums,
             tracks:    tracks,
             og_obj:    og_obj
         })
@@ -81,6 +88,7 @@ pub fn extract(url: &str) -> Result<ScraperProduct, Error> {
 // This is not proper HTML serialization, of course.
 fn walk(handle:    Handle,
         playlists: &mut Vec<Playlist>,
+        albums:    &mut Vec<Album>,
         tracks:    &mut Vec<Track>,
         og_props:  &mut Vec<(String, String)>) {
     let node = handle.borrow();
@@ -93,10 +101,15 @@ fn walk(handle:    Handle,
             let tag_name = name.local.as_ref();
             let mut ps = extract_open_graph_metadata_from_tag(tag_name, attrs);
             og_props.append(&mut ps);
-            let (ps, ts) = extract_enclosures_from_tag(tag_name, attrs);
+            let (ps, als, ts) = extract_enclosures_from_tag(tag_name, attrs);
             for playlist in ps.iter().cloned() {
                 if !(playlists).iter().any(|p| playlist == *p) {
                     (*playlists).push(playlist)
+                }
+            }
+            for album in als.iter().cloned() {
+                if !(albums).iter().any(|a| album == *a) {
+                    (*albums).push(album)
                 }
             }
             for track in ts.iter().cloned() {
@@ -107,7 +120,7 @@ fn walk(handle:    Handle,
         }
     }
     for child in node.children.iter() {
-        walk(child.clone(), playlists, tracks, og_props);
+        walk(child.clone(), playlists, albums, tracks, og_props);
     }
 }
 
@@ -121,19 +134,19 @@ fn attr(attr_name: &str, attrs: &Vec<Attribute>) -> Option<String> {
 }
 
 pub fn extract_enclosures_from_tag(tag_name: &str,
-                                   attrs: &Vec<Attribute>) -> (Vec<Playlist>, Vec<Track>) {
+                                   attrs: &Vec<Attribute>) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
     if tag_name == "iframe" {
         match attr("src", attrs) {
             Some(ref src) => extract_enclosures_from_url(src.to_string()),
-            None => (vec![], vec![])
+            None => (vec![], vec![], vec![])
         }
     } else if tag_name == "a" || tag_name == "link" {
         match attr("href", attrs) {
             Some(ref href) => extract_enclosures_from_url(href.to_string()),
-            None => (vec![], vec![])
+            None => (vec![], vec![], vec![])
         }
     } else {
-        (vec![], vec![])
+        (vec![], vec![], vec![])
     }
 }
 
@@ -223,26 +236,39 @@ fn country_param(url_str: &str) -> String {
     url_param(url_str, "country").unwrap_or("us".to_string())
 }
 
-fn fetch_spotify_playlist(uri: &str) -> (Vec<Playlist>, Vec<Track>) {
-    match Regex::new(r"spotify:user:([a-zA-Z0-9_-]+):playlist:([a-zA-Z0-9_-]+)") {
+fn fetch_spotify_playlist(uri: &str, regex: &str) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
+    match Regex::new(regex) {
         Ok(re) => match re.captures(uri) {
             Some(cap) => {
-                let user_id     = cap[1].to_string();
-                let playlist_id = cap[2].to_string();
+                let user_id     = cap[2].to_string();
+                let playlist_id = cap[3].to_string();
                 return match spotify::fetch_playlist(&user_id, &playlist_id) {
                     Ok(playlist) => {
                         let tracks = playlist.tracks.items
                             .iter()
                             .map(|ref i| Track::from_sp_track(&i.track))
                             .collect::<Vec<_>>();
-                        return (vec![Playlist::from_sp_playlist(&playlist)], tracks);
+                        (vec![Playlist::from_sp_playlist(&playlist)], vec![], tracks)
                     },
-                    Err(_)       => (vec![], vec![])
+                    Err(_)       => (vec![], vec![], vec![])
                 }
             },
-            None => (vec![], vec![])
+            None => (vec![], vec![], vec![])
         },
-        Err(_) => (vec![], vec![])
+        Err(_) => (vec![], vec![], vec![])
+    }
+}
+
+fn fetch_spotify_album(identifier: String) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
+    match spotify::fetch_album(&identifier) {
+        Ok(album) => {
+            let tracks = album.tracks.clone().map(|t| t.items).unwrap_or(vec![])
+                .iter()
+                .map(|ref t| Track::from_sp_track(t))
+                .collect::<Vec<_>>();
+            (vec![], vec![Album::from_sp_album(&album)], tracks)
+        },
+        Err(_) => (vec![], vec![Album::new(Provider::Spotify, identifier)], vec![]),
     }
 }
 
@@ -257,7 +283,7 @@ fn fetch_spotify_track(identifier: String) -> Vec<Track> {
     }
 }
 
-fn fetch_youtube_playlist(id: &str) -> (Vec<Playlist>, Vec<Track>) {
+fn fetch_youtube_playlist(id: &str) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
     let playlists = match youtube::fetch_playlist(id) {
         Ok(res) => res.items
             .iter()
@@ -272,25 +298,29 @@ fn fetch_youtube_playlist(id: &str) -> (Vec<Playlist>, Vec<Track>) {
             .collect::<Vec<_>>(),
         Err(_) => vec![],
     };
-    (playlists, tracks)
+    (playlists, vec![], tracks)
 }
 
-fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Track>) {
+fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
     let decoded = percent_decode(url.as_bytes()).decode_utf8_lossy().into_owned();
 
     match extract_identifier(&decoded, APPLE_MUSIC_SONG) {
         Some(identifier) => {
             let country = country_param(&url);
             if let Ok(song) = apple_music::fetch_song(&identifier, &country) {
-                return (vec![], vec![Track::from_am_song(&song)])
+                return (vec![], vec![], vec![Track::from_am_song(&song)])
             };
         },
         None => ()
     }
     match extract_identifier(&decoded, APPLE_MUSIC_ALBUM) {
         Some(identifier) => {
-            // todo
-            return (vec![], vec![])
+            let country = country_param(&url);
+            match apple_music::fetch_album(&identifier, &country) {
+                Ok(album) => return (vec![], vec![Album::from_am_album(&album)], vec![]),
+                Err(_) => (),
+            }
+            return (vec![], vec![], vec![])
         },
         None => ()
     }
@@ -298,19 +328,19 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Track>) {
         Some(identifier) => {
             let country = country_param(&url);
             match apple_music::fetch_playlist(&identifier, &country) {
-                Ok(playlist) => return (vec![Playlist::from_am_playlist(&playlist)], vec![]),
+                Ok(playlist) => return (vec![Playlist::from_am_playlist(&playlist)], vec![], vec![]),
                 Err(_) => (),
             }
-            return (vec![], vec![])
+            return (vec![], vec![], vec![])
         },
         None => ()
     }
     match parse_apple_music_link(&decoded, APPLE_MUSIC_ALBUM_LINK) {
         Some((country, _, _, Some(song_id))) => {
             if let Ok(song) = apple_music::fetch_song(&song_id, &country) {
-                return (vec![], vec![Track::from_am_song(&song)])
+                return (vec![], vec![], vec![Track::from_am_song(&song)])
             };
-            return (vec![], vec![])
+            return (vec![], vec![], vec![])
         },
         Some((_, _, _, None)) => (),
         None => ()
@@ -318,15 +348,15 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Track>) {
     match parse_apple_music_link(&decoded, APPLE_MUSIC_PLAYLIST_LINK) {
         Some((country, _, identifier, _)) => {
             match apple_music::fetch_playlist(&identifier, &country) {
-                Ok(playlist) => return (vec![Playlist::from_am_playlist(&playlist)], vec![]),
+                Ok(playlist) => return (vec![Playlist::from_am_playlist(&playlist)], vec![], vec![]),
                 Err(_) => (),
             }
-            return (vec![], vec![])
+            return (vec![], vec![], vec![])
         },
         None => ()
     }
     match extract_identifier(&decoded, YOUTUBE_WATCH) {
-        Some(identifier) => return (vec![], vec![Track::new(Provider::YouTube, identifier)]),
+        Some(identifier) => return (vec![], vec![], vec![Track::new(Provider::YouTube, identifier)]),
         None             => ()
     }
     match extract_identifier(&decoded, YOUTUBE_LIST) {
@@ -334,11 +364,11 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Track>) {
         None             => ()
     }
     match extract_identifier(&decoded, YOUTUBE_EMBED) {
-        Some(identifier) => return (vec![], vec![Track::new(Provider::YouTube, identifier)]),
+        Some(identifier) => return (vec![], vec![], vec![Track::new(Provider::YouTube, identifier)]),
         None             => ()
     }
     match extract_identifier(&decoded, SOUNDCLOUD_TRACK) {
-        Some(identifier) => return (vec![], vec![Track::new(Provider::SoundCloud, identifier)]),
+        Some(identifier) => return (vec![], vec![], vec![Track::new(Provider::SoundCloud, identifier)]),
         None             => ()
     }
     match extract_identifier(&decoded, SOUNDCLOUD_PLAYLIST) {
@@ -348,9 +378,9 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Track>) {
                     .iter()
                     .map(|ref t| Track::from_sc_track(t))
                     .collect::<Vec<_>>();
-                (vec![Playlist::from_sc_playlist(&playlist)], tracks)
+                (vec![Playlist::from_sc_playlist(&playlist)], vec![], tracks)
             },
-            Err(_)       => (vec![], vec![]),
+            Err(_)       => (vec![], vec![], vec![]),
         },
         None => ()
     }
@@ -361,25 +391,37 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Track>) {
                     .iter()
                     .map(|ref t| Track::from_sc_track(t))
                     .collect::<Vec<_>>();
-                (vec![], tracks)
+                (vec![], vec![], tracks)
             },
-            Err(_)       => (vec![], vec![]),
+            Err(_)       => (vec![], vec![], vec![]),
         },
         None => ()
     }
     match extract_identifier(&decoded, SPOTIFY_TRACK) {
-        Some(identifier) => return (vec![], fetch_spotify_track(identifier)),
+        Some(identifier) => return (vec![], vec![], fetch_spotify_track(identifier)),
         None             => ()
     }
     match extract_identifier(&decoded, SPOTIFY_TRACK_OPEN) {
-        Some(identifier) => return (vec![], fetch_spotify_track(identifier)),
+        Some(identifier) => return (vec![], vec![], fetch_spotify_track(identifier)),
         None             => ()
     }
     match extract_identifier(&decoded, SPOTIFY_PLAYLIST) {
-        Some(uri) => return fetch_spotify_playlist(&uri),
+        Some(uri) => return fetch_spotify_playlist(&uri, SPOTIFY_PLAYLIST),
         None      => ()
     }
-    return (vec![], vec![])
+    match extract_identifier(&decoded, SPOTIFY_PLAYLIST_OPEN) {
+        Some(uri) => return fetch_spotify_playlist(&uri, SPOTIFY_PLAYLIST_OPEN),
+        None      => ()
+    }
+    match extract_identifier(&decoded, SPOTIFY_ALBUM) {
+        Some(identifier) => return fetch_spotify_album(identifier),
+        None             => ()
+    }
+    match extract_identifier(&decoded, SPOTIFY_ALBUM_OPEN) {
+        Some(identifier) => return fetch_spotify_album(identifier),
+        None             => ()
+    }
+    return (vec![], vec![], vec![])
 }
 
 #[cfg(test)]
