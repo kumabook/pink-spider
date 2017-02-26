@@ -6,9 +6,11 @@ import {
 import RaisedButton from 'material-ui/RaisedButton';
 import datePrettify from '../utils/datePrettify';
 import { getUrl }   from '../model/Track';
-
-const NO_IMAGE   = '/web/no_image.png';
-const DEAD_IMAGE = '/web/dead_image.png';
+import {
+  NO_IMAGE,
+  DEAD_IMAGE,
+  getImageOfProvider,
+} from '../utils/thumbnail';
 
 function getThumbnailUrl(playlist) {
   if (playlist.state === 'alive') {
@@ -24,11 +26,12 @@ const PlaylistListTableRow = ({ playlist, onDetailButtonClick }) => (
         <img
           src={getThumbnailUrl(playlist)}
           role="presentation"
-          className="track-list-thumb"
+          className="playlist-list-thumb"
         />
       </a>
     </TableRowColumn>
     <TableRowColumn>
+      <img src={getImageOfProvider(playlist.provider)} width="16" height="16" />
       {playlist.title || `${playlist.provider} id: ${playlist.identifier}`}
     </TableRowColumn>
     <TableRowColumn>

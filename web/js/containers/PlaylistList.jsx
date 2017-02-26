@@ -44,9 +44,9 @@ class PlaylistList extends React.Component {
     return (
       <div>
         <Table selectable={false}>
-          <TableHeader>
+          <TableHeader displaySelectAll={false}>
             <TableRow>
-              <TableHeaderColumn colSpan="5" style={{ textAlign: 'center' }}>
+              <TableHeaderColumn colSpan="4" style={{ textAlign: 'center' }}>
                 <Paginate
                   page={this.props.page}
                   pageCount={this.props.playlists.total / this.props.playlists.perPage}

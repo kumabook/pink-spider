@@ -59,9 +59,15 @@ class EntryList extends React.Component {
         </TableRowColumn>
         <TableRowColumn>
           <Link to={`entries/${entry.id}/tracks`}>
-            {`${entry.playlists.length} playlists`}
-            <br />
             {`${entry.tracks.length} tracks`}
+          </Link>
+          <br />
+          <Link to={`entries/${entry.id}/playlists`}>
+            {`${entry.playlists.length} playlists`}
+          </Link>
+          <br />
+          <Link to={`entries/${entry.id}/albums`}>
+            {`${entry.albums.length} albums`}
           </Link>
         </TableRowColumn>
       </TableRow>

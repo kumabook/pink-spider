@@ -37,6 +37,7 @@ class TrackList extends React.Component {
   render() {
     const rows = this.props.tracks.items.map(track => (
       <TrackListTableRow
+        key={track.id}
         track={track}
         onDetailButtonClick={this.props.handleDetailButtonClick}
         onUpdateButtonClick={this.props.handleUpdateButtonClick}

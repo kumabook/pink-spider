@@ -6,9 +6,11 @@ import {
 import RaisedButton from 'material-ui/RaisedButton';
 import datePrettify from '../utils/datePrettify';
 import { getUrl }   from '../model/Track';
-
-const NO_IMAGE   = '/web/no_image.png';
-const DEAD_IMAGE = '/web/dead_image.png';
+import {
+  NO_IMAGE,
+  DEAD_IMAGE,
+  getImageOfProvider,
+} from '../utils/thumbnail';
 
 function getThumbnailUrl(track) {
   if (track.state === 'alive') {
@@ -32,7 +34,8 @@ const TrackListTableRow = ({ track, onDetailButtonClick, onUpdateButtonClick }) 
       {track.title || `${track.provider} id: ${track.identifier}`}
     </TableRowColumn>
     <TableRowColumn>
-      {track.artist}
+      <img src={getImageOfProvider(track.provider)} width="16" height="16" />
+      {track.owner_name}
     </TableRowColumn>
     <TableRowColumn>
       {datePrettify(track.published_at)}
@@ -57,7 +60,7 @@ const TrackListTableRow = ({ track, onDetailButtonClick, onUpdateButtonClick }) 
 TrackListTableRow.propTypes = {
   track: React.PropTypes.shape({
     title:         React.PropTypes.string.isRequired,
-    artist:        React.PropTypes.number.isRequired,
+    owner_name:    React.PropTypes.string.isRequired,
     provider:      React.PropTypes.string.isRequired,
     identifier:    React.PropTypes.string.isRequired,
     thumbnail_url: React.PropTypes.string,
