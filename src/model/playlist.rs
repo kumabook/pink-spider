@@ -11,9 +11,10 @@ use youtube::HasThumbnail;
 use soundcloud;
 use spotify;
 use error::Error;
-use super::{conn, PaginatedCollection};
+use super::{conn, Model};
 use model::provider::Provider;
 use model::state::State;
+use model::enclosure::Enclosure;
 
 static PROPS: [&'static str; 12]  = ["id",
                                      "provider",
@@ -42,13 +43,6 @@ pub struct Playlist {
     pub created_at:    NaiveDateTime,
     pub updated_at:    NaiveDateTime,
     pub state:         State,
-}
-
-fn props_str(prefix: &str) -> String {
-    PROPS
-        .iter()
-        .map(|&p| format!("{}{}", prefix, p))
-        .collect::<Vec<String>>().join(",")
 }
 
 impl PartialEq for Playlist {
@@ -85,8 +79,86 @@ impl fmt::Display for Playlist {
     }
 }
 
-impl Playlist {
-    pub fn new(provider: Provider, identifier: String) -> Playlist {
+impl Model for Playlist {
+    fn table_name() -> String { "playlists".to_string() }
+    fn props_str(prefix: &str) -> String {
+        PROPS
+            .iter()
+            .map(|&p| format!("{}{}", prefix, p))
+            .collect::<Vec<String>>().join(",")
+    }
+    fn rows_to_items(rows: postgres::rows::Rows) -> Vec<Playlist> {
+        let mut playlists = Vec::new();
+        for row in rows.iter() {
+            let playlist = Playlist {
+                id:            row.get(0),
+                provider:      Provider::new(row.get(1)),
+                identifier:    row.get(2),
+                url:           row.get(3),
+                title:         row.get(4),
+                description:   row.get(5),
+                thumbnail_url: row.get(6),
+                artwork_url:   row.get(7),
+                published_at:  row.get(8),
+                created_at:    row.get(9),
+                updated_at:    row.get(10),
+                state:         State::new(row.get(11)),
+            };
+            playlists.push(playlist)
+        }
+        playlists
+    }
+
+    fn create(&self) -> Result<Playlist, Error> {
+        let conn = try!(conn());
+        let stmt = try!(conn.prepare("INSERT INTO playlists (provider, identifier, url, title)
+                                 VALUES ($1, $2, $3, $4) RETURNING id"));
+        let rows = try!(stmt.query(&[&self.provider.to_string(), &self.identifier, &self.url, &self.title]));
+        let mut playlist = self.clone();
+        for row in rows.iter() {
+            playlist.id = row.get(0);
+        }
+        Ok(playlist)
+    }
+
+    fn save(&mut self) -> Result<(), Error> {
+        self.updated_at = UTC::now().naive_utc();
+        let conn = conn().unwrap();
+        let stmt = conn.prepare("UPDATE playlists SET
+                                 provider      = $2,
+                                 identifier    = $3,
+                                 url           = $4,
+                                 title         = $5,
+                                 description   = $6,
+                                 thumbnail_url = $7,
+                                 artwork_url   = $8,
+                                 published_at  = $9,
+                                 created_at    = $10,
+                                 updated_at    = $11,
+                                 state         = $12
+                                 WHERE id = $1").unwrap();
+        let result = stmt.query(&[&self.id,
+                                  &self.provider.to_string(),
+                                  &self.identifier,
+                                  &self.url,
+                                  &self.title,
+                                  &self.description,
+                                  &self.thumbnail_url,
+                                  &self.artwork_url,
+                                  &self.published_at,
+                                  &self.created_at,
+                                  &self.updated_at,
+                                  &self.state.to_string(),
+        ]);
+        match result {
+            Ok(_)  => Ok(()),
+            Err(_) => Err(Error::Unexpected),
+        }
+    }
+}
+
+impl Enclosure for Playlist {
+    fn new(provider: Provider, identifier: String) -> Playlist {
         Playlist {
             id:            Uuid::new_v4(),
             provider:      provider,
@@ -102,7 +174,20 @@ impl Playlist {
             state:         State::Alive,
         }
     }
+    fn find_by_entry_id(entry_id: Uuid) -> Vec<Playlist> {
+        let conn = conn().unwrap();
+        let stmt = conn.prepare(
+            &format!("SELECT {} FROM playlists p LEFT JOIN playlist_entries pe
+                        ON p.id = pe.playlist_id
+                        WHERE pe.entry_id = $1
+                        ORDER BY p.published_at DESC",
+                     Playlist::props_str("p."))).unwrap();
+        let rows = stmt.query(&[&entry_id]).unwrap();
+        Playlist::rows_to_items(rows)
+    }
+}
 
+impl Playlist {
     pub fn from_yt_playlist(playlist: &youtube::Playlist) -> Playlist {
         Playlist::new(Provider::YouTube, (*playlist).id.to_string())
             .update_with_yt_playlist(playlist)
@@ -194,142 +279,6 @@ impl Playlist {
         self
     }
 
-    fn rows_to_playlists(rows: postgres::rows::Rows) -> Vec<Playlist> {
-        let mut playlists = Vec::new();
-        for row in rows.iter() {
-            let playlist = Playlist {
-                id:            row.get(0),
-                provider:      Provider::new(row.get(1)),
-                identifier:    row.get(2),
-                url:           row.get(3),
-                title:         row.get(4),
-                description:   row.get(5),
-                thumbnail_url: row.get(6),
-                artwork_url:   row.get(7),
-                published_at:  row.get(8),
-                created_at:    row.get(9),
-                updated_at:    row.get(10),
-                state:         State::new(row.get(11)),
-            };
-            playlists.push(playlist)
-        }
-        playlists
-    }
-
-
-    pub fn find_by_id(id: &str) -> Result<Playlist, Error> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare(
-            &format!("SELECT {} FROM playlists
-                        WHERE id = $1", props_str(""))).unwrap();
-        let uuid      = try!(Uuid::parse_str(id).map_err(|_| Error::Unprocessable));
-        let rows      = stmt.query(&[&uuid]).unwrap();
-        let playlists = Playlist::rows_to_playlists(rows);
-        if playlists.len() > 0 {
-            return Ok(playlists[0].clone());
-        }
-        return Err(Error::NotFound)
-    }
-
-    pub fn find_by(provider: &Provider, identifier: &str) -> Result<Playlist, Error> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare(
-            &format!("SELECT {} FROM playlists
-                     WHERE provider = $1 AND identifier = $2
-                     ORDER BY published_at DESC", props_str(""))).unwrap();
-        let rows      = stmt.query(&[&(*provider).to_string(), &identifier]).unwrap();
-        let playlists = Playlist::rows_to_playlists(rows);
-        if playlists.len() > 0 {
-            return Ok(playlists[0].clone());
-        }
-        return Err(Error::NotFound)
-    }
-
-    pub fn find_by_entry_id(entry_id: Uuid) -> Vec<Playlist> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare(
-            &format!("SELECT {} FROM playlists p LEFT JOIN playlist_entries pe
-                        ON p.id = pe.playlist_id
-                        WHERE pe.entry_id = $1
-                        ORDER BY p.published_at DESC", props_str("p."))).unwrap();
-        let rows = stmt.query(&[&entry_id]).unwrap();
-        Playlist::rows_to_playlists(rows)
-    }
-
-    pub fn find(page: i64, per_page: i64) -> PaginatedCollection<Playlist> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare(&format!("SELECT {}  FROM playlists
-                                            ORDER BY published_at DESC
-                                            LIMIT $2 OFFSET $1", props_str(""))).unwrap();
-        let offset    = page * per_page;
-        let rows      = stmt.query(&[&offset, &per_page]).unwrap();
-        let playlists = Playlist::rows_to_playlists(rows);
-        let mut total: i64 = 0;
-        for row in conn.query("SELECT COUNT(*) FROM playlists", &[]).unwrap().iter() {
-            total = row.get(0);
-        }
-        PaginatedCollection {
-            page:     page,
-            per_page: per_page,
-            total:    total,
-            items:    playlists,
-        }
-    }
-
-    pub fn create(&self) -> Result<Playlist, Error> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare("INSERT INTO playlists (provider, identifier, url, title)
-                                 VALUES ($1, $2, $3, $4) RETURNING id").unwrap();
-        let rows = try!(stmt.query(&[&self.provider.to_string(), &self.identifier, &self.url, &self.title]));
-        let mut playlist = self.clone();
-        for row in rows.iter() {
-            playlist.id = row.get(0);
-        }
-        Ok(playlist)
-    }
-
-    pub fn find_or_create(provider: Provider, identifier: String) -> Result<Playlist, Error> {
-        return match Playlist::find_by(&provider, &identifier) {
-            Ok(playlist) => Ok(playlist),
-            Err(_)    => Playlist::new(provider, identifier).create()
-        }
-    }
-
-    pub fn save(&mut self) -> Result<(), Error> {
-        self.updated_at = UTC::now().naive_utc();
-        let conn = conn().unwrap();
-        let stmt = conn.prepare("UPDATE playlists SET
-                                 provider      = $2,
-                                 identifier    = $3,
-                                 url           = $4,
-                                 title         = $5,
-                                 description   = $6,
-                                 thumbnail_url = $7,
-                                 artwork_url   = $8,
-                                 published_at  = $9,
-                                 created_at    = $10,
-                                 updated_at    = $11,
-                                 state         = $12
-                                 WHERE id = $1").unwrap();
-        let result = stmt.query(&[&self.id,
-                                  &self.provider.to_string(),
-                                  &self.identifier,
-                                  &self.url,
-                                  &self.title,
-                                  &self.description,
-                                  &self.thumbnail_url,
-                                  &self.artwork_url,
-                                  &self.published_at,
-                                  &self.created_at,
-                                  &self.updated_at,
-                                  &self.state.to_string(),
-        ]);
-        match result {
-            Ok(_)  => Ok(()),
-            Err(_) => Err(Error::Unexpected),
-        }
-    }
-
     pub fn delete(&self) -> Result<(), Error> {
         let conn = conn().unwrap();
         let stmt = conn.prepare("DELETE FROM playlists WHERE id=$1").unwrap();
@@ -343,6 +292,8 @@ impl Playlist {
 
 #[cfg(test)]
 mod test {
+    use model::enclosure::Enclosure;
+    use model::Model;
     use super::Playlist;
     use Provider;
     #[test]
