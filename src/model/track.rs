@@ -11,7 +11,8 @@ use youtube::HasThumbnail;
 use soundcloud;
 use spotify;
 use error::Error;
-use super::{conn, PaginatedCollection};
+use super::{conn, Model};
+use model::enclosure::Enclosure;
 use model::provider::Provider;
 use model::state::State;
 
@@ -30,13 +31,6 @@ static PROPS: [&'static str; 15]  = ["id",
                                      "created_at",
                                      "updated_at",
                                      "state"];
-
-fn props_str(prefix: &str) -> String {
-    PROPS
-        .iter()
-        .map(|&p| format!("{}{}", prefix, p))
-        .collect::<Vec<String>>().join(",")
-}
 
 #[derive(Debug, Clone)]
 pub struct Track {
@@ -94,8 +88,97 @@ impl fmt::Display for Track {
     }
 }
 
-impl Track {
-    pub fn new(provider: Provider, identifier: String) -> Track {
+impl Model for Track {
+    fn table_name() -> String {
+        "tracks".to_string()
+    }
+    fn props_str(prefix: &str) -> String {
+        PROPS
+            .iter()
+            .map(|&p| format!("{}{}", prefix, p))
+            .collect::<Vec<String>>().join(",")
+    }
+    fn rows_to_items(rows: postgres::rows::Rows) -> Vec<Track> {
+        let mut tracks = Vec::new();
+        for row in rows.iter() {
+            let track = Track {
+                id:            row.get(0),
+                provider:      Provider::new(row.get(1)),
+                identifier:    row.get(2),
+                owner_id:      row.get(3),
+                owner_name:    row.get(4),
+                url:           row.get(5),
+                title:         row.get(6),
+                description:   row.get(7),
+                thumbnail_url: row.get(8),
+                artwork_url:   row.get(9),
+                duration:      row.get(10),
+                published_at:  row.get(11),
+                created_at:    row.get(12),
+                updated_at:    row.get(13),
+                state:         State::new(row.get(14)),
+            };
+            tracks.push(track)
+        }
+        tracks
+    }
+
+    fn create(&self) -> Result<Track, Error> {
+        let conn = conn().unwrap();
+        let stmt = conn.prepare("INSERT INTO tracks (provider, identifier, url, title)
+                                 VALUES ($1, $2, $3, $4) RETURNING id").unwrap();
+        let rows = try!(stmt.query(&[&self.provider.to_string(), &self.identifier, &self.url, &self.title]));
+        let mut track = self.clone();
+        for row in rows.iter() {
+            track.id = row.get(0);
+        }
+        Ok(track)
+    }
+
+    fn save(&mut self) -> Result<(), Error> {
+        self.updated_at = UTC::now().naive_utc();
+        let conn = conn().unwrap();
+        let stmt = conn.prepare("UPDATE tracks SET
+                                 provider      = $2,
+                                 identifier    = $3,
+                                 owner_id      = $4,
+                                 owner_name    = $5,
+                                 url           = $6,
+                                 title         = $7,
+                                 description   = $8,
+                                 thumbnail_url = $9,
+                                 artwork_url   = $10,
+                                 duration      = $11,
+                                 published_at  = $12,
+                                 created_at    = $13,
+                                 updated_at    = $14,
+                                 state         = $15
+                                 WHERE id = $1").unwrap();
+        let result = stmt.query(&[&self.id,
+                                  &self.provider.to_string(),
+                                  &self.identifier,
+                                  &self.owner_id,
+                                  &self.owner_name,
+                                  &self.url,
+                                  &self.title,
+                                  &self.description,
+                                  &self.thumbnail_url,
+                                  &self.artwork_url,
+                                  &self.duration,
+                                  &self.published_at,
+                                  &self.created_at,
+                                  &self.updated_at,
+                                  &self.state.to_string(),
+        ]);
+        match result {
+            Ok(_)  => Ok(()),
+            Err(_) => Err(Error::Unexpected)
+        }
+    }
+}
+
+impl Enclosure for Track {
+    fn new(provider: Provider, identifier: String) -> Track {
         Track {
             id:            Uuid::new_v4(),
             provider:      provider,
@@ -114,6 +197,20 @@ impl Track {
             state:         State::Alive,
         }
     }
+    fn find_by_entry_id(entry_id: Uuid) -> Vec<Track> {
+        let conn = conn().unwrap();
+        let stmt = conn.prepare(
+            &format!("SELECT {} FROM tracks t LEFT JOIN track_entries te
+                        ON t.id = te.track_id
+                        WHERE te.entry_id = $1
+                        ORDER BY t.published_at DESC",
+                     Track::props_str("t."))).unwrap();
+        let rows = stmt.query(&[&entry_id]).unwrap();
+        Track::rows_to_items(rows)
+    }
+}
+
+impl Track {
     pub fn from_am_song(song: &apple_music::Song) -> Track {
         let identifier = (*song).id.to_string();
         Track::new(Provider::AppleMusic, identifier.to_string())
@@ -243,149 +340,5 @@ impl Track {
     pub fn disable(&mut self) -> &mut Track {
         self.state = State::Dead;
         self
-    }
-
-    fn rows_to_tracks(rows: postgres::rows::Rows) -> Vec<Track> {
-        let mut tracks = Vec::new();
-        for row in rows.iter() {
-            let track = Track {
-                id:            row.get(0),
-                provider:      Provider::new(row.get(1)),
-                identifier:    row.get(2),
-                owner_id:      row.get(3),
-                owner_name:    row.get(4),
-                url:           row.get(5),
-                title:         row.get(6),
-                description:   row.get(7),
-                thumbnail_url: row.get(8),
-                artwork_url:   row.get(9),
-                duration:      row.get(10),
-                published_at:  row.get(11),
-                created_at:    row.get(12),
-                updated_at:    row.get(13),
-                state:         State::new(row.get(14)),
-            };
-            tracks.push(track)
-        }
-        tracks
-    }
-
-    pub fn find_by_id(id: &str) -> Result<Track, Error> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare(
-            &format!("SELECT {} FROM tracks
-                        WHERE id = $1", props_str(""))).unwrap();
-        let uuid   = try!(Uuid::parse_str(id).map_err(|_| Error::Unprocessable));
-        let rows   = stmt.query(&[&uuid]).unwrap();
-        let tracks = Track::rows_to_tracks(rows);
-        if tracks.len() > 0 {
-            return Ok(tracks[0].clone());
-        }
-        return Err(Error::NotFound)
-    }
-
-    pub fn find_by(provider: &Provider, identifier: &str) -> Result<Track, Error> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare(
-            &format!("SELECT {} FROM tracks
-                     WHERE provider = $1 AND identifier = $2
-                     ORDER BY published_at DESC", props_str(""))).unwrap();
-        let rows = stmt.query(&[&(*provider).to_string(), &identifier]).unwrap();
-        let tracks = Track::rows_to_tracks(rows);
-        if tracks.len() > 0 {
-            return Ok(tracks[0].clone());
-        }
-        return Err(Error::NotFound)
-    }
-
-    pub fn find_by_entry_id(entry_id: Uuid) -> Vec<Track> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare(
-            &format!("SELECT {} FROM tracks t LEFT JOIN track_entries te
-                        ON t.id = te.track_id
-                        WHERE te.entry_id = $1
-                        ORDER BY t.published_at DESC", props_str("t."))).unwrap();
-        let rows = stmt.query(&[&entry_id]).unwrap();
-        Track::rows_to_tracks(rows)
-    }
-
-    pub fn find(page: i64, per_page: i64) -> PaginatedCollection<Track> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare(&format!("SELECT {}  FROM tracks
-                                            ORDER BY published_at DESC
-                                            LIMIT $2 OFFSET $1", props_str(""))).unwrap();
-        let offset = page * per_page;
-        let rows   = stmt.query(&[&offset, &per_page]).unwrap();
-        let tracks = Track::rows_to_tracks(rows);
-        let mut total: i64 = 0;
-        for row in conn.query("SELECT COUNT(*) FROM tracks", &[]).unwrap().iter() {
-            total = row.get(0);
-        }
-        PaginatedCollection {
-            page:     page,
-            per_page: per_page,
-            total:    total,
-            items:    tracks,
-        }
-    }
-
-    pub fn create(&self) -> Result<Track, Error> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare("INSERT INTO tracks (provider, identifier, url, title)
-                                 VALUES ($1, $2, $3, $4) RETURNING id").unwrap();
-        let rows = try!(stmt.query(&[&self.provider.to_string(), &self.identifier, &self.url, &self.title]));
-        let mut track = self.clone();
-        for row in rows.iter() {
-            track.id = row.get(0);
-        }
-        Ok(track)
-    }
-
-    pub fn find_or_create(provider: Provider, identifier: String) -> Result<Track, Error> {
-        return match Track::find_by(&provider, &identifier) {
-            Ok(track) => Ok(track),
-            Err(_)    => Track::new(provider, identifier).create()
-        }
-    }
-
-    pub fn save(&mut self) -> Result<(), Error> {
-        self.updated_at = UTC::now().naive_utc();
-        let conn = conn().unwrap();
-        let stmt = conn.prepare("UPDATE tracks SET
-                                 provider      = $2,
-                                 identifier    = $3,
-                                 owner_id      = $4,
-                                 owner_name    = $5,
-                                 url           = $6,
-                                 title         = $7,
-                                 description   = $8,
-                                 thumbnail_url = $9,
-                                 artwork_url   = $10,
-                                 duration      = $11,
-                                 published_at  = $12,
-                                 created_at    = $13,
-                                 updated_at    = $14,
-                                 state         = $15
-                                 WHERE id = $1").unwrap();
-        let result = stmt.query(&[&self.id,
-                                  &self.provider.to_string(),
-                                  &self.identifier,
-                                  &self.owner_id,
-                                  &self.owner_name,
-                                  &self.url,
-                                  &self.title,
-                                  &self.description,
-                                  &self.thumbnail_url,
-                                  &self.artwork_url,
-                                  &self.duration,
-                                  &self.published_at,
-                                  &self.created_at,
-                                  &self.updated_at,
-                                  &self.state.to_string(),
-        ]);
-        match result {
-            Ok(_)  => Ok(()),
-            Err(_) => Err(Error::Unexpected)
-        }
     }
 }

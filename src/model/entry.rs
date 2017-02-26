@@ -42,6 +42,7 @@ impl ToJson for Entry {
         let mut d      = BTreeMap::new();
         let tracks     = Json::Array(self.tracks.iter().map(|x| x.to_json()).collect());
         let playlists  = Json::Array(self.playlists.iter().map(|x| x.to_json()).collect());
+        let albums     = Json::Array(self.albums.iter().map(|x| x.to_json()).collect());
         d.insert("id".to_string()         , self.id.to_string().to_json());
         d.insert("url".to_string()        , self.url.to_json());
         d.insert("title".to_string()      , self.title.to_json());
@@ -52,6 +53,7 @@ impl ToJson for Entry {
         d.insert("updated_at".to_string() , updated_at.to_rfc3339().to_json());
         d.insert("tracks".to_string()     , tracks);
         d.insert("playlists".to_string()  , playlists);
+        d.insert("albums".to_string()     , albums);
         Json::Object(d)
     }
 }
