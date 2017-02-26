@@ -17,17 +17,19 @@ pub enum Error {
     Unprocessable,
     NotFound,
     DbError(postgres::error::Error),
+    DbConnectError(postgres::error::ConnectError),
     Unexpected,
 }
 
 impl Error {
     pub fn status(&self) -> Status {
         match *self {
-            Error::BadRequest    => Status::BadRequest,
-            Error::Unprocessable => Status::UnprocessableEntity,
-            Error::NotFound      => Status::NotFound,
-            Error::DbError(_)    => Status::InternalServerError,
-            Error::Unexpected    => Status::InternalServerError,
+            Error::BadRequest        => Status::BadRequest,
+            Error::Unprocessable     => Status::UnprocessableEntity,
+            Error::NotFound          => Status::NotFound,
+            Error::DbError(_)        => Status::InternalServerError,
+            Error::DbConnectError(_) => Status::InternalServerError,
+            Error::Unexpected        => Status::InternalServerError,
         }
     }
 
@@ -43,11 +45,12 @@ impl Error {
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         match *self {
-            Error::BadRequest     => write!(f, "BadRequest"),
-            Error::Unprocessable  => write!(f, "Unproccesable"),
-            Error::NotFound       => write!(f, "NotFound"),
-            Error::DbError(ref e) => write!(f, "UnexpectedError: DBError {}", e),
-            Error::Unexpected     => write!(f, "UnexpectedError"),
+            Error::BadRequest            => write!(f, "BadRequest"),
+            Error::Unprocessable         => write!(f, "Unproccesable"),
+            Error::NotFound              => write!(f, "NotFound"),
+            Error::DbError(ref e)        => write!(f, "UnexpectedError: DBError {}", e),
+            Error::DbConnectError(ref e) => write!(f, "UnexpectedError: DBConnectError {}", e),
+            Error::Unexpected            => write!(f, "UnexpectedError"),
         }
     }
 }
@@ -66,6 +69,12 @@ impl From<postgres::error::Error> for Error {
     }
 }
 
+impl From<postgres::error::ConnectError> for Error {
+    fn from(err: postgres::error::ConnectError) -> Error {
+        Error::DbConnectError(err)
+    }
+}
+
 impl From<urlencoded::UrlDecodingError> for Error {
     fn from(_: urlencoded::UrlDecodingError) -> Error {
         Error::BadRequest
@@ -79,11 +88,12 @@ impl error::Error for Error {
 impl From<Error> for IronError {
     fn from(err: Error) -> IronError {
         match err {
-            Error::BadRequest     => IronError::new(err, Status::BadRequest),
-            Error::Unprocessable  => IronError::new(err, Status::BadRequest),
-            Error::NotFound       => IronError::new(err, Status::NotFound),
-            Error::DbError(_)     => IronError::new(err, Status::BadRequest),
-            Error::Unexpected     => IronError::new(err, Status::BadRequest),
+            Error::BadRequest        => IronError::new(err, Status::BadRequest),
+            Error::Unprocessable     => IronError::new(err, Status::BadRequest),
+            Error::NotFound          => IronError::new(err, Status::NotFound),
+            Error::DbError(_)        => IronError::new(err, Status::BadRequest),
+            Error::DbConnectError(_) => IronError::new(err, Status::BadRequest),
+            Error::Unexpected        => IronError::new(err, Status::BadRequest),
         }
     }
 }
