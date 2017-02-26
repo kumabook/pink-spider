@@ -99,16 +99,16 @@ pub struct User {
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct Album {
-    pub album_type: String,
-    pub artists:    Vec<Artist>,
+    pub album_type:        String,
+    pub artists:           Vec<Artist>,
     pub available_markets: Vec<String>,
-    pub external_urls: BTreeMap<String, String>,
-    pub href:          String,
-    pub id:            String,
-    pub images:        Vec<Image>,
-    pub name:          String,
-//  pub type:            String, TODO Use serde instead of rustc_serialize
-    pub uri:           String,
+    pub external_urls:     BTreeMap<String, String>,
+    pub href:              String,
+    pub id:                String,
+    pub images:            Vec<Image>,
+    pub name:              String,
+//  pub type:              String, TODO Use serde instead of rustc_serialize
+    pub uri:               String,
 }
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
