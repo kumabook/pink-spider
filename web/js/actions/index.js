@@ -1,6 +1,7 @@
 import entry    from '../api/entry';
 import track    from '../api/track';
 import playlist from '../api/playlist';
+import album    from '../api/album';
 
 export const toggleDrawler = () => ({ type: 'TOGGLE_DRAWLER' });
 
@@ -62,4 +63,25 @@ export const fetchPlaylists = (page = 0, perPage = 10, entryId = null) => (dispa
   const promise = entryId ? playlist.indexByEntry(entryId, page, perPage) :
         playlist.index(page, perPage);
   return promise.then(playlists => dispatch(receivePlaylists(playlists, entryId)));
+};
+
+export const fetchAlbum = albumId => (dispatch) => {
+  dispatch({ type: 'FETCH_ALBUM' });
+  return album.show(albumId).then(item => dispatch({ type: 'RECEIVE_ALBUM', item }));
+};
+
+export const receiveAlbums = (albums, entryId) => ({
+  type:    'RECEIVE_ALBUMS',
+  entryId,
+  page:    albums.page,
+  perPage: albums.per_page,
+  total:   albums.total,
+  items:   albums.items,
+});
+
+export const fetchAlbums = (page = 0, perPage = 10, entryId = null) => (dispatch) => {
+  dispatch({ type: 'FETCH_ALBUMS', page, perPage, entryId });
+  const promise = entryId ? album.indexByEntry(entryId, page, perPage) :
+        album.index(page, perPage);
+  return promise.then(albums => dispatch(receiveAlbums(albums, entryId)));
 };
