@@ -25,9 +25,10 @@ export const getUrl = (album) => {
   }
   const id = album.identifier;
   switch (album.provider) {
-    case 'AppleMusic':
+    case 'AppleMusic': {
       const country = getCountryParam(album.url);
       return `http://tools.applemusic.com/embed/v1/album/${id}?country=${country}`;
+    }
     case 'Spotify':
       return formatOpenURL(parse(album.url));
     default:

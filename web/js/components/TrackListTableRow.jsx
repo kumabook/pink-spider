@@ -34,7 +34,11 @@ const TrackListTableRow = ({ track, onDetailButtonClick, onUpdateButtonClick }) 
       {track.title || `${track.provider} id: ${track.identifier}`}
     </TableRowColumn>
     <TableRowColumn>
-      <img src={getImageOfProvider(track.provider)} width="16" height="16" />
+      <img
+        role="presentation"
+        src={getImageOfProvider(track.provider)}
+        width="16" height="16"
+      />
       {track.owner_name}
     </TableRowColumn>
     <TableRowColumn>

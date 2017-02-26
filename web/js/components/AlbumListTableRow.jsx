@@ -34,7 +34,11 @@ const AlbumListTableRow = ({ album, onDetailButtonClick }) => (
       {album.title || `${album.provider} id: ${album.identifier}`}
     </TableRowColumn>
     <TableRowColumn>
-      <img src={getImageOfProvider(album.provider)} width="16" height="16" />
+      <img
+        role="presentation"
+        src={getImageOfProvider(album.provider)}
+        width="16" height="16"
+      />
       {album.owner_name}
     </TableRowColumn>
     <TableRowColumn>

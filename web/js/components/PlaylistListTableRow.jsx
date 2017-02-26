@@ -31,7 +31,11 @@ const PlaylistListTableRow = ({ playlist, onDetailButtonClick }) => (
       </a>
     </TableRowColumn>
     <TableRowColumn>
-      <img src={getImageOfProvider(playlist.provider)} width="16" height="16" />
+      <img
+        role="presentation"
+        src={getImageOfProvider(playlist.provider)}
+        width="16" height="16"
+      />
       {playlist.title || `${playlist.provider} id: ${playlist.identifier}`}
     </TableRowColumn>
     <TableRowColumn>
