@@ -19,9 +19,9 @@ export const getUrl = (playlist) => {
   const id = playlist.identifier;
   switch (playlist.provider) {
     case 'YouTube':
-      return `https://www.youtube.com/watch/?v=${id}`;
+      return `https://www.youtube.com/playlist?list=${id}`;
     case 'SoundCloud':
-      return `https://soundcloud.com/tracks/${id}`;
+      return `https://soundcloud.com/playlists/${id}`;
     case 'Spotify':
       return formatOpenURL(parse(playlist.url));
     case 'AppleMusic': {
