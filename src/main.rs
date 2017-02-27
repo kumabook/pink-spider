@@ -30,7 +30,7 @@ extern crate pink_spider;
 
 use pink_spider::error::Error;
 use pink_spider::scraper::extract;
-use pink_spider::model::{Model, Track, Playlist, Album, Entry, Enclosure, Provider, PaginatedCollection};
+use pink_spider::model::{Model, Track, Playlist, Album, Artist, Entry, Enclosure, Provider, PaginatedCollection};
 use rustc_serialize::json::{ToJson, Json};
 use pink_spider::youtube;
 use pink_spider::soundcloud;
@@ -43,7 +43,7 @@ pub fn index_entries(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, application_json(), json_str)))
 }
 
-pub fn index<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
+pub fn index<T: Model>(req: &mut Request) -> IronResult<Response> {
     let (page, per_page) = pagination_params(req);
     let enclosures       = T::find(page, per_page);
     let json_obj: Json   = enclosures.to_json();
@@ -188,7 +188,7 @@ pub fn show<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
     }
 }
 
-pub fn show_by_id<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
+pub fn show_by_id<T: Model>(req: &mut Request) -> IronResult<Response> {
     let ref id = req.extensions.get::<Router>().unwrap().find("id").unwrap();
     match T::find_by_id(id) {
         Ok(enclosure) => {
@@ -249,6 +249,7 @@ pub fn main() {
         index_playlists_by_entry: get  "/entries/:entry_id/playlists" => index_by_entry::<Playlist>,
         index_albums:             get  "/albums"                      => index::<Album>,
         index_albums_by_entry:    get  "/entries/:entry_id/albums"    => index_by_entry::<Album>,
+        index_artists:            get  "/artists"                     => index::<Artist>,
         web:                   get  "/*"                        => mount,
     );
     let port_str = match std::env::var("PORT") {
