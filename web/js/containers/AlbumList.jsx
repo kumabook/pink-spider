@@ -46,7 +46,7 @@ class AlbumList extends React.Component {
     return (
       <div>
         <Table selectable={false}>
-          <TableHeader>
+          <TableHeader displaySelectAll={false}>
             <TableRow>
               <TableHeaderColumn colSpan="5" style={{ textAlign: 'center' }}>
                 <Paginate
@@ -64,7 +64,7 @@ class AlbumList extends React.Component {
               <TableHeaderColumn>buttons</TableHeaderColumn>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody displayRowCheckbox={false}>
             {rows}
           </TableBody>
         </Table>

@@ -64,7 +64,7 @@ class TrackList extends React.Component {
               <TableHeaderColumn>buttons</TableHeaderColumn>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody displayRowCheckbox={false}>
             {rows}
           </TableBody>
         </Table>
