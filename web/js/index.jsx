@@ -22,6 +22,7 @@ import PlaylistList   from './containers/PlaylistList';
 import PlaylistDetail from './containers/PlaylistDetail';
 import AlbumList      from './containers/AlbumList';
 import AlbumDetail    from './containers/AlbumDetail';
+import ArtistList     from './containers/ArtistList';
 import reducers       from './reducers';
 
 injectTapEventPlugin();
@@ -40,6 +41,7 @@ const routes = [{
     { path: 'playlists', component: PlaylistList },
     { path: 'albums/:album_id', component: AlbumDetail },
     { path: 'albums', component: AlbumList },
+    { path: 'artists', component: ArtistList },
     { path: 'entries', component: EntryList },
     { path: 'entries/:entry_id/tracks', component: TrackList },
     { path: 'entries/:entry_id/playlists', component: PlaylistList },
