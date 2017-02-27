@@ -5,7 +5,7 @@ import {
 } from 'material-ui/Table';
 import RaisedButton from 'material-ui/RaisedButton';
 import datePrettify from '../utils/datePrettify';
-import { getUrl }   from '../model/Track';
+import { getUrl }   from '../model/Playlist';
 import {
   NO_IMAGE,
   DEAD_IMAGE,
@@ -22,7 +22,7 @@ function getThumbnailUrl(playlist) {
 const PlaylistListTableRow = ({ playlist, onDetailButtonClick }) => (
   <TableRow>
     <TableRowColumn>
-      <a href={getUrl(playlist.url)}>
+      <a href={getUrl(playlist)}>
         <img
           src={getThumbnailUrl(playlist)}
           role="presentation"
