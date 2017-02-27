@@ -8,6 +8,7 @@ import playlist            from './playlist';
 import playlists           from './playlists';
 import album               from './album';
 import albums              from './albums';
+import artists             from './artists';
 
 const rootReducer = combineReducers({
   routing: routerReducer,
@@ -19,6 +20,7 @@ const rootReducer = combineReducers({
   playlists,
   album,
   albums,
+  artists,
 });
 
 export default rootReducer;
