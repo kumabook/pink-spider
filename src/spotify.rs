@@ -120,6 +120,7 @@ pub struct Artist {
     pub name:          String,
 //  pub type:            String, TODO Use serde instead of rustc_serialize
     pub uri:           String,
+    pub images:        Option<Vec<Image>>,
 }
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
