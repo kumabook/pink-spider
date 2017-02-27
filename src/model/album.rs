@@ -12,6 +12,7 @@ use super::{conn, Model};
 use model::provider::Provider;
 use model::state::State;
 use model::enclosure::Enclosure;
+use model::artist::Artist;
 
 static PROPS: [&'static str; 14]  = ["id",
                                      "provider",
@@ -28,7 +29,7 @@ static PROPS: [&'static str; 14]  = ["id",
                                      "updated_at",
                                      "state"];
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Debug, Clone)]
 pub struct Album {
     pub id:            Uuid,
     pub provider:      Provider,
@@ -44,6 +45,7 @@ pub struct Album {
     pub created_at:    NaiveDateTime,
     pub updated_at:    NaiveDateTime,
     pub state:         State,
+    pub artists:       Option<Vec<Artist>>,
 }
 
 impl PartialEq for Album {
@@ -70,6 +72,7 @@ impl ToJson for Album {
         d.insert("created_at".to_string()   , created_at.to_rfc3339().to_json());
         d.insert("updated_at".to_string()   , updated_at.to_rfc3339().to_json());
         d.insert("state".to_string()        , self.state.to_json());
+        d.insert("artists".to_string()      , self.artists.to_json());
         Json::Object(d)
     }
 }
@@ -107,6 +110,7 @@ impl Model for Album {
                 created_at:    row.get(11),
                 updated_at:    row.get(12),
                 state:         State::new(row.get(13)),
+                artists:       None,
             };
             albums.push(album)
         }
@@ -182,6 +186,7 @@ impl Enclosure for Album {
             created_at:    UTC::now().naive_utc(),
             updated_at:    UTC::now().naive_utc(),
             state:         State::Alive,
+            artists:       None,
         }
     }
     fn find_by_entry_id(entry_id: Uuid) -> Vec<Album> {
@@ -198,6 +203,18 @@ impl Enclosure for Album {
 }
 
 impl Album {
+    fn add_artist(&mut self, artist: Artist) -> Result<(), Error> {
+        let conn = try!(conn());
+        let stmt = try!(conn.prepare("INSERT INTO track_artists (track_id, artist_id) VALUES ($1, $2)"));
+        try!(stmt.query(&[&self.id, &artist.id]));
+        match self.artists {
+            Some(ref mut artists) => artists.push(artist),
+            None                  => self.artists = Some(vec![artist]),
+
+        }
+        Ok(())
+    }
+
     pub fn from_sp_album(album: &spotify::Album) -> Album {
         Album::new(Provider::Spotify, (*album).id.to_string())
             .update_with_sp_album(album)
@@ -225,6 +242,19 @@ impl Album {
         if album.images.len() > 1 {
             self.thumbnail_url = Some(album.images[1].url.clone());
         }
+        let artists = album.artists
+            .iter()
+            .map(|artist| {
+                Artist::find_or_create(self.provider, artist.id.to_string())
+                    .map(|mut a| a.update_with_sp_artist(&artist).clone())
+            })
+            .filter(|r| r.is_ok())
+            .map(|r| r.unwrap())
+            .collect::<Vec<Artist>>();
+        for mut a in artists {
+            let _ = a.save();
+            let _ = self.add_artist(a);
+        }
         self
     }
 
@@ -237,6 +267,12 @@ impl Album {
         self.thumbnail_url = Some(album.artwork_url.to_string());
         self.artwork_url   = Some(album.artwork_url.to_string());
         self.state         = State::Alive;
+        if let Ok(mut artist) = Artist::find_or_create(self.provider,
+                                                       album.album_artist.to_string()) {
+            artist.name  = album.album_artist.to_string();
+            let _ = artist.save();
+            let _ = self.add_artist(artist);
+        }
         self
     }
 

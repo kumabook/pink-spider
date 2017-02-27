@@ -15,6 +15,7 @@ use super::{conn, Model};
 use model::enclosure::Enclosure;
 use model::provider::Provider;
 use model::state::State;
+use model::artist::Artist;
 
 static PROPS: [&'static str; 15]  = ["id",
                                      "provider",
@@ -49,6 +50,7 @@ pub struct Track {
     pub created_at:    NaiveDateTime,
     pub updated_at:    NaiveDateTime,
     pub state:         State,
+    pub artists:       Option<Vec<Artist>>,
 }
 
 impl PartialEq for Track {
@@ -78,6 +80,7 @@ impl ToJson for Track {
         d.insert("created_at".to_string()   , created_at.to_rfc3339().to_json());
         d.insert("updated_at".to_string()   , updated_at.to_rfc3339().to_json());
         d.insert("state".to_string()        , self.state.to_json());
+        d.insert("artists".to_string()      , self.artists.to_json());
         Json::Object(d)
     }
 }
@@ -117,6 +120,7 @@ impl Model for Track {
                 created_at:    row.get(12),
                 updated_at:    row.get(13),
                 state:         State::new(row.get(14)),
+                artists:       None,
             };
             tracks.push(track)
         }
@@ -195,6 +199,7 @@ impl Enclosure for Track {
             created_at:    UTC::now().naive_utc(),
             updated_at:    UTC::now().naive_utc(),
             state:         State::Alive,
+            artists:       None,
         }
     }
     fn find_by_entry_id(entry_id: Uuid) -> Vec<Track> {
@@ -246,6 +251,19 @@ impl Track {
             _ => self,
         }
     }
+
+    fn add_artist(&mut self, artist: Artist) -> Result<(), Error> {
+        let conn = try!(conn());
+        let stmt = try!(conn.prepare("INSERT INTO track_artists (track_id, artist_id) VALUES ($1, $2)"));
+        try!(stmt.query(&[&self.id, &artist.id]));
+        match self.artists {
+            Some(ref mut artists) => artists.push(artist),
+            None                  => self.artists = Some(vec![artist]),
+
+        }
+        Ok(())
+    }
+
     pub fn update_with_am_song(&mut self, song: &apple_music::Song) -> &mut Track {
         self.provider      = Provider::AppleMusic;
         self.identifier    = song.id.to_string();
@@ -257,41 +275,59 @@ impl Track {
         self.thumbnail_url = Some(song.artwork_url.to_string());
         self.artwork_url   = Some(song.artwork_url.to_string());
         self.state         = State::Alive;
+        if let Ok(mut artist) = Artist::find_or_create(self.provider,
+                                                       song.artist.to_string()) {
+            artist.name  = song.artist.to_string();
+            let _ = artist.save();
+            let _ = self.add_artist(artist);
+        }
         self
     }
 
     pub fn update_with_yt_video(&mut self, video: &youtube::Video) -> &mut Track {
+        let s              = &video.snippet;
         self.provider      = Provider::YouTube;
         self.identifier    = video.id.to_string();
-        self.owner_id      = Some(video.snippet.channelId.to_string());
-        self.owner_name    = Some(video.snippet.channelTitle.to_string());
+        self.owner_id      = Some(s.channelId.to_string());
+        self.owner_name    = Some(s.channelTitle.to_string());
         self.url           = format!("https://www.youtube.com/watch/?v={}", video.id);
-        self.title         = video.snippet.title.to_string();
-        self.description   = Some(video.snippet.description.to_string());
-        self.thumbnail_url = video.snippet.get_thumbnail_url();
-        self.artwork_url   = video.snippet.get_artwork_url();
+        self.title         = s.title.to_string();
+        self.description   = Some(s.description.to_string());
+        self.thumbnail_url = s.get_thumbnail_url();
+        self.artwork_url   = s.get_artwork_url();
         self.state         = State::Alive;
-        match DateTime::parse_from_rfc3339(&video.snippet.publishedAt) {
+        match DateTime::parse_from_rfc3339(&s.publishedAt) {
             Ok(published_at) => self.published_at = published_at.naive_utc(),
             Err(_)           => (),
+        }
+        if let Ok(mut artist) = Artist::find_or_create(self.provider, s.channelId.to_string()) {
+            artist.name  = s.channelTitle.to_string();
+            let _ = artist.save();
+            let _ = self.add_artist(artist);
         }
         self
     }
 
     pub fn update_with_yt_playlist_item(&mut self, item: &youtube::PlaylistItem) -> &mut Track {
+        let s              = &item.snippet;
         self.provider      = Provider::YouTube;
-        self.identifier    = item.snippet.resourceId["videoId"].to_string();
-        self.owner_id      = Some(item.snippet.channelId.to_string());
-        self.owner_name    = Some(item.snippet.channelTitle.to_string());
+        self.identifier    = s.resourceId["videoId"].to_string();
+        self.owner_id      = Some(s.channelId.to_string());
+        self.owner_name    = Some(s.channelTitle.to_string());
         self.url           = format!("https://www.youtube.com/watch/?v={}", item.id);
-        self.title         = item.snippet.title.to_string();
-        self.description   = Some(item.snippet.description.to_string());
-        self.thumbnail_url = item.snippet.get_thumbnail_url();
-        self.artwork_url   = item.snippet.get_artwork_url();
+        self.title         = s.title.to_string();
+        self.description   = Some(s.description.to_string());
+        self.thumbnail_url = s.get_thumbnail_url();
+        self.artwork_url   = s.get_artwork_url();
         self.state         = State::Alive;
-        match DateTime::parse_from_rfc3339(&item.snippet.publishedAt) {
+        match DateTime::parse_from_rfc3339(&s.publishedAt) {
             Ok(published_at) => self.published_at = published_at.naive_utc(),
             Err(_)           => (),
+        }
+        if let Ok(mut artist) = Artist::find_or_create(self.provider, s.channelId.to_string()) {
+            artist.name  = s.channelTitle.to_string();
+            let _ = artist.save();
+            let _ = self.add_artist(artist);
         }
         self
     }
@@ -311,6 +347,12 @@ impl Track {
         match DateTime::parse_from_str(&track.created_at, "%Y/%m/%d %H:%M:%S %z") {
             Ok(published_at) => self.published_at = published_at.naive_utc(),
             Err(_)           => (),
+        }
+        if let Ok(mut artist) = Artist::find_or_create(self.provider,
+                                                       track.user.id.to_string()) {
+            artist.update_with_sc_user(&track.user);
+            let _ = artist.save();
+            let _ = self.add_artist(artist);
         }
         self
     }
@@ -335,6 +377,19 @@ impl Track {
             if album.images.len() > 1 {
                 self.thumbnail_url = Some(album.images[1].url.clone());
             }
+        }
+        let artists = track.artists
+            .iter()
+            .map(|artist| {
+                Artist::find_or_create(self.provider, artist.id.to_string())
+                    .map(|mut a| a.update_with_sp_artist(&artist).clone())
+            })
+            .filter(|r| r.is_ok())
+            .map(|r| r.unwrap())
+            .collect::<Vec<Artist>>();
+        for mut a in artists {
+            let _ = a.save();
+            let _ = self.add_artist(a);
         }
         self
     }

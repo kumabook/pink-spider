@@ -1,6 +1,7 @@
 pub use self::track::Track;
 pub use self::playlist::Playlist;
 pub use self::album::Album;
+pub use self::artist::Artist;
 pub use self::enclosure::Enclosure;
 pub use self::provider::Provider;
 pub use self::entry::Entry;
@@ -9,6 +10,7 @@ pub use self::feed::Feed;
 mod track;
 mod playlist;
 mod album;
+mod artist;
 mod entry;
 mod feed;
 mod provider;
