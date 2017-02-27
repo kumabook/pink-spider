@@ -12,7 +12,7 @@ const status = (state = Status.Dirty, action) => {
   switch (action.type) {
     case 'FETCH_PLAYLISTS':
       return Status.Fetching;
-    case 'RECEIVE_PLAYLISTSS':
+    case 'RECEIVE_PLAYLISTS':
       return Status.Normal;
     case 'UPDATE_PLAYLIST':
       return Status.Dirty;
