@@ -29,6 +29,8 @@ uuid            = { version = "*", features = ["v4", "rustc-serialize", "serde"]
 staticfile      = "*"
 chrono          = { version = "*", features = ["serde", "rustc-serialize"] }
 queryst         = "*"
+bodyparser      = "*"
+serde_json      = "*"
 [dependencies.mount]
 git = "https://github.com/iron/mount.git"
 [dependencies.postgres]
