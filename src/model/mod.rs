@@ -101,6 +101,18 @@ pub trait Model where Self: std::marker::Sized + ToJson + Clone {
             items:    items,
         }
     }
+    fn mget(ids: Vec<Uuid>) -> Result<Vec<Self>, Error> {
+        let ids: Vec<String> = ids.iter()
+                                  .map(|id| format!("'{}'", id.to_string()))
+                                  .collect();
+        let conn = try!(conn());
+        let stmt = try!(conn.prepare(&format!("SELECT {} FROM {} WHERE id IN ({})",
+                                              Self::props_str(""),
+                                              Self::table_name(),
+                                              ids.join(","))));
+        let rows = try!(stmt.query(&[]));
+        Ok(Self::rows_to_items(rows))
+    }
     fn create(&self) -> Result<Self, Error>;
     fn save(&mut self) -> Result<(), Error>;
 }

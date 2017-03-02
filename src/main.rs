@@ -9,6 +9,8 @@ extern crate html5ever;
 extern crate regex;
 extern crate uuid;
 extern crate chrono;
+extern crate bodyparser;
+extern crate serde_json;
 
 use std::net::SocketAddrV4;
 use std::net::Ipv4Addr;
@@ -49,6 +51,27 @@ pub fn index<T: Model>(req: &mut Request) -> IronResult<Response> {
     let json_obj: Json   = enclosures.to_json();
     let json_str: String = json_obj.to_string();
     Ok(Response::with((status::Ok, application_json(), json_str)))
+}
+
+pub fn mget<T: Model>(req: &mut Request) -> IronResult<Response> {
+    let ids              = try!(params_as_uuid_array(req));
+    let items            = try!(T::mget(ids));
+    let json_obj: Json   = items.to_json();
+    let json_str: String = json_obj.to_string();
+    Ok(Response::with((status::Ok, application_json(), json_str)))
+}
+
+fn params_as_uuid_array(req: &mut Request) -> IronResult<Vec<Uuid>> {
+    match req.get::<bodyparser::Json>() {
+        Ok(Some(serde_json::Value::Array(ids))) =>
+            Ok(ids
+               .iter()
+               .map(|v| Uuid::parse_str(v.as_str().unwrap_or("")))
+               .filter(|opt| opt.is_ok())
+               .map(|opt| opt.unwrap())
+               .collect()),
+        _ => Err(IronError::from(Error::Unprocessable)),
+    }
 }
 
 pub fn index_by_entry<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
@@ -234,23 +257,30 @@ pub fn main() {
     let mut mount = Mount::new();
     mount.mount("/web/", Static::new(Path::new(path)));
     let router = router!(
+        web:                      get  "/*"                        => mount,
         playlistify:              get  "/playlistify"                 => playlistify,
+        index_entries:            get  "/entries"                     => index_entries,
+        index_artists:            get  "/artists"                     => index::<Artist>,
+        mget_artists:             post "/artists/.mget"               => mget::<Artist>,
+
         show_track_by_id:         get  "/tracks/:id"                  => show_by_id::<Track>,
         show_track:               get  "/tracks/:provider/:id"        => show::<Track>,
+        mget_tracks:              post "/tracks/.mget"                => mget::<Track>,
         update_track:             post "/tracks/:track_id"            => update_track,
-        show_playlist_by_id:      get  "/playlists/:id"               => show_by_id::<Playlist>,
-        show_playlist:            get  "/playlists/:provider/:id"      => show::<Playlist>,
-        show_album_by_id:         get  "/albums/:id"                  => show_by_id::<Album>,
-        show_album:               get  "/albums/:provider/:id"        => show::<Album>,
-        index_entries:            get  "/entries"                     => index_entries,
         index_tracks:             get  "/tracks"                      => index::<Track>,
         index_tracks_by_entry:    get  "/entries/:entry_id/tracks"    => index_by_entry::<Track>,
+
+        show_playlist_by_id:      get  "/playlists/:id"               => show_by_id::<Playlist>,
+        show_playlist:            get  "/playlists/:provider/:id"     => show::<Playlist>,
+        mget_playlists:           post "/playlists/.mget"             => mget::<Playlist>,
         index_playlists:          get  "/playlists"                   => index::<Playlist>,
         index_playlists_by_entry: get  "/entries/:entry_id/playlists" => index_by_entry::<Playlist>,
+
+        show_album_by_id:         get  "/albums/:id"                  => show_by_id::<Album>,
+        show_album:               get  "/albums/:provider/:id"        => show::<Album>,
+        mget_albums:              post "/albums/.mget"                => mget::<Album>,
         index_albums:             get  "/albums"                      => index::<Album>,
         index_albums_by_entry:    get  "/entries/:entry_id/albums"    => index_by_entry::<Album>,
-        index_artists:            get  "/artists"                     => index::<Artist>,
-        web:                   get  "/*"                        => mount,
     );
     let port_str = match std::env::var("PORT") {
         Ok(n)    => n,
