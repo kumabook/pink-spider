@@ -17,7 +17,7 @@ describe('actions', () => {
   });
   describe('.fetchEntries', () => {
     it('creates RECEIVE_ENTRIES when fetching entries has been done', () => {
-      mock.onGet('/entries').reply(200, { items: [], page: 0, per_page: 10, total: 0 });
+      mock.onGet('/v1/entries').reply(200, { items: [], page: 0, per_page: 10, total: 0 });
       const expectedActions = [
         { type: 'FETCH_ENTRIES', page: 0, perPage: 10 },
         { type: 'RECEIVE_ENTRIES', page: 0, perPage: 10, total: 0, items: []},
@@ -30,7 +30,7 @@ describe('actions', () => {
   });
   describe('.fetchTracks', () => {
     it('creates RECEIVE_TRACKS when fetching tracks has been done', () => {
-      mock.onGet('/tracks').reply(200, { items: [], page: 0, per_page: 10, total: 0 });
+      mock.onGet('/v1/tracks').reply(200, { items: [], page: 0, per_page: 10, total: 0 });
       const expectedActions = [
         { type: 'FETCH_TRACKS', entryId: null, page: 0, perPage: 10 },
         { type: 'RECEIVE_TRACKS', entryId: null, page: 0, perPage: 10, total: 0, items: []},
@@ -46,7 +46,7 @@ describe('actions', () => {
       const track = {
         id: 'track_id',
       };
-      mock.onGet('/tracks/track_id').reply(200, track);
+      mock.onGet('/v1/tracks/track_id').reply(200, track);
       const expectedActions = [
         { type: 'FETCH_TRACK' },
         { type: 'RECEIVE_TRACK', item: track },
@@ -62,7 +62,7 @@ describe('actions', () => {
       const track = {
         id: 'track_id',
       };
-      mock.onPost('/tracks/track_id').reply(200, track);
+      mock.onPost('/v1/tracks/track_id').reply(200, track);
       const expectedActions = [{ type: 'UPDATE_TRACK' }];
       const store = mockStore();
       return store.dispatch(actions.updateTrack('track_id')).then(() => {
