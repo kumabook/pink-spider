@@ -47,6 +47,7 @@ class TrackDetail extends React.Component {
     const provider    = tryGet(this.props.item, 'provider', 'No Service');
     const identifier  = tryGet(this.props.item, 'identifier', 'No ID');
     const artworkUrl  = tryGet(this.props.item, 'artwork_url', NO_IMAGE);
+    const audioUrl    = tryGet(this.props.item, 'audio_url', null);
     const publishedAt = datePrettify(tryGet(this.props.item, 'published_at', null));
     const createdAt   = datePrettify(tryGet(this.props.item, 'created_at', null));
     const updatedAt   = datePrettify(tryGet(this.props.item, 'updated_at', null));
@@ -94,6 +95,7 @@ class TrackDetail extends React.Component {
             <ListItem primaryText="identifier" secondaryText={identifier} />
             <ListItem primaryText="owner id" secondaryText={ownerId} />
             <ListItem primaryText="owner name" secondaryText={ownerName} />
+            <ListItem primaryText="audio url" secondaryText={audioUrl} />
             <ListItem primaryText="published" secondaryText={publishedAt} />
             <ListItem primaryText="created" secondaryText={createdAt} />
             <ListItem primaryText="updated" secondaryText={updatedAt} />
