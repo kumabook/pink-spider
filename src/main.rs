@@ -89,6 +89,26 @@ pub fn index_by_entry<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, application_json(), json_str)))
 }
 
+pub fn legacy_playlistify(req: &mut Request) -> IronResult<Response> {
+    pub fn playlistify2(req: &mut Request) -> Result<Response, Error> {
+        let ref params  = try!(req.get_ref::<UrlEncodedQuery>());
+        let url         = try!(params.get("url").ok_or(Error::BadRequest));
+        let defaults    = &vec!("false".to_string());
+        let force_param = params.get("force").unwrap_or(defaults);
+        let force       = force_param.len() > 0 && &force_param[0] == "true";
+        let mut entry   = try!(find_or_playlistify_entry(&url[0], force));
+        entry.tracks    = entry.tracks
+            .iter()
+            .filter(|t| t.provider == Provider::YouTube || t.provider == Provider::SoundCloud)
+            .map(|t| t.clone())
+            .collect();
+        let json_obj    = entry.to_json() as Json;
+        let json_str    = json_obj.to_string() as String;
+        Ok(Response::with((status::Ok, application_json(), json_str)))
+    }
+    playlistify2(req).map_err(|err| IronError::from(err))
+}
+
 pub fn playlistify(req: &mut Request) -> IronResult<Response> {
     pub fn playlistify2(req: &mut Request) -> Result<Response, Error> {
         let ref params  = try!(req.get_ref::<UrlEncodedQuery>());
@@ -258,7 +278,7 @@ pub fn main() {
     mount.mount("/web/", Static::new(Path::new(path)));
     let router = router!(
         web:                      get  "/*"                        => mount,
-        legacy_playlistify:       get  "/playlistify"                    => playlistify,
+        legacy_playlistify:       get  "/playlistify"                    => legacy_playlistify,
         playlistify:              get  "/v1/playlistify"                 => playlistify,
         index_entries:            get  "/v1/entries"                     => index_entries,
         index_artists:            get  "/v1/artists"                     => index::<Artist>,
