@@ -17,7 +17,7 @@ use model::provider::Provider;
 use model::state::State;
 use model::artist::Artist;
 
-static PROPS: [&'static str; 15]  = ["id",
+static PROPS: [&'static str; 16]  = ["id",
                                      "provider",
                                      "identifier",
                                      "owner_id",
@@ -27,6 +27,7 @@ static PROPS: [&'static str; 15]  = ["id",
                                      "description",
                                      "thumbnail_url",
                                      "artwork_url",
+                                     "audio_url",
                                      "duration",
                                      "published_at",
                                      "created_at",
@@ -45,6 +46,7 @@ pub struct Track {
     pub description:   Option<String>,
     pub thumbnail_url: Option<String>,
     pub artwork_url:   Option<String>,
+    pub audio_url:     Option<String>,
     pub duration:      i32,
     pub published_at:  NaiveDateTime,
     pub created_at:    NaiveDateTime,
@@ -75,6 +77,7 @@ impl ToJson for Track {
         d.insert("description".to_string()  , self.description.to_json());
         d.insert("thumbnail_url".to_string(), self.thumbnail_url.to_json());
         d.insert("artwork_url".to_string()  , self.artwork_url.to_json());
+        d.insert("audio_url".to_string()    , self.audio_url.to_json());
         d.insert("duration".to_string()     , self.duration.to_json());
         d.insert("published_at".to_string() , published_at.to_rfc3339().to_json());
         d.insert("created_at".to_string()   , created_at.to_rfc3339().to_json());
@@ -115,11 +118,12 @@ impl Model for Track {
                 description:   row.get(7),
                 thumbnail_url: row.get(8),
                 artwork_url:   row.get(9),
-                duration:      row.get(10),
-                published_at:  row.get(11),
-                created_at:    row.get(12),
-                updated_at:    row.get(13),
-                state:         State::new(row.get(14)),
+                audio_url:     row.get(10),
+                duration:      row.get(11),
+                published_at:  row.get(12),
+                created_at:    row.get(13),
+                updated_at:    row.get(14),
+                state:         State::new(row.get(15)),
                 artists:       None,
             };
             tracks.push(track)
@@ -152,11 +156,12 @@ impl Model for Track {
                                  description   = $8,
                                  thumbnail_url = $9,
                                  artwork_url   = $10,
-                                 duration      = $11,
-                                 published_at  = $12,
-                                 created_at    = $13,
-                                 updated_at    = $14,
-                                 state         = $15
+                                 audio_url     = $11,
+                                 duration      = $12,
+                                 published_at  = $13,
+                                 created_at    = $14,
+                                 updated_at    = $15,
+                                 state         = $16
                                  WHERE id = $1").unwrap();
         let result = stmt.query(&[&self.id,
                                   &self.provider.to_string(),
@@ -168,6 +173,7 @@ impl Model for Track {
                                   &self.description,
                                   &self.thumbnail_url,
                                   &self.artwork_url,
+                                  &self.audio_url,
                                   &self.duration,
                                   &self.published_at,
                                   &self.created_at,
@@ -194,6 +200,7 @@ impl Enclosure for Track {
             description:   None,
             thumbnail_url: None,
             artwork_url:   None,
+            audio_url:     None,
             duration:      0,
             published_at:  UTC::now().naive_utc(),
             created_at:    UTC::now().naive_utc(),
@@ -274,6 +281,7 @@ impl Track {
         self.description   = None;
         self.thumbnail_url = Some(song.artwork_url.to_string());
         self.artwork_url   = Some(song.artwork_url.to_string());
+        self.audio_url     = Some(song.audio_url.to_string());
         self.state         = State::Alive;
         if let Ok(mut artist) = Artist::find_or_create(self.provider,
                                                        song.artist.to_string()) {
@@ -295,6 +303,7 @@ impl Track {
         self.description   = Some(s.description.to_string());
         self.thumbnail_url = s.get_thumbnail_url();
         self.artwork_url   = s.get_artwork_url();
+        self.audio_url     = None;
         self.state         = State::Alive;
         match DateTime::parse_from_rfc3339(&s.publishedAt) {
             Ok(published_at) => self.published_at = published_at.naive_utc(),
@@ -319,6 +328,7 @@ impl Track {
         self.description   = Some(s.description.to_string());
         self.thumbnail_url = s.get_thumbnail_url();
         self.artwork_url   = s.get_artwork_url();
+        self.audio_url     = None;
         self.state         = State::Alive;
         match DateTime::parse_from_rfc3339(&s.publishedAt) {
             Ok(published_at) => self.published_at = published_at.naive_utc(),
@@ -343,6 +353,7 @@ impl Track {
         self.description   = Some(track.description.to_string());
         self.thumbnail_url = track.artwork_url.clone();
         self.artwork_url   = track.artwork_url.clone();
+        self.audio_url     = Some(track.stream_url.clone());
         self.state         = State::Alive;
         match DateTime::parse_from_str(&track.created_at, "%Y/%m/%d %H:%M:%S %z") {
             Ok(published_at) => self.published_at = published_at.naive_utc(),
@@ -367,6 +378,7 @@ impl Track {
         self.url            = track.uri.clone();
         self.title          = track.name.clone();
         self.description    = None;
+        self.audio_url      = track.preview_url.clone();
         self.state          = State::Alive;
         self.published_at   = UTC::now().naive_utc();
         if let Some(album) = track.album.clone() {
