@@ -3,7 +3,15 @@ import {
   parse,
 } from 'spotify-uri';
 
-import { getCountryParam } from './Playlist';
+export const getCountry = (urlString) => {
+  const regex = /\/geo\.itunes\.apple\.com\/([a-zA-Z]+)\//;
+  const results = urlString.match(regex);
+  if (results.length >= 2) {
+    return results[1];
+  }
+  return 'us';
+};
+
 
 export const getOwnerUrl = (track) => {
   if (!track || !track.owner_id) {
@@ -33,7 +41,7 @@ export const getUrl = (track) => {
     case 'Spotify':
       return formatOpenURL(parse(track.url));
     case 'AppleMusic': {
-      const country = getCountryParam(track.url);
+      const country = getCountry(track.url);
       return `http://tools.applemusic.com/embed/v1/song/${id}?country=${country}`;
     }
     default:
