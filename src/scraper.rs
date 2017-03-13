@@ -265,6 +265,7 @@ fn fetch_spotify_album(identifier: String) -> (Vec<Playlist>, Vec<Album>, Vec<Tr
             let tracks = album.tracks.clone().map(|t| t.items).unwrap_or(vec![])
                 .iter()
                 .map(|ref t| Track::from_sp_track(t))
+                .map(|ref mut t| t.update_with_sp_album(&album).clone())
                 .collect::<Vec<_>>();
             (vec![], vec![Album::from_sp_album(&album)], tracks)
         },

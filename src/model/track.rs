@@ -382,13 +382,7 @@ impl Track {
         self.state          = State::Alive;
         self.published_at   = UTC::now().naive_utc();
         if let Some(album) = track.album.clone() {
-            if album.images.len() > 0 {
-                self.artwork_url   = Some(album.images[0].url.clone());
-                self.thumbnail_url = Some(album.images[0].url.clone());
-            }
-            if album.images.len() > 1 {
-                self.thumbnail_url = Some(album.images[1].url.clone());
-            }
+            self.update_with_sp_album(&album);
         }
         let artists = track.artists
             .iter()
@@ -402,6 +396,17 @@ impl Track {
         for mut a in artists {
             let _ = a.save();
             let _ = self.add_artist(a);
+        }
+        self
+    }
+
+    pub fn update_with_sp_album(&mut self, album: &spotify::Album) -> &mut Track {
+        if album.images.len() > 0 {
+            self.artwork_url   = Some(album.images[0].url.clone());
+            self.thumbnail_url = Some(album.images[0].url.clone());
+        }
+        if album.images.len() > 1 {
+            self.thumbnail_url = Some(album.images[1].url.clone());
         }
         self
     }
