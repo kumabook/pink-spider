@@ -6,6 +6,26 @@
   "keywords": ["rust", "iron"],
   "website": "https://github.com/kumabook/musicfav-cloud/wiki",
   "env": {
-    "BUILDPACK_URL": "https://github.com/kumabook/heroku-buildpack-rust.git"
+    "ENV": {
+      "description": "environment",
+      "value": "production"
+    },
+    "BUILDPACK_URL": "https://github.com/kumabook/heroku-buildpack-rust.git",
+    "SOUNDCLOUD_API_KEY": {
+      "description": "sound cloud api key",
+      "value": "set_your_sound_cloud_api_key"
+    },
+    "YOUTUBE_API_KEY": {
+      "description": "youtube api key",
+      "value": "set_your_youtube_api_key"
+    },
+    "SPOTIFY_CLIENT_ID": {
+      "description": "spotify web api client id",
+      "value": "set_your_spotify_client_id"
+    },
+    "SPOTIFY_CLIENT_SECRET": {
+      "description": "spotify web api client id",
+      "value": "set_your_spotify_client_secret"
+    }
   }
 }
