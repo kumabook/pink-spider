@@ -57,6 +57,7 @@ class PlaylistList extends React.Component {
             <TableRow>
               <TableHeaderColumn>thumbnail</TableHeaderColumn>
               <TableHeaderColumn>title</TableHeaderColumn>
+              <TableHeaderColumn>owner</TableHeaderColumn>
               <TableHeaderColumn>published at</TableHeaderColumn>
               <TableHeaderColumn>buttons</TableHeaderColumn>
             </TableRow>

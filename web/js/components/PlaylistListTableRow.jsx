@@ -5,7 +5,10 @@ import {
 } from 'material-ui/Table';
 import RaisedButton from 'material-ui/RaisedButton';
 import datePrettify from '../utils/datePrettify';
-import { getUrl }   from '../model/Playlist';
+import {
+  getOwnerName,
+  getUrl,
+} from '../model/Playlist';
 import {
   NO_IMAGE,
   DEAD_IMAGE,
@@ -31,12 +34,15 @@ const PlaylistListTableRow = ({ playlist, onDetailButtonClick }) => (
       </a>
     </TableRowColumn>
     <TableRowColumn>
+      {playlist.title || `${playlist.provider} id: ${playlist.identifier}`}
+    </TableRowColumn>
+    <TableRowColumn>
       <img
         role="presentation"
         src={getImageOfProvider(playlist.provider)}
         width="16" height="16"
       />
-      {playlist.title || `${playlist.provider} id: ${playlist.identifier}`}
+      {getOwnerName(playlist)}
     </TableRowColumn>
     <TableRowColumn>
       {datePrettify(playlist.published_at)}
@@ -54,6 +60,7 @@ const PlaylistListTableRow = ({ playlist, onDetailButtonClick }) => (
 PlaylistListTableRow.propTypes = {
   playlist: React.PropTypes.shape({
     title:         React.PropTypes.string.isRequired,
+    owner_name:    React.PropTypes.string,
     provider:      React.PropTypes.string.isRequired,
     identifier:    React.PropTypes.string.isRequired,
     thumbnail_url: React.PropTypes.string,

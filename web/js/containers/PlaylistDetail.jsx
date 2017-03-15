@@ -39,6 +39,8 @@ class PlaylistDetail extends React.Component {
   render() {
     const id          = tryGet(this.props.item, 'id', 'unknown id');
     const state       = tryGet(this.props.item, 'state', 'unknown state');
+    const ownerId     = tryGet(this.props.item, 'owner_id', 'unknown');
+    const ownerName   = tryGet(this.props.item, 'owner_name', 'unknown');
     const title       = tryGet(this.props.item, 'title', 'No Title');
     const description = tryGet(this.props.item, 'description', 'No Description');
     const provider    = tryGet(this.props.item, 'provider', 'No Service');
@@ -88,6 +90,8 @@ class PlaylistDetail extends React.Component {
             <ListItem primaryText="state" secondaryText={state} />
             <ListItem primaryText="provider" secondaryText={provider} />
             <ListItem primaryText="identifier" secondaryText={identifier} />
+            <ListItem primaryText="owner id" secondaryText={ownerId} />
+            <ListItem primaryText="owner name" secondaryText={ownerName} />
             <ListItem primaryText="published" secondaryText={publishedAt} />
             <ListItem primaryText="created" secondaryText={createdAt} />
             <ListItem primaryText="updated" secondaryText={updatedAt} />
