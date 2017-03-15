@@ -12,6 +12,8 @@ export const getCountryParam = (urlString) => {
   return 'us';
 };
 
+export const getOwnerName = playlist => playlist.owner_name || playlist.owner_id;
+
 export const getUrl = (playlist) => {
   if (!playlist || !playlist.identifier) {
     return null;
