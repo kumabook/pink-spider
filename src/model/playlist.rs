@@ -16,9 +16,11 @@ use model::provider::Provider;
 use model::state::State;
 use model::enclosure::Enclosure;
 
-static PROPS: [&'static str; 12]  = ["id",
+static PROPS: [&'static str; 14]  = ["id",
                                      "provider",
                                      "identifier",
+                                     "owner_id",
+                                     "owner_name",
                                      "url",
                                      "title",
                                      "description",
@@ -34,6 +36,8 @@ pub struct Playlist {
     pub id:            Uuid,
     pub provider:      Provider,
     pub identifier:    String,
+    pub owner_id:      Option<String>,
+    pub owner_name:    Option<String>,
     pub url:           String,
     pub title:         String,
     pub description:   Option<String>,
@@ -60,6 +64,8 @@ impl ToJson for Playlist {
         d.insert("id".to_string()           , self.id.to_string().to_json());
         d.insert("provider".to_string()     , self.provider.to_json());
         d.insert("identifier".to_string()   , self.identifier.to_json());
+        d.insert("owner_id".to_string()     , self.owner_id.to_json());
+        d.insert("owner_name".to_string()   , self.owner_name.to_json());
         d.insert("url".to_string()          , self.url.to_json());
         d.insert("title".to_string()        , self.title.to_json());
         d.insert("description".to_string()  , self.description.to_json());
@@ -94,15 +100,17 @@ impl Model for Playlist {
                 id:            row.get(0),
                 provider:      Provider::new(row.get(1)),
                 identifier:    row.get(2),
-                url:           row.get(3),
-                title:         row.get(4),
-                description:   row.get(5),
-                thumbnail_url: row.get(6),
-                artwork_url:   row.get(7),
-                published_at:  row.get(8),
-                created_at:    row.get(9),
-                updated_at:    row.get(10),
-                state:         State::new(row.get(11)),
+                owner_id:      row.get(3),
+                owner_name:    row.get(4),
+                url:           row.get(5),
+                title:         row.get(6),
+                description:   row.get(7),
+                thumbnail_url: row.get(8),
+                artwork_url:   row.get(9),
+                published_at:  row.get(10),
+                created_at:    row.get(11),
+                updated_at:    row.get(12),
+                state:         State::new(row.get(13)),
             };
             playlists.push(playlist)
         }
@@ -127,19 +135,23 @@ impl Model for Playlist {
         let stmt = conn.prepare("UPDATE playlists SET
                                  provider      = $2,
                                  identifier    = $3,
-                                 url           = $4,
-                                 title         = $5,
-                                 description   = $6,
-                                 thumbnail_url = $7,
-                                 artwork_url   = $8,
-                                 published_at  = $9,
-                                 created_at    = $10,
-                                 updated_at    = $11,
-                                 state         = $12
+                                 owner_id      = $4,
+                                 owner_name    = $5,
+                                 url           = $6,
+                                 title         = $7,
+                                 description   = $8,
+                                 thumbnail_url = $9,
+                                 artwork_url   = $10,
+                                 published_at  = $11,
+                                 created_at    = $12,
+                                 updated_at    = $13,
+                                 state         = $14
                                  WHERE id = $1").unwrap();
         let result = stmt.query(&[&self.id,
                                   &self.provider.to_string(),
                                   &self.identifier,
+                                  &self.owner_id,
+                                  &self.owner_name,
                                   &self.url,
                                   &self.title,
                                   &self.description,
@@ -163,6 +175,8 @@ impl Enclosure for Playlist {
             id:            Uuid::new_v4(),
             provider:      provider,
             identifier:    identifier,
+            owner_id:      None,
+            owner_name:    None,
             url:           "".to_string(),
             title:         "".to_string(),
             description:   None,
@@ -215,6 +229,8 @@ impl Playlist {
     pub fn update_with_yt_playlist(&mut self, playlist: &youtube::Playlist) -> &mut Playlist {
         self.provider      = Provider::YouTube;
         self.identifier    = playlist.id.to_string();
+        self.owner_id      = Some(playlist.snippet.channelId.to_string());
+        self.owner_name    = Some(playlist.snippet.channelTitle.to_string());
         self.url           = format!("https://www.youtube.com/watch/?v={}", playlist.id);
         self.title         = playlist.snippet.title.to_string();
         self.description   = Some(playlist.snippet.description.to_string());
@@ -231,6 +247,8 @@ impl Playlist {
     pub fn update_with_sp_playlist(&mut self, playlist: &spotify::Playlist) -> &mut Playlist {
         self.provider       = Provider::Spotify;
         self.identifier     = playlist.id.to_string();
+        self.owner_id       = Some(playlist.owner.id.to_string());
+        self.owner_name     = playlist.owner.display_name.clone();
         self.url            = playlist.uri.clone();
         self.title          = playlist.name.clone();
         self.description    = None;
@@ -249,6 +267,8 @@ impl Playlist {
     pub fn update_with_sc_playlist(&mut self, playlist: &soundcloud::Playlist) -> &mut Playlist {
         self.provider      = Provider::SoundCloud;
         self.identifier    = playlist.id.to_string();
+        self.owner_id      = Some(playlist.user.id.to_string());
+        self.owner_name    = Some(playlist.user.username.clone());
         self.url           = playlist.permalink_url.to_string();
         self.title         = playlist.title.to_string();
         self.description   = None;
@@ -265,6 +285,8 @@ impl Playlist {
     pub fn update_with_am_playlist(&mut self, playlist: &apple_music::Playlist) -> &mut Playlist {
         self.provider      = Provider::AppleMusic;
         self.identifier    = playlist.id.to_string();
+        self.owner_id      = Some(playlist.curator.to_string());
+        self.owner_name    = Some(playlist.curator.to_string());
         self.url           = playlist.music_url.to_string();
         self.title         = playlist.title.to_string();
         self.description   = Some(playlist.description.to_string());
