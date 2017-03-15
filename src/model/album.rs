@@ -63,6 +63,8 @@ impl ToJson for Album {
         d.insert("id".to_string()           , self.id.to_string().to_json());
         d.insert("provider".to_string()     , self.provider.to_json());
         d.insert("identifier".to_string()   , self.identifier.to_json());
+        d.insert("owner_id".to_string()     , self.owner_id.to_json());
+        d.insert("owner_name".to_string()   , self.owner_name.to_json());
         d.insert("url".to_string()          , self.url.to_json());
         d.insert("title".to_string()        , self.title.to_json());
         d.insert("description".to_string()  , self.description.to_json());
@@ -230,6 +232,10 @@ impl Album {
     pub fn update_with_sp_album(&mut self, album: &spotify::Album) -> &mut Album {
         self.provider       = Provider::Spotify;
         self.identifier     = album.id.to_string();
+        if album.artists.len() > 0 {
+            self.owner_id   = Some(album.artists[0].id.clone());
+            self.owner_name = Some(album.artists[0].name.clone());
+        }
         self.url            = album.uri.clone();
         self.title          = album.name.clone();
         self.description    = None;
@@ -261,6 +267,8 @@ impl Album {
     pub fn update_with_am_album(&mut self, album: &apple_music::Album) -> &mut Album {
         self.provider      = Provider::AppleMusic;
         self.identifier    = album.id.to_string();
+        self.owner_id      = Some(album.album_artist.to_string());
+        self.owner_name    = Some(album.album_artist.to_string());
         self.url           = album.music_url.to_string();
         self.title         = album.title.to_string();
         self.description   = None;
