@@ -3,6 +3,8 @@ class CreatePlaylists < ActiveRecord::Migration[4.2]
     create_table :playlists, id: :uuid, default: "uuid_generate_v4()", force: true do |t|
       t.string :provider     , null: false
       t.string :identifier   , null: false
+      t.string :owner_id
+      t.string :owner_name
       t.string :url          , null: false
       t.string :title        , null: false
       t.text   :description
