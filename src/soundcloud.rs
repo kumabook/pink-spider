@@ -27,11 +27,13 @@ pub struct Playlist {
     pub id:            i32,
     pub created_at:    String,
     pub user_id:       i32,
+    pub user:          User,
     pub title:         String,
     pub permalink:     String,
     pub permalink_url: String,
     pub artwork_url:   Option<String>,
     pub tracks:        Vec<Track>,
+    pub genre:         Option<String>,
 }
 
 #[derive(Debug, RustcDecodable, RustcEncodable)]
