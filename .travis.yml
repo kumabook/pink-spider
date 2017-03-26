@@ -24,6 +24,7 @@ script:
   - npm test
 env:
   global:
+  - USER_AGENT=Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1
   - secure: S1scCqP3oLWhF2/t2FBxmyluE0PUKMyNvMhKz+NfDstwV3kqdD2MCa0XTP/zW6bB7rd1BOeKM7Ofa8brFafkMM2Gt0/r1upG0m1Rf3nKdsIliJSY4uc4RMc/8k75dFlqT94Tah8t6fAIukwy/DlYo98pauJAqq0YHb2dzBAvq+0=
   - secure: V3xd6SmedlaFZaypwx2Cn/nr37I+pCXMOtOKkrtYA59Ci/H4lgMZg1sDMLsLmb+r71ZpYOwm9NrfYeIgng+PHfKEaAnf0I0t4g6VbDtnTpmGKc+qav4bDl/FYTbGbfeqPE9PoAZDYzRKDG1bbB5y2oWJmuTdIU6CTsoAjF6NONI=
   - secure: DeNLhCa1B9Y3/CcVNQQ89ydUAWprqQS349PiiEsqjcV+p7a/u8mkeFsn9yqVqq3HC6na8lQgIEbjzOCfPXlGpldasZZf0j/5yrlyx2ERMhmWIce1o0w68hYQzI1bSTDbBdJsNNAUgtWoQ3U6nFnlRf+73PWDtkL7s5LiF7znK98=
