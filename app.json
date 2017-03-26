@@ -11,6 +11,10 @@
       "value": "production"
     },
     "BUILDPACK_URL": "https://github.com/kumabook/heroku-buildpack-rust.git",
+    "USER_AGENT": {
+      "description": "User agent of cralwer http request",
+      "value": "Mozilla/5.0 (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1"
+    },
     "SOUNDCLOUD_API_KEY": {
       "description": "sound cloud api key",
       "value": "set_your_sound_cloud_api_key"
