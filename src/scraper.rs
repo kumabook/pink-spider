@@ -2,12 +2,15 @@ use html5ever::rcdom::{Document, Doctype, Text, Comment, Element};
 use html5ever::rcdom::{RcDom, Handle};
 use html5ever::{parse_document, Attribute};
 use tendril::stream::TendrilSink;
+use std::io::Read;
 use std::default::Default;
-
+use std::fs::File;
+use std::env;
 use regex::Regex;
 use hyper::Client;
 use hyper::header::Connection;
 use hyper::header::ConnectionOption;
+use hyper::header::UserAgent;
 use url::Url;
 
 use Provider;
@@ -44,6 +47,21 @@ static SPOTIFY_ALBUM:         &'static str = r"spotify:album:([a-zA-Z0-9_-]+)";
 static APPLE_MUSIC_ALBUM_LINK:    &'static str = r"itunes.apple.com/([a-zA-Z0-9_-]+)/album/([a-zA-Z0-9_-]+)/id([a-zA-Z0-9_-]+)";
 static APPLE_MUSIC_PLAYLIST_LINK: &'static str = r"itunes.apple.com/([a-zA-Z0-9_-]+)/playlist/([a-zA-Z0-9_-]+)/idpl.([a-zA-Z0-9_-]+)";
 
+lazy_static! {
+    static ref USER_AGENT: String = {
+        let opt_key = env::var("USER_AGENT");
+        match opt_key {
+            Ok(key) => key,
+            Err(_) => {
+                let mut f = File::open("user_agent.txt").unwrap();
+                let mut s = String::new();
+                let _ = f.read_to_string(&mut s);
+                s
+            }
+        }
+    };
+}
+
 #[derive(Debug)]
 pub struct ScraperProduct {
     pub playlists: Vec<Playlist>,
@@ -56,6 +74,7 @@ pub fn extract(url: &str) -> Result<ScraperProduct, Error> {
     let client = Client::new();
     let mut res = client.get(url)
         .header(Connection(vec![ConnectionOption::Close]))
+        .header(UserAgent(USER_AGENT.to_string()))
         .send()
         .unwrap();
     if res.status.is_success() {
