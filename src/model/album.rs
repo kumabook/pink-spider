@@ -120,9 +120,9 @@ impl Model for Album {
     }
 
     fn create(&self) -> Result<Album, Error> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare("INSERT INTO albums (provider, identifier, url, title)
-                                 VALUES ($1, $2, $3, $4) RETURNING id").unwrap();
+        let conn = try!(conn());
+        let stmt = try!(conn.prepare("INSERT INTO albums (provider, identifier, url, title)
+                                      VALUES ($1, $2, $3, $4) RETURNING id"));
         let rows = try!(stmt.query(&[&self.provider.to_string(), &self.identifier, &self.url, &self.title]));
         let mut album = self.clone();
         for row in rows.iter() {
@@ -133,22 +133,22 @@ impl Model for Album {
 
     fn save(&mut self) -> Result<(), Error> {
         self.updated_at = UTC::now().naive_utc();
-        let conn = conn().unwrap();
-        let stmt = conn.prepare("UPDATE albums SET
-                                 provider      = $2,
-                                 identifier    = $3,
-                                 owner_id      = $4,
-                                 owner_name    = $5,
-                                 url           = $6,
-                                 title         = $7,
-                                 description   = $8,
-                                 thumbnail_url = $9,
-                                 artwork_url   = $10,
-                                 published_at  = $11,
-                                 created_at    = $12,
-                                 updated_at    = $13,
-                                 state         = $14
-                                 WHERE id = $1").unwrap();
+        let conn = try!(conn());
+        let stmt = try!(conn.prepare("UPDATE albums SET
+                                      provider      = $2,
+                                      identifier    = $3,
+                                      owner_id      = $4,
+                                      owner_name    = $5,
+                                      url           = $6,
+                                      title         = $7,
+                                      description   = $8,
+                                      thumbnail_url = $9,
+                                      artwork_url   = $10,
+                                      published_at  = $11,
+                                      created_at    = $12,
+                                      updated_at    = $13,
+                                      state         = $14
+                                      WHERE id = $1"));
         let result = stmt.query(&[&self.id,
                                   &self.provider.to_string(),
                                   &self.identifier,
@@ -290,8 +290,8 @@ impl Album {
     }
 
     pub fn delete(&self) -> Result<(), Error> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare("DELETE FROM albums WHERE id=$1").unwrap();
+        let conn = try!(conn());
+        let stmt = try!(conn.prepare("DELETE FROM albums WHERE id=$1"));
         let result = stmt.query(&[&self.id]);
         match result {
             Ok(_)  => Ok(()),

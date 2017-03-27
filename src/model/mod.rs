@@ -66,13 +66,13 @@ pub trait Model where Self: std::marker::Sized + ToJson + Clone {
     fn props_str(prefix: &str) -> String;
     fn rows_to_items(rows: postgres::rows::Rows) -> Vec<Self>;
     fn find_by_id(id: &str) -> Result<Self, Error> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare(
+        let conn = try!(conn());
+        let stmt = try!(conn.prepare(
             &format!("SELECT {} FROM {} WHERE id = $1",
                      Self::props_str(""),
-                     Self::table_name())).unwrap();
+                     Self::table_name())));
         let uuid   = try!(Uuid::parse_str(id).map_err(|_| Error::Unprocessable));
-        let rows   = stmt.query(&[&uuid]).unwrap();
+        let rows   = try!(stmt.query(&[&uuid]));
         let items = Self::rows_to_items(rows);
         if items.len() > 0 {
             return Ok(items[0].clone());

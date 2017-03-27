@@ -132,9 +132,9 @@ impl Model for Track {
     }
 
     fn create(&self) -> Result<Track, Error> {
-        let conn = conn().unwrap();
-        let stmt = conn.prepare("INSERT INTO tracks (provider, identifier, url, title)
-                                 VALUES ($1, $2, $3, $4) RETURNING id").unwrap();
+        let conn = try!(conn());
+        let stmt = try!(conn.prepare("INSERT INTO tracks (provider, identifier, url, title)
+                                      VALUES ($1, $2, $3, $4) RETURNING id"));
         let rows = try!(stmt.query(&[&self.provider.to_string(), &self.identifier, &self.url, &self.title]));
         let mut track = self.clone();
         for row in rows.iter() {
@@ -145,24 +145,24 @@ impl Model for Track {
 
     fn save(&mut self) -> Result<(), Error> {
         self.updated_at = UTC::now().naive_utc();
-        let conn = conn().unwrap();
-        let stmt = conn.prepare("UPDATE tracks SET
-                                 provider      = $2,
-                                 identifier    = $3,
-                                 owner_id      = $4,
-                                 owner_name    = $5,
-                                 url           = $6,
-                                 title         = $7,
-                                 description   = $8,
-                                 thumbnail_url = $9,
-                                 artwork_url   = $10,
-                                 audio_url     = $11,
-                                 duration      = $12,
-                                 published_at  = $13,
-                                 created_at    = $14,
-                                 updated_at    = $15,
-                                 state         = $16
-                                 WHERE id = $1").unwrap();
+        let conn = try!(conn());
+        let stmt = try!(conn.prepare("UPDATE tracks SET
+                                      provider      = $2,
+                                      identifier    = $3,
+                                      owner_id      = $4,
+                                      owner_name    = $5,
+                                      url           = $6,
+                                      title         = $7,
+                                      description   = $8,
+                                      thumbnail_url = $9,
+                                      artwork_url   = $10,
+                                      audio_url     = $11,
+                                      duration      = $12,
+                                      published_at  = $13,
+                                      created_at    = $14,
+                                      updated_at    = $15,
+                                      state         = $16
+                                      WHERE id = $1"));
         let result = stmt.query(&[&self.id,
                                   &self.provider.to_string(),
                                   &self.identifier,
