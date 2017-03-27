@@ -62,6 +62,9 @@ lazy_static! {
     };
 }
 
+const EXPAND_YOUTUBE_PLAYLIST:    bool = true;
+const EXPAND_SOUNDCLOUD_PLAYLIST: bool = true;
+
 #[derive(Debug)]
 pub struct ScraperProduct {
     pub playlists: Vec<Playlist>,
@@ -263,11 +266,7 @@ fn fetch_spotify_playlist(uri: &str, regex: &str) -> (Vec<Playlist>, Vec<Album>,
                 let playlist_id = cap[3].to_string();
                 return match spotify::fetch_playlist(&user_id, &playlist_id) {
                     Ok(playlist) => {
-                        let tracks = playlist.tracks.items
-                            .iter()
-                            .map(|ref i| Track::from_sp_track(&i.track))
-                            .collect::<Vec<_>>();
-                        (vec![Playlist::from_sp_playlist(&playlist)], vec![], tracks)
+                        (vec![Playlist::from_sp_playlist(&playlist)], vec![], vec![])
                     },
                     Err(_)       => (vec![], vec![], vec![])
                 }
@@ -281,12 +280,7 @@ fn fetch_spotify_playlist(uri: &str, regex: &str) -> (Vec<Playlist>, Vec<Album>,
 fn fetch_spotify_album(identifier: String) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
     match spotify::fetch_album(&identifier) {
         Ok(album) => {
-            let tracks = album.tracks.clone().map(|t| t.items).unwrap_or(vec![])
-                .iter()
-                .map(|ref t| Track::from_sp_track(t))
-                .map(|ref mut t| t.update_with_sp_album(&album).clone())
-                .collect::<Vec<_>>();
-            (vec![], vec![Album::from_sp_album(&album)], tracks)
+            (vec![], vec![Album::from_sp_album(&album)], vec![])
         },
         Err(_) => (vec![], vec![Album::new(Provider::Spotify, identifier)], vec![]),
     }
@@ -304,19 +298,21 @@ fn fetch_spotify_track(identifier: String) -> Vec<Track> {
 }
 
 fn fetch_youtube_playlist(id: &str) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
+    let items = youtube::fetch_playlist_items(id)
+        .map(|res| res.items)
+        .unwrap_or(vec![]);
+    let tracks = if EXPAND_YOUTUBE_PLAYLIST {
+        items.iter()
+            .map(|ref i| Track::from_yt_playlist_item(i))
+            .collect::<Vec<_>>()
+    } else {
+        vec![]
+    };
     let playlists = match youtube::fetch_playlist(id) {
-        Ok(res) => res.items
-            .iter()
-            .map(|ref i| Playlist::from_yt_playlist(i))
+        Ok(res) => res.items.iter()
+            .map(|ref i| Playlist::from_yt_playlist(i, &items))
             .collect::<Vec<_>>(),
         Err(_)  => vec![],
-    };
-    let tracks = match youtube::fetch_playlist_items(id) {
-        Ok(res) => res.items
-            .iter()
-            .map(|ref i| Track::from_yt_playlist_item(i))
-            .collect::<Vec<_>>(),
-        Err(_) => vec![],
     };
     (playlists, vec![], tracks)
 }
@@ -394,10 +390,14 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
     match extract_identifier(&decoded, SOUNDCLOUD_PLAYLIST) {
         Some(identifier) => return match soundcloud::fetch_playlist(&identifier) {
             Ok(playlist) => {
-                let tracks = playlist.tracks
-                    .iter()
-                    .map(|ref t| Track::from_sc_track(t))
-                    .collect::<Vec<_>>();
+                let tracks = if EXPAND_SOUNDCLOUD_PLAYLIST {
+                    playlist.tracks
+                        .iter()
+                        .map(|ref t| Track::from_sc_track(t))
+                        .collect::<Vec<_>>()
+                } else {
+                    vec![]
+                };
                 (vec![Playlist::from_sc_playlist(&playlist)], vec![], tracks)
             },
             Err(_)       => (vec![], vec![], vec![]),
@@ -451,6 +451,7 @@ mod test {
     use super::parse_apple_music_link;
     use Provider;
     use Track;
+    use Playlist;
 
     #[test]
     fn test_extract_identifier() {
@@ -511,6 +512,8 @@ mod test {
         let youtube_tracks: Vec<&Track> = tracks.iter().filter(|&x| x.provider == Provider::YouTube).collect();
         let spotify_tracks: Vec<&Track> = tracks.iter().filter(|&x| x.provider == Provider::Spotify).collect();
         assert_eq!(youtube_tracks.len(), 15);
-        assert_eq!(spotify_tracks.len(), 30);
+        assert_eq!(spotify_tracks.len(), 0);
+        let spotify_playlists: Vec<&Playlist> = playlists.iter().filter(|&x| x.provider == Provider::Spotify).collect();
+        assert_eq!(spotify_playlists[0].tracks.len(), 30);
     }
 }
