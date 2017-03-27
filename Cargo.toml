@@ -25,6 +25,7 @@ html5ever       = "*"
 scraper         = "*"
 url             = "*"
 lazy_static     = "*"
+toml            = "0.2.1"
 uuid            = { version = "*", features = ["v4", "rustc-serialize", "serde"] }
 staticfile      = "*"
 chrono          = { version = "*", features = ["serde", "rustc-serialize"] }
