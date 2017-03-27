@@ -12,6 +12,7 @@ use super::{conn, Model};
 use model::provider::Provider;
 use model::state::State;
 use model::enclosure::Enclosure;
+use model::track::Track;
 use model::artist::Artist;
 
 static PROPS: [&'static str; 14]  = ["id",
@@ -45,6 +46,7 @@ pub struct Album {
     pub created_at:    NaiveDateTime,
     pub updated_at:    NaiveDateTime,
     pub state:         State,
+    pub tracks:        Vec<Track>,
     pub artists:       Option<Vec<Artist>>,
 }
 
@@ -112,6 +114,7 @@ impl Model for Album {
                 created_at:    row.get(11),
                 updated_at:    row.get(12),
                 state:         State::new(row.get(13)),
+                tracks:        vec![],
                 artists:       None,
             };
             albums.push(album)
@@ -188,6 +191,7 @@ impl Enclosure for Album {
             created_at:    UTC::now().naive_utc(),
             updated_at:    UTC::now().naive_utc(),
             state:         State::Alive,
+            tracks:        vec![],
             artists:       None,
         }
     }
@@ -205,6 +209,13 @@ impl Enclosure for Album {
 }
 
 impl Album {
+    fn add_track(&mut self, track: &Track) -> Result<(), Error> {
+        let conn = try!(conn());
+        let stmt = try!(conn.prepare("INSERT INTO album_tracks (track_id, album_id)
+                                 VALUES ($1, $2)"));
+        try!(stmt.query(&[&track.id, &self.id]));
+        Ok(())
+    }
     fn add_artist(&mut self, artist: Artist) -> Result<(), Error> {
         let conn = try!(conn());
         let stmt = try!(conn.prepare("INSERT INTO track_artists (track_id, artist_id) VALUES ($1, $2)"));
@@ -227,6 +238,18 @@ impl Album {
         Album::new(Provider::AppleMusic, (*album).id.to_string())
             .update_with_am_album(album)
             .clone()
+    }
+
+    fn add_tracks(&mut self, tracks: Vec<Track>) {
+        self.tracks = tracks.iter().map(|t| {
+            let mut t = t.clone();
+            if let Ok(new_track) = Track::find_or_create(t.provider,
+                                                         t.identifier.to_string()) {
+                t.id      = new_track.id;
+                let _     = self.add_track(&t);
+            };
+            t
+        }).collect::<Vec<_>>();
     }
 
     pub fn update_with_sp_album(&mut self, album: &spotify::Album) -> &mut Album {
@@ -261,6 +284,12 @@ impl Album {
             let _ = a.save();
             let _ = self.add_artist(a);
         }
+        let tracks = album.tracks.clone()
+            .map(|t| t.items).unwrap_or(vec![]).iter()
+            .map(|ref t| Track::from_sp_track(t))
+            .map(|ref mut t| t.update_with_sp_album(&album).clone())
+            .collect::<Vec<_>>();
+        self.add_tracks(tracks);
         self
     }
 
