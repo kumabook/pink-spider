@@ -15,6 +15,7 @@ use super::{conn, Model};
 use model::provider::Provider;
 use model::state::State;
 use model::enclosure::Enclosure;
+use model::track::Track;
 
 static PROPS: [&'static str; 14]  = ["id",
                                      "provider",
@@ -31,7 +32,7 @@ static PROPS: [&'static str; 14]  = ["id",
                                      "updated_at",
                                      "state"];
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Debug, Clone)]
 pub struct Playlist {
     pub id:            Uuid,
     pub provider:      Provider,
@@ -47,6 +48,7 @@ pub struct Playlist {
     pub created_at:    NaiveDateTime,
     pub updated_at:    NaiveDateTime,
     pub state:         State,
+    pub tracks:        Vec<Track>,
 }
 
 impl PartialEq for Playlist {
@@ -111,6 +113,7 @@ impl Model for Playlist {
                 created_at:    row.get(11),
                 updated_at:    row.get(12),
                 state:         State::new(row.get(13)),
+                tracks:        vec![], // TODO
             };
             playlists.push(playlist)
         }
@@ -186,6 +189,7 @@ impl Enclosure for Playlist {
             created_at:    UTC::now().naive_utc(),
             updated_at:    UTC::now().naive_utc(),
             state:         State::Alive,
+            tracks:        vec![],
         }
     }
     fn find_by_entry_id(entry_id: Uuid) -> Vec<Playlist> {
@@ -202,9 +206,17 @@ impl Enclosure for Playlist {
 }
 
 impl Playlist {
-    pub fn from_yt_playlist(playlist: &youtube::Playlist) -> Playlist {
+    pub fn add_track(&mut self, track: &Track) -> Result<(), Error> {
+        let conn = try!(conn());
+        let stmt = try!(conn.prepare("INSERT INTO playlist_tracks (track_id, playlist_id)
+                                      VALUES ($1, $2)"));
+        try!(stmt.query(&[&track.id, &self.id]));
+        Ok(())
+    }
+
+    pub fn from_yt_playlist(playlist: &youtube::Playlist, items: &Vec<youtube::PlaylistItem>) -> Playlist {
         Playlist::new(Provider::YouTube, (*playlist).id.to_string())
-            .update_with_yt_playlist(playlist)
+            .update_with_yt_playlist(playlist, items)
             .clone()
     }
 
@@ -226,7 +238,19 @@ impl Playlist {
             .clone()
     }
 
-    pub fn update_with_yt_playlist(&mut self, playlist: &youtube::Playlist) -> &mut Playlist {
+    fn add_tracks(&mut self, tracks: Vec<Track>) {
+        self.tracks = tracks.iter().map(|t| {
+            let mut t = t.clone();
+            if let Ok(new_track) = Track::find_or_create(t.provider,
+                                                         t.identifier.to_string()) {
+                t.id      = new_track.id;
+                let _     = self.add_track(&t);
+            };
+            t
+        }).collect::<Vec<_>>();
+    }
+
+    pub fn update_with_yt_playlist(&mut self, playlist: &youtube::Playlist, items: &Vec<youtube::PlaylistItem>) -> &mut Playlist {
         self.provider      = Provider::YouTube;
         self.identifier    = playlist.id.to_string();
         self.owner_id      = Some(playlist.snippet.channelId.to_string());
@@ -241,6 +265,10 @@ impl Playlist {
             Ok(published_at) => self.published_at = published_at.naive_utc(),
             Err(_)           => (),
         }
+        let tracks = items.iter()
+            .map(|ref i| Track::from_yt_playlist_item(i))
+            .collect::<Vec<_>>();
+        self.add_tracks(tracks);
         self
     }
 
@@ -261,6 +289,10 @@ impl Playlist {
         if playlist.images.len() > 1 {
             self.thumbnail_url = Some(playlist.images[1].url.clone());
         }
+        let tracks = playlist.tracks.items.iter()
+            .map(|ref i| Track::from_sp_track(&i.track))
+            .collect::<Vec<_>>();
+        self.add_tracks(tracks);
         self
     }
 
@@ -278,7 +310,11 @@ impl Playlist {
         match DateTime::parse_from_str(&playlist.created_at, "%Y/%m/%d %H:%M:%S %z") {
             Ok(published_at) => self.published_at = published_at.naive_utc(),
             Err(_)           => (),
-        }
+        };
+        let tracks = playlist.tracks.iter()
+            .map(|ref t| Track::from_sc_track(t))
+            .collect::<Vec<_>>();
+        self.add_tracks(tracks);
         self
     }
 
