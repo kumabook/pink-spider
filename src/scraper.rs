@@ -2,10 +2,7 @@ use html5ever::rcdom::{Document, Doctype, Text, Comment, Element};
 use html5ever::rcdom::{RcDom, Handle};
 use html5ever::{parse_document, Attribute};
 use tendril::stream::TendrilSink;
-use std::io::Read;
 use std::default::Default;
-use std::fs::File;
-use std::env;
 use regex::Regex;
 use hyper::Client;
 use hyper::header::Connection;
@@ -27,6 +24,7 @@ use model::Enclosure;
 
 use url::percent_encoding::{percent_decode};
 use queryst::parse;
+use get_env;
 
 static APPLE_MUSIC_SONG:      &'static str = r"tools.applemusic.com/embed/v1/song/([a-zA-Z0-9_-]+)";
 static APPLE_MUSIC_ALBUM:     &'static str = r"tools.applemusic.com/embed/v1/album/([a-zA-Z0-9_-]+)";
@@ -49,16 +47,7 @@ static APPLE_MUSIC_PLAYLIST_LINK: &'static str = r"itunes.apple.com/([a-zA-Z0-9_
 
 lazy_static! {
     static ref USER_AGENT: String = {
-        let opt_key = env::var("USER_AGENT");
-        match opt_key {
-            Ok(key) => key,
-            Err(_) => {
-                let mut f = File::open("user_agent.txt").unwrap();
-                let mut s = String::new();
-                let _ = f.read_to_string(&mut s);
-                s
-            }
-        }
+        get_env::var("USER_AGENT").unwrap_or("".to_string())
     };
 }
 

@@ -1,9 +1,7 @@
 extern crate rustc_serialize;
 
 use std::io::Read;
-use std::env;
 use std::collections::BTreeMap;
-use std::fs::File;
 use std::sync::Mutex;
 use chrono::{NaiveDateTime, UTC, Duration};
 use rustc_serialize::json;
@@ -16,32 +14,15 @@ use hyper::header::{
     Connection,
     ContentType
 };
+use get_env;
 
 static BASE_URL: &'static str = "https://api.spotify.com/v1";
 lazy_static! {
     static ref CLIENT_ID: String = {
-        let opt_key = env::var("SPOTIFY_CLIENT_ID");
-        match opt_key {
-            Ok(key) => key,
-            Err(_) => {
-                let mut f = File::open("spotify_client_id.txt").unwrap();
-                let mut s = String::new();
-                let _ = f.read_to_string(&mut s);
-                s
-            }
-        }
+        get_env::var("SPOTIFY_CLIENT_ID").unwrap_or("".to_string())
     };
     static ref CLIENT_SECRET: String = {
-        let opt_key = env::var("SPOTIFY_CLIENT_SECRET");
-        match opt_key {
-            Ok(key) => key,
-            Err(_) => {
-                let mut f = File::open("spotify_client_secret.txt").unwrap();
-                let mut s = String::new();
-                let _ = f.read_to_string(&mut s);
-                s
-            }
-        }
+        get_env::var("SPOTIFY_CLIENT_SECRET").unwrap_or("".to_string())
     };
     static ref TOKEN: Mutex<Option<Token>> = Mutex::new(None);
 }

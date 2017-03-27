@@ -1,24 +1,14 @@
 use std::io::Read;
-use std::env;
 use hyper::Client;
 use hyper::header::Connection;
 use rustc_serialize::json;
 use rustc_serialize::json::{DecodeResult};
-use std::fs::File;
+use get_env;
 
 static BASE_URL: &'static str = "https://api.soundcloud.com";
 lazy_static! {
     static ref API_KEY: String = {
-        let opt_key = env::var("SOUNDCLOUD_API_KEY");
-        match opt_key {
-            Ok(key) => key,
-            Err(_) => {
-                let mut f = File::open("soundcloud.txt").unwrap();
-                let mut s = String::new();
-                let _ = f.read_to_string(&mut s);
-                s
-            }
-        }
+        get_env::var("SOUNDCLOUD_API_KEY").unwrap_or("".to_string())
     };
 }
 

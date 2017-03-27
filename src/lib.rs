@@ -12,6 +12,7 @@ extern crate uuid;
 extern crate postgres;
 extern crate chrono;
 extern crate queryst;
+extern crate toml;
 
 #[macro_use]
 extern crate lazy_static;
@@ -31,3 +32,4 @@ pub mod itunes;
 pub mod youtube;
 pub mod soundcloud;
 pub mod spotify;
+pub mod get_env;

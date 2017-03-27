@@ -36,6 +36,7 @@ use pink_spider::model::{Model, Track, Playlist, Album, Artist, Entry, Enclosure
 use rustc_serialize::json::{ToJson, Json};
 use pink_spider::youtube;
 use pink_spider::soundcloud;
+use pink_spider::get_env;
 
 pub fn index_entries(req: &mut Request) -> IronResult<Response> {
     let (page, per_page) = pagination_params(req);
@@ -303,9 +304,9 @@ pub fn main() {
         index_albums:             get  "/v1/albums"                      => index::<Album>,
         index_albums_by_entry:    get  "/v1/entries/:entry_id/albums"    => index_by_entry::<Album>,
     );
-    let port_str = match std::env::var("PORT") {
-        Ok(n)    => n,
-        Err(_) => "8080".to_string()
+    let port_str = match get_env::var("PORT") {
+        Some(n) => n,
+        None    => "8080".to_string()
     };
     let port: u16 = match port_str.trim().parse() {
         Ok(n) => n,

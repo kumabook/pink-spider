@@ -1,25 +1,16 @@
 use std::io::Read;
-use std::env;
 use hyper::Client;
 use hyper::header::Connection;
 use std::collections::BTreeMap;
 use rustc_serialize::json;
-use std::fs::File;
+
+use get_env;
 
 static BASE_URL:    &'static str = "https://www.googleapis.com/youtube/v3";
 static MAX_RESULTS: i32          = 50;
 lazy_static! {
     static ref API_KEY: String = {
-        let opt_key = env::var("YOUTUBE_API_KEY");
-        match opt_key {
-            Ok(key) => key,
-            Err(_) => {
-                let mut f = File::open("youtube.txt").unwrap();
-                let mut s = String::new();
-                let _ = f.read_to_string(&mut s);
-                s
-            }
-        }
+        get_env::var("YOUTUBE_API_KEY").unwrap_or("".to_string())
     };
 }
 
