@@ -31,5 +31,13 @@
       "description": "spotify web api client id",
       "value": "set_your_spotify_client_secret"
     }
-  }
+  },
+  "buildpacks": [
+      { "url": "https://github.com/kumabook/heroku-buildpack-rust.git" },
+      { "url": "heroku/ruby" },
+      { "url": "heroku/nodejs" }
+  ],
+  "addons": [
+    "heroku-postgresql:hobby-dev"
+  ]
 }
