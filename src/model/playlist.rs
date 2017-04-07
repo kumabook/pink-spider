@@ -255,7 +255,7 @@ impl Playlist {
         self.identifier    = playlist.id.to_string();
         self.owner_id      = Some(playlist.snippet.channelId.to_string());
         self.owner_name    = Some(playlist.snippet.channelTitle.to_string());
-        self.url           = format!("https://www.youtube.com/watch/?v={}", playlist.id);
+        self.url           = format!("https://www.youtube.com/playlist?list={}", playlist.id);
         self.title         = playlist.snippet.title.to_string();
         self.description   = Some(playlist.snippet.description.to_string());
         self.thumbnail_url = playlist.snippet.get_thumbnail_url();
