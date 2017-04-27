@@ -14,6 +14,7 @@ describe('Track', () => {
       assert.equal('https://soundcloud.com/tracks/1234', getUrl({
         provider: 'SoundCloud',
         identifier: '1234',
+        url: 'https://soundcloud.com/tracks/1234',
       }));
       assert.equal('http://open.spotify.com/user/spotify_user/playlist/playlist_id', getUrl({
         provider: 'Spotify',

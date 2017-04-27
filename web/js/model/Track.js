@@ -37,7 +37,7 @@ export const getUrl = (track) => {
     case 'YouTube':
       return `https://www.youtube.com/watch/?v=${id}`;
     case 'SoundCloud':
-      return `https://soundcloud.com/tracks/${id}`;
+      return track.url;
     case 'Spotify':
       return formatOpenURL(parse(track.url));
     case 'AppleMusic': {
