@@ -9,6 +9,10 @@ authors = ["kumabook@live.jp"]
 [[bin]]
 name = "app"
 
+[[bin]]
+name = "update_tracks"
+path = "src/update_tracks.rs"
+
 [features]
 default = ["postgres"]
 
