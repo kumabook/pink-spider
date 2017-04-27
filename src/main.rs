@@ -36,6 +36,7 @@ use pink_spider::model::{Model, Track, Playlist, Album, Artist, Entry, Enclosure
 use rustc_serialize::json::{ToJson, Json};
 use pink_spider::youtube;
 use pink_spider::soundcloud;
+use pink_spider::spotify;
 use pink_spider::get_env;
 
 pub fn index_entries(req: &mut Request) -> IronResult<Response> {
@@ -209,6 +210,10 @@ pub fn update_track(req: &mut Request) -> IronResult<Response> {
         },
         Provider::SoundCloud => match soundcloud::fetch_track(&track.identifier) {
             Ok(sc_track) => track.update_with_sc_track(&sc_track),
+            Err(_)       => track.disable(),
+        },
+        Provider::Spotify => match spotify::fetch_track(&track.identifier) {
+            Ok(sp_track) => track.update_with_sp_track(&sp_track),
             Err(_)       => track.disable(),
         },
         _ => &mut track,
