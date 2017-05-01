@@ -192,6 +192,54 @@ impl Enclosure for Playlist {
             tracks:        vec![],
         }
     }
+    fn set_url(&mut self, url: String) -> &mut Playlist {
+        self.url = url;
+        self
+    }
+    fn set_owner_id(&mut self, owner_id: Option<String>) -> &mut Playlist {
+        self.owner_id = owner_id;
+        self
+    }
+    fn fetch_props(&mut self) -> &mut Playlist {
+        match self.provider {
+            Provider::YouTube => {
+                let items = youtube::fetch_playlist_items(&self.identifier)
+                    .map(|res| res.items)
+                    .unwrap_or(vec![]);
+                if let Ok(res) = youtube::fetch_playlist(&self.identifier) {
+                    if let Some(playlist) = res.items.iter().nth(0) {
+                        return self.update_with_yt_playlist(&playlist, &items);
+                    }
+                }
+                return self.disable();
+            },
+            Provider::SoundCloud => {
+                match soundcloud::fetch_playlist(&self.identifier) {
+                    Ok(playlist) => return self.update_with_sc_playlist(&playlist),
+                    Err(_)       => return self.disable()
+                }
+            },
+            Provider::AppleMusic => {
+                let country = apple_music::country(&self.url);
+                match apple_music::fetch_playlist(&self.identifier, &country) {
+                    Ok(playlist) => return self.update_with_am_playlist(&playlist),
+                    Err(_)       => return self.disable(),
+                }
+            },
+            Provider::Spotify => {
+                if self.owner_id.is_none() {
+                    return self;
+                }
+                let owner_id = self.clone().owner_id.unwrap();
+                match spotify::fetch_playlist(&owner_id, &self.identifier) {
+                    Ok(playlist) => return self.update_with_sp_playlist(&playlist),
+                    Err(_)       => return self.disable(),
+
+                }
+            },
+            _ => self,
+        }
+    }
     fn find_by_entry_id(entry_id: Uuid) -> Vec<Playlist> {
         let conn = conn().unwrap();
         let stmt = conn.prepare(
