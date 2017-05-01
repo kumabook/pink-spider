@@ -7,6 +7,8 @@ use std::io::Read;
 use std::error;
 use std::fmt;
 use regex::Regex;
+use url::Url;
+use queryst::parse;
 
 static BASE_URL:  &'static str = "http://tools.applemusic.com/embed/v1/";
 static MUSIC_URL: &'static str = r#"musicUrl = "([\x00-\x21\x23-\x7F]+)""#; // except \x22(")
@@ -73,6 +75,41 @@ type ScrapeResult<T> = Result<T, ScrapeError>;
 impl error::Error for ScrapeError {
     fn description(&self) -> &str {
         &self.reason
+    }
+}
+
+fn url_param(url_str: &str, key: &str) -> Option<String> {
+    let url_str = if url_str.starts_with("http") || url_str.starts_with("https") {
+        url_str.to_string()
+    } else {
+        "https://".to_string() + url_str
+    };
+    let url = Url::parse(&url_str);
+    if !url.is_ok() {
+        return None;
+    }
+    let params = url.unwrap().query()
+        .map(|q| parse(&q))
+        .and_then(|r| r.ok());
+    if let Some(params) = params {
+        params.as_object()
+            .and_then(|params| params.get(key))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+    } else {
+        None
+    }
+}
+
+pub fn country(url: &str) -> String {
+    if let Some(url) = url_param(url, "country") {
+        url
+    } else if let Some(url) = parse_url_as_playlist(url).map(|v| v.0) {
+        url
+    } else if let Some(url) = parse_url_as_album(url).map(|v| v.0) {
+        url
+    } else {
+        "us".to_string()
     }
 }
 
