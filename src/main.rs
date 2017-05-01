@@ -34,9 +34,6 @@ use pink_spider::error::Error;
 use pink_spider::scraper::extract;
 use pink_spider::model::{Model, Track, Playlist, Album, Artist, Entry, Enclosure, Provider, PaginatedCollection};
 use rustc_serialize::json::{ToJson, Json};
-use pink_spider::youtube;
-use pink_spider::soundcloud;
-use pink_spider::spotify;
 use pink_spider::get_env;
 
 pub fn index_entries(req: &mut Request) -> IronResult<Response> {
@@ -193,33 +190,10 @@ pub fn playlistify_entry(entry: Entry) -> Result<Entry, Error> {
     Ok(e)
 }
 
-pub fn update_track(req: &mut Request) -> IronResult<Response> {
-    let mut track = try!(Track::find_by_id(&query_as_string(req, "track_id")));
-    match param_as_string(req, "title") {
-        Some(title) => track.title = title,
-        None        => (),
-    }
-    match param_as_string(req, "url") {
-        Some(url) => track.url = url,
-        None      => (),
-    }
-    let track = match track.provider {
-        Provider::YouTube => match youtube::fetch_video(&track.identifier) {
-            Ok(video) => track.update_with_yt_video(&video),
-            Err(_)    => track.disable(),
-        },
-        Provider::SoundCloud => match soundcloud::fetch_track(&track.identifier) {
-            Ok(sc_track) => track.update_with_sc_track(&sc_track),
-            Err(_)       => track.disable(),
-        },
-        Provider::Spotify => match spotify::fetch_track(&track.identifier) {
-            Ok(sp_track) => track.update_with_sp_track(&sp_track),
-            Err(_)       => track.disable(),
-        },
-        _ => &mut track,
-    };
-    try!(track.save());
-    let res = track.to_json().to_string();
+pub fn update<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
+    let mut enclosure = try!(T::find_by_id(&query_as_string(req, "id")));
+    try!(enclosure.fetch_props().save());
+    let res = enclosure.to_json().to_string();
     Ok(Response::with((status::Ok, application_json(), res)))
 }
 
@@ -293,12 +267,13 @@ pub fn main() {
         show_track_by_id:         get  "/v1/tracks/:id"                  => show_by_id::<Track>,
         show_track:               get  "/v1/tracks/:provider/:id"        => show::<Track>,
         mget_tracks:              post "/v1/tracks/.mget"                => mget::<Track>,
-        update_track:             post "/v1/tracks/:track_id"            => update_track,
+        update_track:             post "/v1/tracks/:id"                  => update::<Track>,
         index_tracks:             get  "/v1/tracks"                      => index::<Track>,
         index_tracks_by_entry:    get  "/v1/entries/:entry_id/tracks"    => index_by_entry::<Track>,
 
         show_playlist_by_id:      get  "/v1/playlists/:id"               => show_by_id::<Playlist>,
         show_playlist:            get  "/v1/playlists/:provider/:id"     => show::<Playlist>,
+        update_playlist:          post "/v1/playlists/:id"               => update::<Playlist>,
         mget_playlists:           post "/v1/playlists/.mget"             => mget::<Playlist>,
         index_playlists:          get  "/v1/playlists"                   => index::<Playlist>,
         index_playlists_by_entry: get  "/v1/entries/:entry_id/playlists" => index_by_entry::<Playlist>,
@@ -306,6 +281,7 @@ pub fn main() {
         show_album_by_id:         get  "/v1/albums/:id"                  => show_by_id::<Album>,
         show_album:               get  "/v1/albums/:provider/:id"        => show::<Album>,
         mget_albums:              post "/v1/albums/.mget"                => mget::<Album>,
+        update_album:             post "/v1/albums/:id"                  => update::<Album>,
         index_albums:             get  "/v1/albums"                      => index::<Album>,
         index_albums_by_entry:    get  "/v1/entries/:entry_id/albums"    => index_by_entry::<Album>,
     );
