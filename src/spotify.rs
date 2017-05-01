@@ -14,9 +14,17 @@ use hyper::header::{
     Connection,
     ContentType
 };
+use regex::Regex;
 use get_env;
 
-static BASE_URL: &'static str = "https://api.spotify.com/v1";
+static BASE_URL:          &'static str = "https://api.spotify.com/v1";
+pub static TRACK_URI:     &'static str = r"spotify:track:([a-zA-Z0-9_-]+)";
+pub static TRACK_OPEN:    &'static str = r"open.spotify.com/track/([a-zA-Z0-9_-]+)";
+pub static PLAYLIST_URI:  &'static str = r"(spotify:user:([a-zA-Z0-9_-]+):playlist:([a-zA-Z0-9_-]+))";
+pub static PLAYLIST_OPEN: &'static str = r"(open.spotify.com/user/([a-zA-Z0-9_-]+)/playlist/([a-zA-Z0-9_-]+))";
+pub static ALBUM_URI:     &'static str = r"spotify:album:([a-zA-Z0-9_-]+)";
+pub static ALBUM_OPEN:    &'static str = r"open.spotify.com/album/([a-zA-Z0-9_-]+)";
+
 lazy_static! {
     static ref CLIENT_ID: String = {
         get_env::var("SPOTIFY_CLIENT_ID").unwrap_or("".to_string())
@@ -151,6 +159,22 @@ pub struct Token {
     pub token_type:   String,
     pub expires_in:   i64,
     pub expires_at:   Option<NaiveDateTime>,
+}
+
+pub fn parse_uri_as_playlist(uri: &str) -> Option<(String, String)> {
+    Regex::new(PLAYLIST_URI).ok().and_then(|re| re.captures(uri).map(|cap| {
+        let user_id     = cap[2].to_string();
+        let playlist_id = cap[3].to_string();
+        (user_id, playlist_id)
+    }))
+}
+
+pub fn parse_open_url_as_playlist(url: &str) -> Option<(String, String)> {
+    Regex::new(PLAYLIST_OPEN).ok().and_then(|re| re.captures(url).map(|cap| {
+        let user_id     = cap[2].to_string();
+        let playlist_id = cap[3].to_string();
+        (user_id, playlist_id)
+    }))
 }
 
 /// This function fetches a track info with spotify api.

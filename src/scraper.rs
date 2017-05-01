@@ -33,12 +33,6 @@ static YOUTUBE_WATCH:         &'static str = r"www.youtube.com/watch\?v=([a-zA-Z
 static SOUNDCLOUD_TRACK:      &'static str = r"api.soundcloud.com/tracks/([a-zA-Z0-9_-]+)";
 static SOUNDCLOUD_PLAYLIST:   &'static str = r"api.soundcloud.com/playlists/([a-zA-Z0-9_-]+)";
 static SOUNDCLOUD_USER:       &'static str = r"api.soundcloud.com/users/([a-zA-Z0-9_-]+)";
-static SPOTIFY_TRACK_OPEN:    &'static str = r"open.spotify.com/track/([a-zA-Z0-9_-]+)";
-static SPOTIFY_TRACK:         &'static str = r"spotify:track:([a-zA-Z0-9_-]+)";
-static SPOTIFY_PLAYLIST_OPEN: &'static str = r"(open.spotify.com/user/([a-zA-Z0-9_-]+)/playlist/([a-zA-Z0-9_-]+))";
-static SPOTIFY_PLAYLIST:      &'static str = r"(spotify:user:([a-zA-Z0-9_-]+):playlist:([a-zA-Z0-9_-]+))";
-static SPOTIFY_ALBUM_OPEN:    &'static str = r"open.spotify.com/album/([a-zA-Z0-9_-]+)";
-static SPOTIFY_ALBUM:         &'static str = r"spotify:album:([a-zA-Z0-9_-]+)";
 
 lazy_static! {
     static ref USER_AGENT: String = {
@@ -201,23 +195,10 @@ fn extract_identifier(value: &str, regex_str: &str) -> Option<String> {
     }
 }
 
-fn fetch_spotify_playlist(uri: &str, regex: &str) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
-    match Regex::new(regex) {
-        Ok(re) => match re.captures(uri) {
-            Some(cap) => {
-                let user_id     = cap[2].to_string();
-                let playlist_id = cap[3].to_string();
-                return match spotify::fetch_playlist(&user_id, &playlist_id) {
-                    Ok(playlist) => {
-                        (vec![Playlist::from_sp_playlist(&playlist)], vec![], vec![])
-                    },
-                    Err(_)       => (vec![], vec![], vec![])
-                }
-            },
-            None => (vec![], vec![], vec![])
-        },
-        Err(_) => (vec![], vec![], vec![])
-    }
+fn create_spotify_playlist(user_id: String, playlist_id: String) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
+    let mut playlist = Playlist::new(Provider::Spotify, playlist_id);
+    playlist.set_owner_id(Some(user_id)).fetch_props();
+    (vec![playlist], vec![], vec![])
 }
 
 fn fetch_spotify_album(identifier: String) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
@@ -360,27 +341,29 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
         },
         None => ()
     }
-    match extract_identifier(&decoded, SPOTIFY_TRACK) {
+    match extract_identifier(&decoded, spotify::TRACK_URI) {
         Some(identifier) => return (vec![], vec![], fetch_spotify_track(identifier)),
         None             => ()
     }
-    match extract_identifier(&decoded, SPOTIFY_TRACK_OPEN) {
+    match extract_identifier(&decoded, spotify::TRACK_OPEN) {
         Some(identifier) => return (vec![], vec![], fetch_spotify_track(identifier)),
         None             => ()
     }
-    match extract_identifier(&decoded, SPOTIFY_PLAYLIST) {
-        Some(uri) => return fetch_spotify_playlist(&uri, SPOTIFY_PLAYLIST),
-        None      => ()
+    match extract_identifier(&decoded, spotify::PLAYLIST_URI).and_then(
+        |uri| spotify::parse_uri_as_playlist(&uri)) {
+        Some((uid, pid)) => return create_spotify_playlist(uid, pid),
+        None => (),
     }
-    match extract_identifier(&decoded, SPOTIFY_PLAYLIST_OPEN) {
-        Some(uri) => return fetch_spotify_playlist(&uri, SPOTIFY_PLAYLIST_OPEN),
-        None      => ()
+    match extract_identifier(&decoded, spotify::PLAYLIST_OPEN).and_then(
+        |url| spotify::parse_open_url_as_playlist(&url)) {
+        Some((uid, pid)) => return create_spotify_playlist(uid, pid),
+        None => ()
     }
-    match extract_identifier(&decoded, SPOTIFY_ALBUM) {
+    match extract_identifier(&decoded, spotify::ALBUM_URI) {
         Some(identifier) => return fetch_spotify_album(identifier),
         None             => ()
     }
-    match extract_identifier(&decoded, SPOTIFY_ALBUM_OPEN) {
+    match extract_identifier(&decoded, spotify::ALBUM_OPEN) {
         Some(identifier) => return fetch_spotify_album(identifier),
         None             => ()
     }
