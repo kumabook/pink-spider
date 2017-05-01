@@ -195,6 +195,30 @@ impl Enclosure for Album {
             artists:       None,
         }
     }
+    fn set_url(&mut self, url: String) -> &mut Album {
+        self.url = url;
+        self
+    }
+    fn set_owner_id(&mut self, owner_id: Option<String>) -> &mut Album {
+        self.owner_id = owner_id;
+        self
+    }
+    fn fetch_props(&mut self) -> &mut Album {
+        match self.provider {
+            Provider::AppleMusic => {
+                let country = apple_music::country(&self.url);
+                match apple_music::fetch_album(&self.identifier, &country) {
+                    Ok(album) => self.update_with_am_album(&album),
+                    Err(_)    => self.disable(),
+                }
+            }
+            Provider::Spotify => match spotify::fetch_album(&self.identifier) {
+                Ok(album) => self.update_with_sp_album(&album),
+                Err(_)    => self.disable(),
+            },
+            _ => self,
+        }
+    }
     fn find_by_entry_id(entry_id: Uuid) -> Vec<Album> {
         let conn = conn().unwrap();
         let stmt = conn.prepare(
