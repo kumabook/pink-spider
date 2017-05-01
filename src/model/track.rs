@@ -209,6 +209,42 @@ impl Enclosure for Track {
             artists:       None,
         }
     }
+
+    fn set_url(&mut self, url: String) -> &mut Track {
+        self.url = url;
+        self
+    }
+
+    fn set_owner_id(&mut self, owner_id: Option<String>) -> &mut Track {
+        self.owner_id = owner_id;
+        self
+    }
+
+    fn fetch_props(&mut self) -> &mut Track {
+        match self.provider {
+            Provider::YouTube => match youtube::fetch_video(&self.identifier) {
+                Ok(video) => self.update_with_yt_video(&video),
+                Err(_)    => self.disable(),
+            },
+            Provider::SoundCloud => match soundcloud::fetch_track(&self.identifier) {
+                Ok(sc_track) => self.update_with_sc_track(&sc_track),
+                Err(_)       => self.disable(),
+            },
+            Provider::AppleMusic => {
+                let country = apple_music::country(&self.url);
+                match apple_music::fetch_song(&self.identifier, &country) {
+                    Ok(song) => self.update_with_am_song(&song),
+                    Err(_)   => self.disable(),
+                }
+            },
+            Provider::Spotify => match spotify::fetch_track(&self.identifier) {
+                Ok(sp_track) => self.update_with_sp_track(&sp_track),
+                Err(_)       => self.disable(),
+            },
+            _ => self,
+        }
+    }
+
     fn find_by_entry_id(entry_id: Uuid) -> Vec<Track> {
         let conn = conn().unwrap();
         let stmt = conn.prepare(
