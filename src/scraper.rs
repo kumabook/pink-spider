@@ -8,7 +8,6 @@ use hyper::Client;
 use hyper::header::Connection;
 use hyper::header::ConnectionOption;
 use hyper::header::UserAgent;
-use url::Url;
 
 use Provider;
 use Track;
@@ -23,7 +22,6 @@ use error::Error;
 use model::Enclosure;
 
 use url::percent_encoding::{percent_decode};
-use queryst::parse;
 use get_env;
 
 static APPLE_MUSIC_SONG:      &'static str = r"tools.applemusic.com/embed/v1/song/([a-zA-Z0-9_-]+)";
@@ -41,9 +39,6 @@ static SPOTIFY_PLAYLIST_OPEN: &'static str = r"(open.spotify.com/user/([a-zA-Z0-
 static SPOTIFY_PLAYLIST:      &'static str = r"(spotify:user:([a-zA-Z0-9_-]+):playlist:([a-zA-Z0-9_-]+))";
 static SPOTIFY_ALBUM_OPEN:    &'static str = r"open.spotify.com/album/([a-zA-Z0-9_-]+)";
 static SPOTIFY_ALBUM:         &'static str = r"spotify:album:([a-zA-Z0-9_-]+)";
-
-static APPLE_MUSIC_ALBUM_LINK:    &'static str = r"itunes.apple.com/([a-zA-Z0-9_-]+)/album/([a-zA-Z0-9_-]+)/id([a-zA-Z0-9_-]+)";
-static APPLE_MUSIC_PLAYLIST_LINK: &'static str = r"itunes.apple.com/([a-zA-Z0-9_-]+)/playlist/([a-zA-Z0-9_-]+)/idpl.([a-zA-Z0-9_-]+)";
 
 lazy_static! {
     static ref USER_AGENT: String = {
@@ -206,48 +201,6 @@ fn extract_identifier(value: &str, regex_str: &str) -> Option<String> {
     }
 }
 
-fn parse_apple_music_link(value: &str, regex_str: &str) -> Option<(String, String, String, Option<String>)> {
-    match Regex::new(regex_str) {
-        Ok(re) => match re.captures(value) {
-            Some(cap) => {
-                let country: String = cap[1].to_string();
-                let name:    String = cap[2].to_string();
-                let id:      String = cap[3].to_string();
-                return Some((country, name, id, url_param(value, "i")));
-            },
-            None => None
-        },
-        Err(_) => None
-    }
-}
-
-fn url_param(url_str: &str, key: &str) -> Option<String> {
-    let url_str = if url_str.starts_with("http") || url_str.starts_with("https") {
-        url_str.to_string()
-    } else {
-        "https://".to_string() + url_str
-    };
-    let url = Url::parse(&url_str);
-    if !url.is_ok() {
-        return None;
-    }
-    let params = url.unwrap().query()
-        .map(|q| parse(&q))
-        .and_then(|r| r.ok());
-    if let Some(params) = params {
-        params.as_object()
-            .and_then(|params| params.get(key))
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string())
-    } else {
-        None
-    }
-}
-
-fn country_param(url_str: &str) -> String {
-    url_param(url_str, "country").unwrap_or("us".to_string())
-}
-
 fn fetch_spotify_playlist(uri: &str, regex: &str) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
     match Regex::new(regex) {
         Ok(re) => match re.captures(uri) {
@@ -312,7 +265,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
 
     match extract_identifier(&decoded, APPLE_MUSIC_SONG) {
         Some(identifier) => {
-            let country = country_param(&url);
+            let country = apple_music::country(&url);
             if let Ok(song) = apple_music::fetch_song(&identifier, &country) {
                 return (vec![], vec![], vec![Track::from_am_song(&song)])
             };
@@ -321,7 +274,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
     }
     match extract_identifier(&decoded, APPLE_MUSIC_ALBUM) {
         Some(identifier) => {
-            let country = country_param(&url);
+            let country = apple_music::country(&url);
             match apple_music::fetch_album(&identifier, &country) {
                 Ok(album) => return (vec![], vec![Album::from_am_album(&album)], vec![]),
                 Err(_) => (),
@@ -332,7 +285,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
     }
     match extract_identifier(&decoded, APPLE_MUSIC_PLAYLIST) {
         Some(identifier) => {
-            let country = country_param(&url);
+            let country = apple_music::country(&url);
             match apple_music::fetch_playlist(&identifier, &country) {
                 Ok(playlist) => return (vec![Playlist::from_am_playlist(&playlist)], vec![], vec![]),
                 Err(_) => (),
@@ -341,7 +294,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
         },
         None => ()
     }
-    match parse_apple_music_link(&decoded, APPLE_MUSIC_ALBUM_LINK) {
+    match apple_music::parse_url_as_album(&decoded) {
         Some((country, _, _, Some(song_id))) => {
             if let Ok(song) = apple_music::fetch_song(&song_id, &country) {
                 return (vec![], vec![], vec![Track::from_am_song(&song)])
@@ -351,7 +304,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
         Some((_, _, _, None)) => (),
         None => ()
     }
-    match parse_apple_music_link(&decoded, APPLE_MUSIC_PLAYLIST_LINK) {
+    match apple_music::parse_url_as_playlist(&decoded) {
         Some((country, _, identifier, _)) => {
             match apple_music::fetch_playlist(&identifier, &country) {
                 Ok(playlist) => return (vec![Playlist::from_am_playlist(&playlist)], vec![], vec![]),
@@ -438,7 +391,6 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
 mod test {
     use super::extract;
     use super::extract_identifier;
-    use super::parse_apple_music_link;
     use Provider;
     use Track;
     use Playlist;
@@ -466,30 +418,6 @@ mod test {
         match extract_identifier(youtube_list, super::YOUTUBE_LIST) {
             Some(identifier) => assert_eq!(identifier, "PLy8LZ8FM-o0ViuGAF68RAaXkQ8V-3dbTX".to_string()),
             None             => assert!(false)
-        }
-    }
-    #[test]
-    fn test_parse_apple_music_link() {
-        let album_song_link = "https://geo.itunes.apple.com/us/album/last-nite/id266376953?i=266377010&mt=1&app=music";
-        match parse_apple_music_link(album_song_link, super::APPLE_MUSIC_ALBUM_LINK) {
-            Some((country, name, id, song_id)) => {
-                assert_eq!(&country         , "us");
-                assert_eq!(&name            , "last-nite");
-                assert_eq!(&id              , "266376953");
-                assert_eq!(&song_id.unwrap(), "266377010");
-            },
-            None => assert!(false),
-        }
-
-        let playlist_link = "https://itunes.apple.com/us/playlist/the-strokes-essentials/idpl.3a7a911b00c048ebba63b651935a241a?mt=1&app=music";
-        match parse_apple_music_link(playlist_link, super::APPLE_MUSIC_PLAYLIST_LINK) {
-            Some((country, name, id, song_id)) => {
-                assert_eq!(&country         , "us");
-                assert_eq!(&name            , "the-strokes-essentials");
-                assert_eq!(&id              , "3a7a911b00c048ebba63b651935a241a");
-                assert!(song_id.is_none());
-            },
-            None => assert!(false),
         }
     }
     #[test]
