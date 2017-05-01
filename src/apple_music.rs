@@ -14,7 +14,7 @@ static BASE_URL:  &'static str = "http://tools.applemusic.com/embed/v1/";
 static MUSIC_URL: &'static str = r#"musicUrl = "([\x00-\x21\x23-\x7F]+)""#; // except \x22(")
 
 static ALBUM_LINK:    &'static str = r"itunes.apple.com/([a-zA-Z0-9_-]+)/album/([a-zA-Z0-9_-]+)/id([a-zA-Z0-9_-]+)";
-static PLAYLIST_LINK: &'static str = r"itunes.apple.com/([a-zA-Z0-9_-]+)/playlist/([a-zA-Z0-9_-]+)/idpl.([a-zA-Z0-9_-]+)";
+static PLAYLIST_LINK: &'static str = r"itunes.apple.com/([a-zA-Z0-9_-]+)/playlist/([^/]+)/idpl.([a-zA-Z0-9_-]+)";
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct Song {
