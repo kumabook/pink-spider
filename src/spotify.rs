@@ -128,8 +128,8 @@ pub struct Followers {
 
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct PlaylistTrack {
-    pub added_at: String,
-    pub added_by: User,
+    pub added_at: Option<String>,
+    pub added_by: Option<User>,
     pub is_local: bool,
     pub track:    Track,
 }
