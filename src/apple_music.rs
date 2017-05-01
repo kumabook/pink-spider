@@ -11,6 +11,9 @@ use regex::Regex;
 static BASE_URL:  &'static str = "http://tools.applemusic.com/embed/v1/";
 static MUSIC_URL: &'static str = r#"musicUrl = "([\x00-\x21\x23-\x7F]+)""#; // except \x22(")
 
+static ALBUM_LINK:    &'static str = r"itunes.apple.com/([a-zA-Z0-9_-]+)/album/([a-zA-Z0-9_-]+)/id([a-zA-Z0-9_-]+)";
+static PLAYLIST_LINK: &'static str = r"itunes.apple.com/([a-zA-Z0-9_-]+)/playlist/([a-zA-Z0-9_-]+)/idpl.([a-zA-Z0-9_-]+)";
+
 #[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
 pub struct Song {
     pub id:          String,
@@ -70,6 +73,29 @@ type ScrapeResult<T> = Result<T, ScrapeError>;
 impl error::Error for ScrapeError {
     fn description(&self) -> &str {
         &self.reason
+    }
+}
+
+pub fn parse_url_as_album(value: &str) -> Option<(String, String, String, Option<String>)> {
+    parse_url(&value, ALBUM_LINK)
+}
+
+pub fn parse_url_as_playlist(value: &str) -> Option<(String, String, String, Option<String>)> {
+    parse_url(&value, PLAYLIST_LINK)
+}
+
+pub fn parse_url(value: &str, regex_str: &str) -> Option<(String, String, String, Option<String>)> {
+    match Regex::new(regex_str) {
+        Ok(re) => match re.captures(value) {
+            Some(cap) => {
+                let country: String = cap[1].to_string();
+                let name:    String = cap[2].to_string();
+                let id:      String = cap[3].to_string();
+                return Some((country, name, id, url_param(value, "i")));
+            },
+            None => None
+        },
+        Err(_) => None
     }
 }
 
@@ -318,9 +344,7 @@ fn extract_track(node: ElementRef) -> Track {
 
 #[cfg(test)]
 mod test {
-    use super::fetch_playlist;
-    use super::fetch_album;
-    use super::fetch_song;
+    use super::*;
     #[test]
     fn test_fetch_playlist() {
         let playlist = fetch_playlist("pl.2ff0e502db0c44a598a7cb2261a5e6b2", "jp").unwrap();
@@ -335,5 +359,31 @@ mod test {
     fn test_fetch_song() {
         let song = fetch_song("1160715431", "jp").unwrap();
         assert_eq!(song.id, "1160715431");
+    }
+    #[test]
+    fn test_parse_url_as_album() {
+        let album_song_link = "https://geo.itunes.apple.com/us/album/last-nite/id266376953?i=266377010&mt=1&app=music";
+        match parse_url_as_album(album_song_link) {
+            Some((country, name, id, song_id)) => {
+                assert_eq!(&country         , "us");
+                assert_eq!(&name            , "last-nite");
+                assert_eq!(&id              , "266376953");
+                assert_eq!(&song_id.unwrap(), "266377010");
+            },
+            None => assert!(false),
+        }
+    }
+    #[test]
+    fn test_parse_url_as_playlist() {
+        let playlist_link = "https://itunes.apple.com/us/playlist/the-strokes-essentials/idpl.3a7a911b00c048ebba63b651935a241a?mt=1&app=music";
+        match parse_url_as_playlist(playlist_link) {
+            Some((country, name, id, song_id)) => {
+                assert_eq!(&country         , "us");
+                assert_eq!(&name            , "the-strokes-essentials");
+                assert_eq!(&id              , "3a7a911b00c048ebba63b651935a241a");
+                assert!(song_id.is_none());
+            },
+            None => assert!(false),
+        }
     }
 }
