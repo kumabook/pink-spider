@@ -223,6 +223,24 @@ pub fn show_by_id<T: Model>(req: &mut Request) -> IronResult<Response> {
     }
 }
 
+pub fn create<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
+    let identifier     = try!(param_as_string(req, "identifier").ok_or(Error::BadRequest));
+    let provider       = try!(param_as_string(req, "provider").ok_or(Error::BadRequest));
+    let owner_id       = param_as_string(req, "owner_id");
+    let url            = param_as_string(req, "url");
+    let p              = Provider::new(provider.to_string());
+    let mut enclosure  = T::new(p, identifier.to_string());
+    enclosure.set_owner_id(owner_id);
+    if let Some(url) = url {
+        enclosure.set_url(url);
+    }
+    enclosure.fetch_props();
+    try!(enclosure.save());
+    Ok(Response::with((status::Ok,
+                       application_json(),
+                       enclosure.to_json().to_string())))
+}
+
 fn param_as_string(req: &mut Request, key: &str) -> Option<String> {
     match req.get_ref::<UrlEncodedBody>() {
         Ok(ref params) => match params.get(key) {
@@ -267,12 +285,14 @@ pub fn main() {
         show_track_by_id:         get  "/v1/tracks/:id"                  => show_by_id::<Track>,
         show_track:               get  "/v1/tracks/:provider/:id"        => show::<Track>,
         mget_tracks:              post "/v1/tracks/.mget"                => mget::<Track>,
+        create_track:             post "/v1/tracks"                      => create::<Track>,
         update_track:             post "/v1/tracks/:id"                  => update::<Track>,
         index_tracks:             get  "/v1/tracks"                      => index::<Track>,
         index_tracks_by_entry:    get  "/v1/entries/:entry_id/tracks"    => index_by_entry::<Track>,
 
         show_playlist_by_id:      get  "/v1/playlists/:id"               => show_by_id::<Playlist>,
         show_playlist:            get  "/v1/playlists/:provider/:id"     => show::<Playlist>,
+        create_playlist:          post "/v1/playlists"                   => create::<Playlist>,
         update_playlist:          post "/v1/playlists/:id"               => update::<Playlist>,
         mget_playlists:           post "/v1/playlists/.mget"             => mget::<Playlist>,
         index_playlists:          get  "/v1/playlists"                   => index::<Playlist>,
@@ -281,6 +301,7 @@ pub fn main() {
         show_album_by_id:         get  "/v1/albums/:id"                  => show_by_id::<Album>,
         show_album:               get  "/v1/albums/:provider/:id"        => show::<Album>,
         mget_albums:              post "/v1/albums/.mget"                => mget::<Album>,
+        create_album:             post "/v1/albums"                      => create::<Album>,
         update_album:             post "/v1/albums/:id"                  => update::<Album>,
         index_albums:             get  "/v1/albums"                      => index::<Album>,
         index_albums_by_entry:    get  "/v1/entries/:entry_id/albums"    => index_by_entry::<Album>,
