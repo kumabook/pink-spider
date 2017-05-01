@@ -24,9 +24,6 @@ use model::Enclosure;
 use url::percent_encoding::{percent_decode};
 use get_env;
 
-static APPLE_MUSIC_SONG:      &'static str = r"tools.applemusic.com/embed/v1/song/([a-zA-Z0-9_-]+)";
-static APPLE_MUSIC_ALBUM:     &'static str = r"tools.applemusic.com/embed/v1/album/([a-zA-Z0-9_-]+)";
-static APPLE_MUSIC_PLAYLIST:  &'static str = r"tools.applemusic.com/embed/v1/playlist/pl.([a-zA-Z0-9_-]+)";
 static YOUTUBE_EMBED:         &'static str = r"www.youtube.com/embed/([a-zA-Z0-9_-].+)";
 static YOUTUBE_LIST:          &'static str = r"www.youtube.com/embed/videoseries\?list=([a-zA-Z0-9_-]+)";
 static YOUTUBE_WATCH:         &'static str = r"www.youtube.com/watch\?v=([a-zA-Z0-9_-]+)";
@@ -244,7 +241,7 @@ fn fetch_youtube_playlist(id: &str) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
 fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
     let decoded = percent_decode(url.as_bytes()).decode_utf8_lossy().into_owned();
 
-    match extract_identifier(&decoded, APPLE_MUSIC_SONG) {
+    match extract_identifier(&decoded, apple_music::SONG_URL) {
         Some(identifier) => {
             let country = apple_music::country(&url);
             if let Ok(song) = apple_music::fetch_song(&identifier, &country) {
@@ -253,7 +250,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
         },
         None => ()
     }
-    match extract_identifier(&decoded, APPLE_MUSIC_ALBUM) {
+    match extract_identifier(&decoded, apple_music::ALBUM_URL) {
         Some(identifier) => {
             let country = apple_music::country(&url);
             match apple_music::fetch_album(&identifier, &country) {
@@ -264,7 +261,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
         },
         None => ()
     }
-    match extract_identifier(&decoded, APPLE_MUSIC_PLAYLIST) {
+    match extract_identifier(&decoded, apple_music::PLAYLIST_URL) {
         Some(identifier) => {
             let country = apple_music::country(&url);
             match apple_music::fetch_playlist(&identifier, &country) {
