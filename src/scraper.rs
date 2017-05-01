@@ -24,10 +24,6 @@ use model::Enclosure;
 use url::percent_encoding::{percent_decode};
 use get_env;
 
-static SOUNDCLOUD_TRACK:      &'static str = r"api.soundcloud.com/tracks/([a-zA-Z0-9_-]+)";
-static SOUNDCLOUD_PLAYLIST:   &'static str = r"api.soundcloud.com/playlists/([a-zA-Z0-9_-]+)";
-static SOUNDCLOUD_USER:       &'static str = r"api.soundcloud.com/users/([a-zA-Z0-9_-]+)";
-
 lazy_static! {
     static ref USER_AGENT: String = {
         get_env::var("USER_AGENT").unwrap_or("".to_string())
@@ -301,11 +297,11 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
         Some(identifier) => return (vec![], vec![], vec![Track::new(Provider::YouTube, identifier)]),
         None             => ()
     }
-    match extract_identifier(&decoded, SOUNDCLOUD_TRACK) {
+    match extract_identifier(&decoded, soundcloud::TRACK) {
         Some(identifier) => return (vec![], vec![], vec![Track::new(Provider::SoundCloud, identifier)]),
         None             => ()
     }
-    match extract_identifier(&decoded, SOUNDCLOUD_PLAYLIST) {
+    match extract_identifier(&decoded, soundcloud::PLAYLIST) {
         Some(identifier) => return match soundcloud::fetch_playlist(&identifier) {
             Ok(playlist) => {
                 let tracks = if EXPAND_SOUNDCLOUD_PLAYLIST {
@@ -322,7 +318,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
         },
         None => ()
     }
-    match extract_identifier(&decoded, SOUNDCLOUD_USER) {
+    match extract_identifier(&decoded, soundcloud::USER) {
         Some(identifier) => return match soundcloud::fetch_user_tracks(&identifier) {
             Ok(tracks) => {
                 let tracks = tracks
@@ -369,6 +365,7 @@ mod test {
     use super::extract;
     use super::extract_identifier;
     use youtube;
+    use soundcloud;
     use Provider;
     use Track;
     use Playlist;
@@ -376,7 +373,7 @@ mod test {
     #[test]
     fn test_extract_identifier() {
         let soundcloud_src = "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/195425494/stream&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&visual=true";
-        match extract_identifier(soundcloud_src, super::SOUNDCLOUD_TRACK) {
+        match extract_identifier(soundcloud_src, soundcloud::TRACK) {
             Some(identifier) => assert_eq!(identifier, "195425494".to_string()),
             None             => assert!(false)
         }

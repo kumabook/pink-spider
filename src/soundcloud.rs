@@ -6,6 +6,11 @@ use rustc_serialize::json::{DecodeResult};
 use get_env;
 
 static BASE_URL: &'static str = "https://api.soundcloud.com";
+
+pub static TRACK:    &'static str = r"api.soundcloud.com/tracks/([a-zA-Z0-9_-]+)";
+pub static PLAYLIST: &'static str = r"api.soundcloud.com/playlists/([a-zA-Z0-9_-]+)";
+pub static USER:     &'static str = r"api.soundcloud.com/users/([a-zA-Z0-9_-]+)";
+
 lazy_static! {
     static ref API_KEY: String = {
         get_env::var("SOUNDCLOUD_API_KEY").unwrap_or("".to_string())
