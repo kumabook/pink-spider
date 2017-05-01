@@ -64,11 +64,12 @@ pub struct ScraperProduct {
 
 pub fn extract(url: &str) -> Result<ScraperProduct, Error> {
     let client = Client::new();
-    let mut res = client.get(url)
-        .header(Connection(vec![ConnectionOption::Close]))
-        .header(UserAgent(USER_AGENT.to_string()))
-        .send()
-        .unwrap();
+    let mut builder = client.get(url)
+        .header(Connection(vec![ConnectionOption::Close]));
+    if *USER_AGENT == "" {
+        builder = builder.header(UserAgent(USER_AGENT.to_string()));
+    }
+    let mut res = try!(builder.send());
     if res.status.is_success() {
         let dom = parse_document(RcDom::default(), Default::default())
             .from_utf8()
