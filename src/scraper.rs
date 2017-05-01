@@ -24,9 +24,6 @@ use model::Enclosure;
 use url::percent_encoding::{percent_decode};
 use get_env;
 
-static YOUTUBE_EMBED:         &'static str = r"www.youtube.com/embed/([a-zA-Z0-9_-].+)";
-static YOUTUBE_LIST:          &'static str = r"www.youtube.com/embed/videoseries\?list=([a-zA-Z0-9_-]+)";
-static YOUTUBE_WATCH:         &'static str = r"www.youtube.com/watch\?v=([a-zA-Z0-9_-]+)";
 static SOUNDCLOUD_TRACK:      &'static str = r"api.soundcloud.com/tracks/([a-zA-Z0-9_-]+)";
 static SOUNDCLOUD_PLAYLIST:   &'static str = r"api.soundcloud.com/playlists/([a-zA-Z0-9_-]+)";
 static SOUNDCLOUD_USER:       &'static str = r"api.soundcloud.com/users/([a-zA-Z0-9_-]+)";
@@ -292,15 +289,15 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
         },
         None => ()
     }
-    match extract_identifier(&decoded, YOUTUBE_WATCH) {
+    match extract_identifier(&decoded, youtube::WATCH) {
         Some(identifier) => return (vec![], vec![], vec![Track::new(Provider::YouTube, identifier)]),
         None             => ()
     }
-    match extract_identifier(&decoded, YOUTUBE_LIST) {
+    match extract_identifier(&decoded, youtube::LIST) {
         Some(identifier) => return fetch_youtube_playlist(&identifier),
         None             => ()
     }
-    match extract_identifier(&decoded, YOUTUBE_EMBED) {
+    match extract_identifier(&decoded, youtube::EMBED) {
         Some(identifier) => return (vec![], vec![], vec![Track::new(Provider::YouTube, identifier)]),
         None             => ()
     }
@@ -371,6 +368,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
 mod test {
     use super::extract;
     use super::extract_identifier;
+    use youtube;
     use Provider;
     use Track;
     use Playlist;
@@ -383,19 +381,19 @@ mod test {
             None             => assert!(false)
         }
         let youtube_embed = "https://www.youtube.com/embed/X8tOngmlES0?rel=0";
-        match extract_identifier(youtube_embed, super::YOUTUBE_EMBED) {
+        match extract_identifier(youtube_embed, youtube::EMBED) {
             Some(identifier) => assert_eq!(identifier, "X8tOngmlES0".to_string()),
             None             => assert!(false)
         }
 
         let youtube_watch = "https://www.youtube.com/watch?v=oDuif301F-8";
-        match extract_identifier(youtube_watch, super::YOUTUBE_WATCH) {
+        match extract_identifier(youtube_watch, youtube::WATCH) {
             Some(identifier) => assert_eq!(identifier, "oDuif301F-8".to_string()),
             None             => assert!(false)
         }
 
         let youtube_list = "https://www.youtube.com/embed/videoseries?list=PLy8LZ8FM-o0ViuGAF68RAaXkQ8V-3dbTX";
-        match extract_identifier(youtube_list, super::YOUTUBE_LIST) {
+        match extract_identifier(youtube_list, youtube::LIST) {
             Some(identifier) => assert_eq!(identifier, "PLy8LZ8FM-o0ViuGAF68RAaXkQ8V-3dbTX".to_string()),
             None             => assert!(false)
         }

@@ -14,6 +14,10 @@ lazy_static! {
     };
 }
 
+pub static EMBED: &'static str = r"www.youtube.com/embed/([a-zA-Z0-9_-].+)";
+pub static LIST:  &'static str = r"www.youtube.com/embed/videoseries\?list=([a-zA-Z0-9_-]+)";
+pub static WATCH: &'static str = r"www.youtube.com/watch\?v=([a-zA-Z0-9_-]+)";
+
 pub trait HasThumbnail {
     fn get_thumbnails(&self) -> BTreeMap<String, Thumbnail>;
     fn get_thumbnail_url(&self) -> Option<String> {
