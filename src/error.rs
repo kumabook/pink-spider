@@ -10,6 +10,7 @@ use std::str::FromStr;
 use std::error;
 use postgres;
 use urlencoded;
+use hyper;
 
 #[derive(Debug)]
 pub enum Error {
@@ -77,6 +78,12 @@ impl From<postgres::error::ConnectError> for Error {
 
 impl From<urlencoded::UrlDecodingError> for Error {
     fn from(_: urlencoded::UrlDecodingError) -> Error {
+        Error::BadRequest
+    }
+}
+
+impl From<hyper::Error> for Error {
+    fn from(_: hyper::Error) -> Error {
         Error::BadRequest
     }
 }
