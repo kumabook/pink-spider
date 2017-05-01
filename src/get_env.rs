@@ -7,7 +7,11 @@ pub fn var(key: &str) -> Option<String> {
     match env::var(key) {
         Ok(value) => Some(value),
         Err(_) => {
-            let mut f = File::open("config/env.toml").unwrap();
+            let file = File::open("config/env.toml");
+            if file.is_err() {
+                return None;
+            }
+            let mut f = file.unwrap();
             let mut s = String::new();
             let _ = f.read_to_string(&mut s);
             if let Ok(value) = s.parse::<Value>() {
