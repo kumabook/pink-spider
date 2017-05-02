@@ -13,7 +13,7 @@ use Provider;
 use Track;
 use Playlist;
 use Album;
-use open_graph;
+use opengraph;
 use apple_music;
 use youtube;
 use soundcloud;
@@ -38,7 +38,7 @@ pub struct ScraperProduct {
     pub playlists: Vec<Playlist>,
     pub albums:    Vec<Album>,
     pub tracks:    Vec<Track>,
-    pub og_obj:    Option<open_graph::Object>,
+    pub og_obj:    Option<opengraph::Object>,
 }
 
 pub fn extract(url: &str) -> Result<ScraperProduct, Error> {
@@ -60,7 +60,7 @@ pub fn extract(url: &str) -> Result<ScraperProduct, Error> {
         let mut og_props  = Vec::new();
         walk(dom.document, &mut playlists, &mut albums, &mut tracks, &mut og_props);
         let og_obj = if og_props.len() > 0 {
-            Some(open_graph::Object::new(&og_props))
+            Some(opengraph::Object::new(&og_props))
         } else {
             None
         };
@@ -90,7 +90,7 @@ fn walk(handle:    Handle,
         Comment(_)       => (),
         Element(ref name, _, ref attrs) => {
             let tag_name = name.local.as_ref();
-            let mut ps = extract_open_graph_metadata_from_tag(tag_name, attrs);
+            let mut ps = extract_opengraph_metadata_from_tag(tag_name, attrs);
             og_props.append(&mut ps);
             let (ps, als, ts) = extract_enclosures_from_tag(tag_name, attrs);
             for playlist in ps.iter().cloned() {
@@ -141,16 +141,16 @@ pub fn extract_enclosures_from_tag(tag_name: &str,
     }
 }
 
-pub fn extract_open_graph_metadata_from_tag(tag_name: &str,
+pub fn extract_opengraph_metadata_from_tag(tag_name: &str,
                                             attrs: &Vec<Attribute>) -> Vec<(String, String)> {
 
     let mut og_props = vec!();
     if tag_name == "meta" {
-        match extract_open_graph_prop("property", attrs) {
+        match extract_opengraph_prop("property", attrs) {
             Some((key, content)) => og_props.push((key, content)),
             None                 => (),
         }
-        match extract_open_graph_prop("name", attrs) {
+        match extract_opengraph_prop("name", attrs) {
             Some((key, content)) => og_props.push((key, content)),
             None                 => (),
         }
@@ -158,7 +158,7 @@ pub fn extract_open_graph_metadata_from_tag(tag_name: &str,
     og_props
 }
 
-fn extract_open_graph_prop<'a>(attr_name: &str, attrs: &Vec<Attribute>) -> Option<(String, String)> {
+fn extract_opengraph_prop<'a>(attr_name: &str, attrs: &Vec<Attribute>) -> Option<(String, String)> {
     attr(attr_name, attrs)
         .and_then(|property|
                   if property.starts_with("og:") {

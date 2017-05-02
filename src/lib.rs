@@ -21,12 +21,13 @@ extern crate serde_json;
 #[macro_use]
 extern crate lazy_static;
 
+extern crate opengraph;
+
 pub use self::model::Feed;
 pub use self::model::Track;
 pub use self::model::Playlist;
 pub use self::model::Album;
 pub use self::model::Provider;
-pub use self::model::open_graph;
 
 pub mod error;
 pub mod scraper;

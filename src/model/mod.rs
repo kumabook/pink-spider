@@ -16,7 +16,6 @@ mod feed;
 mod provider;
 mod state;
 mod enclosure;
-pub mod open_graph;
 
 use std;
 use uuid::Uuid;
