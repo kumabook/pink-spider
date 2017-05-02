@@ -26,7 +26,7 @@ pub struct Track {
     pub artworkUrl60:           Option<String>,
     pub artworkUrl100:          Option<String>,
     pub collectionPrice:        f32,
-    pub trackPrice:             f32,
+    pub trackPrice:             Option<f32>,
     pub releaseDate:            String,
     pub collectionExplicitness: String,
     pub trackExplicitness:      Option<String>,
