@@ -229,7 +229,7 @@ pub fn create<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
     let owner_id       = param_as_string(req, "owner_id");
     let url            = param_as_string(req, "url");
     let p              = Provider::new(provider.to_string());
-    let mut enclosure  = T::new(p, identifier.to_string());
+    let mut enclosure  = try!(T::find_or_create(p, identifier.to_string()));
     enclosure.set_owner_id(owner_id);
     if let Some(url) = url {
         enclosure.set_url(url);
