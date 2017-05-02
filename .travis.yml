@@ -1,6 +1,6 @@
 language: rust
 rust:
-  - 1.14.0
+  - 1.17.0
   - nightly
 before_install:
   - sudo apt-get update
