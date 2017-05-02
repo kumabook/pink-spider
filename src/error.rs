@@ -1,11 +1,12 @@
 use std::fmt::{Display, Formatter, Result as FmtResult};
-use rustc_serialize::json::{ToJson, Json};
-use std::collections::BTreeMap;
 use iron::prelude::*;
 use iron::status::Status;
 use iron::headers::{ContentType};
 use iron::modifiers::Header;
 use iron::mime::Mime;
+use serde_json;
+use serde::Serialize;
+use serde::Serializer;
 use std::str::FromStr;
 use std::error;
 use postgres;
@@ -22,6 +23,21 @@ pub enum Error {
     Unexpected,
 }
 
+impl Serialize for Error {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where S: Serializer
+    {
+        match *self {
+            Error::BadRequest        => serializer.serialize_str("BadRequest"),
+            Error::Unprocessable     => serializer.serialize_str("Unprocessable"),
+            Error::NotFound          => serializer.serialize_str("NotFound"),
+            Error::DbError(_)        => serializer.serialize_str("DbError"),
+            Error::DbConnectError(_) => serializer.serialize_str("DbConnectError"),
+            Error::Unexpected        => serializer.serialize_str("Unexpected"),
+        }
+    }
+}
+
 impl Error {
     pub fn status(&self) -> Status {
         match *self {
@@ -36,9 +52,7 @@ impl Error {
 
     pub fn as_response(&self) -> Response {
         let json_type = Header(ContentType(Mime::from_str("application/json").ok().unwrap()));
-        Response::with((self.status(),
-                        json_type,
-                        self.to_json().to_string()))
+        Response::with((self.status(), json_type, serde_json::to_string(self).unwrap()))
     }
 }
 
@@ -53,14 +67,6 @@ impl Display for Error {
             Error::DbConnectError(ref e) => write!(f, "UnexpectedError: DBConnectError {}", e),
             Error::Unexpected            => write!(f, "UnexpectedError"),
         }
-    }
-}
-
-impl ToJson for Error {
-    fn to_json(&self) -> Json {
-        let mut d = BTreeMap::new();
-        d.insert("message".to_string(), self.to_string().to_json());
-        Json::Object(d)
     }
 }
 
@@ -102,5 +108,11 @@ impl From<Error> for IronError {
             Error::DbConnectError(_) => IronError::new(err, Status::BadRequest),
             Error::Unexpected        => IronError::new(err, Status::BadRequest),
         }
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(_: serde_json::Error) -> Error {
+        Error::Unexpected
     }
 }
