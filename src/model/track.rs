@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-use rustc_serialize::json::{ToJson, Json};
 use postgres;
 use uuid::Uuid;
 use std::fmt;
@@ -34,7 +32,7 @@ static PROPS: [&'static str; 16]  = ["id",
                                      "updated_at",
                                      "state"];
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Track {
     pub id:            Uuid,
     pub provider:      Provider,
@@ -61,40 +59,13 @@ impl PartialEq for Track {
     }
 }
 
-impl ToJson for Track {
-    fn to_json(&self) -> Json {
-        let published_at = DateTime::<UTC>::from_utc(self.published_at, UTC);
-        let created_at   = DateTime::<UTC>::from_utc(self.created_at  , UTC);
-        let updated_at   = DateTime::<UTC>::from_utc(self.updated_at  , UTC);
-        let mut d = BTreeMap::new();
-        d.insert("id".to_string()           , self.id.to_string().to_json());
-        d.insert("provider".to_string()     , self.provider.to_json());
-        d.insert("identifier".to_string()   , self.identifier.to_json());
-        d.insert("owner_id".to_string()     , self.owner_id.to_json());
-        d.insert("owner_name".to_string()   , self.owner_name.to_json());
-        d.insert("url".to_string()          , self.url.to_json());
-        d.insert("title".to_string()        , self.title.to_json());
-        d.insert("description".to_string()  , self.description.to_json());
-        d.insert("thumbnail_url".to_string(), self.thumbnail_url.to_json());
-        d.insert("artwork_url".to_string()  , self.artwork_url.to_json());
-        d.insert("audio_url".to_string()    , self.audio_url.to_json());
-        d.insert("duration".to_string()     , self.duration.to_json());
-        d.insert("published_at".to_string() , published_at.to_rfc3339().to_json());
-        d.insert("created_at".to_string()   , created_at.to_rfc3339().to_json());
-        d.insert("updated_at".to_string()   , updated_at.to_rfc3339().to_json());
-        d.insert("state".to_string()        , self.state.to_json());
-        d.insert("artists".to_string()      , self.artists.to_json());
-        Json::Object(d)
-    }
-}
-
 impl fmt::Display for Track {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}:{}", self.provider, self.identifier)
     }
 }
 
-impl Model for Track {
+impl<'a> Model<'a> for Track {
     fn table_name() -> String {
         "tracks".to_string()
     }
@@ -187,7 +158,7 @@ impl Model for Track {
     }
 }
 
-impl Enclosure for Track {
+impl<'a> Enclosure<'a> for Track {
     fn new(provider: Provider, identifier: String) -> Track {
         Track {
             id:            Uuid::new_v4(),
