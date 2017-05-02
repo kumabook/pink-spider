@@ -1,9 +1,5 @@
-#[macro_use]
 extern crate pink_spider;
-use pink_spider::youtube;
-use pink_spider::soundcloud;
-use pink_spider::spotify;
-use pink_spider::model::{Model, Enclosure, Playlist, Provider};
+use pink_spider::model::{Model, Enclosure, Playlist};
 use pink_spider::model::{conn};
 use std::time::Duration;
 use std::thread;
