@@ -1,10 +1,7 @@
-extern crate rustc_serialize;
-
 use std::io::Read;
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 use chrono::{NaiveDateTime, UTC, Duration};
-use rustc_serialize::json;
 use hyper::header::{
     Headers,
     Authorization,
@@ -14,6 +11,8 @@ use hyper::header::{
     ContentType
 };
 use regex::Regex;
+use serde_json;
+use serde::de::Error;
 use get_env;
 use http;
 
@@ -35,7 +34,7 @@ lazy_static! {
     static ref TOKEN: Mutex<Option<Token>> = Mutex::new(None);
 }
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Track {
     pub album:             Option<Album>,
     pub artists:           Vec<Artist>,
@@ -57,7 +56,7 @@ pub struct Track {
     pub uri:               String,
 }
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Playlist {
     pub collaborative: bool,
     pub description:   Option<String>,
@@ -75,7 +74,7 @@ pub struct Playlist {
     pub uri:           String,
 }
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct User {
     pub display_name:  Option<String>,
     pub external_urls: BTreeMap<String, String>,
@@ -86,7 +85,7 @@ pub struct User {
     pub uri:           String,
 }
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Album {
     pub album_type:        String,
     pub artists:           Vec<Artist>,
@@ -101,7 +100,7 @@ pub struct Album {
     pub tracks:            Option<PagingObject<Track>>,
 }
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Artist {
     pub external_urls: BTreeMap<String, String>,
     pub href:          String,
@@ -112,14 +111,14 @@ pub struct Artist {
     pub images:        Option<Vec<Image>>,
 }
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Image {
     pub height: Option<i32>,
     pub url:    String,
     pub width:  Option<i32>,
 }
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TrackLink {
     pub external_urls: BTreeMap<String, String>,
     pub href:          String,
@@ -128,13 +127,13 @@ pub struct TrackLink {
     pub uri:           String,
 }
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Followers {
     pub href:  Option<String>,
     pub total: i32,
 }
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PlaylistTrack {
     pub added_at: Option<String>,
     pub added_by: Option<User>,
@@ -142,7 +141,7 @@ pub struct PlaylistTrack {
     pub track:    Track,
 }
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PagingObject<T> {
     pub href:     String,
     pub items:    Vec<T>,
@@ -153,7 +152,7 @@ pub struct PagingObject<T> {
     pub total:    i32,
 }
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Token {
     pub access_token: String,
     pub token_type:   String,
@@ -186,9 +185,9 @@ pub fn parse_open_url_as_playlist(url: &str) -> Option<(String, String)> {
 ///
 /// assert_eq!(track.id, "3n3Ppam7vgaVa1iaRUc9Lp");
 /// ```
-pub fn fetch_track(id: &str) -> json::DecodeResult<Track> {
+pub fn fetch_track(id: &str) -> serde_json::Result<Track> {
     let path = format!("/tracks/{}", id);
-    fetch(&path)
+    fetch(&path).and_then(|s| serde_json::from_str(&s))
 }
 
 /// This function fetches a album info with spotify api.
@@ -200,9 +199,9 @@ pub fn fetch_track(id: &str) -> json::DecodeResult<Track> {
 ///
 /// assert_eq!(album.id, "7exbVQgdNqseHtGCf6mZk5");
 /// ```
-pub fn fetch_album(id: &str) -> json::DecodeResult<Album> {
+pub fn fetch_album(id: &str) -> serde_json::Result<Album> {
     let path = format!("/albums/{}", id);
-    fetch(&path)
+    fetch(&path).and_then(|s| serde_json::from_str(&s))
 }
 
 /// This function fetches a playlist info with spotify api.
@@ -215,13 +214,12 @@ pub fn fetch_album(id: &str) -> json::DecodeResult<Album> {
 /// assert_eq!(playlist.id, "182jSXyIDGLOYwE7PLhxjI");
 /// assert_eq!(playlist.tracks.total, 100);
 /// ```
-pub fn fetch_playlist(user_id: &str, id: &str) -> json::DecodeResult<Playlist> {
+pub fn fetch_playlist(user_id: &str, id: &str) -> serde_json::Result<Playlist> {
     let path = format!("/users/{}/playlists/{}", user_id, id);
-    fetch(&path)
+    fetch(&path).and_then(|s| serde_json::from_str(&s))
 }
 
-fn fetch<T>(path: &str) -> json::DecodeResult<T>
-    where T: rustc_serialize::Decodable {
+fn fetch(path: &str) -> serde_json::Result<String> {
     let token  = try!(update_token_if_needed());
     let url    = format!("{}{}", BASE_URL, path);
     let mut headers = Headers::new();
@@ -238,7 +236,7 @@ fn fetch<T>(path: &str) -> json::DecodeResult<T>
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    json::decode::<T>(&body)
+    Ok(body)
 }
 
 /// This function fetches a oauth token info with spotify api.
@@ -249,7 +247,7 @@ fn fetch<T>(path: &str) -> json::DecodeResult<T>
 /// let token = pink_spider::spotify::fetch_token();
 /// assert!(token.is_ok());
 /// ```
-pub fn fetch_token() -> json::DecodeResult<Token> {
+pub fn fetch_token() -> serde_json::Result<Token> {
     let url         = "https://accounts.spotify.com/api/token";
     let mut headers = Headers::new();
     headers.set(
@@ -268,7 +266,7 @@ pub fn fetch_token() -> json::DecodeResult<Token> {
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    json::decode::<Token>(&body)
+    serde_json::from_str::<Token>(&body)
 }
 
 pub fn get_valid_token() -> Option<Token> {
@@ -286,7 +284,7 @@ pub fn get_valid_token() -> Option<Token> {
     )
 }
 
-pub fn update_token_if_needed() -> json::DecodeResult<Token> {
+pub fn update_token_if_needed() -> serde_json::Result<Token> {
     match get_valid_token() {
         Some(token) => Ok(token),
         None => match fetch_token() {
@@ -300,7 +298,7 @@ pub fn update_token_if_needed() -> json::DecodeResult<Token> {
                 Ok(token)
             },
             Err(_) =>
-                Err(json::DecoderError::ApplicationError("missing token".to_string()))
+                Err(serde_json::error::Error::custom("missing token".to_string()))
         },
     }
 }
