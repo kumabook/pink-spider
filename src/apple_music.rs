@@ -1,6 +1,5 @@
 use scraping::{Html, Selector};
 use scraping::element_ref::ElementRef;
-use hyper::Client;
 use hyper::header::Connection;
 use hyper::header::ConnectionOption;
 use std::io::Read;
@@ -20,7 +19,7 @@ pub static SONG_URL:      &'static str = r"tools.applemusic.com/embed/v1/song/([
 pub static ALBUM_URL:     &'static str = r"tools.applemusic.com/embed/v1/album/([a-zA-Z0-9_-]+)";
 pub static PLAYLIST_URL:  &'static str = r"tools.applemusic.com/embed/v1/playlist/pl.([a-zA-Z0-9_-]+)";
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Song {
     pub id:          String,
     pub country:     String,
@@ -31,7 +30,7 @@ pub struct Song {
     pub music_url:   String,
 }
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Album {
     pub id:           String,
     pub country:      String,
@@ -43,7 +42,7 @@ pub struct Album {
     pub tracks:       Option<Vec<Track>>,
 }
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Playlist {
     pub id:          String,
     pub country:     String,
@@ -55,7 +54,7 @@ pub struct Playlist {
     pub count:       String,
 }
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Track {
     pub title:       String,
     pub artwork_url: String,
