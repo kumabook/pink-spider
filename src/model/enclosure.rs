@@ -3,7 +3,7 @@ use error::Error;
 use model::provider::Provider;
 use super::{conn, Model};
 
-pub trait Enclosure where Self: Model {
+pub trait Enclosure<'a> where Self: Model<'a> {
     fn new(provider: Provider, identifier: String) -> Self;
     fn set_owner_id(&mut self, owner_id: Option<String>) -> &mut Self;
     fn set_url(&mut self, url: String) -> &mut Self;

@@ -18,38 +18,25 @@ mod state;
 mod enclosure;
 pub mod open_graph;
 
-use rustc_serialize::json::{ToJson, Json};
 use std;
-use std::collections::BTreeMap;
 use uuid::Uuid;
 use postgres;
 use postgres::{Connection, TlsMode};
 use postgres::error::ConnectError;
 use std::env;
 use error::Error;
+use serde::Serialize;
+use serde::Deserialize;
 
 static DEFAULT_DATABASE_URL: &'static str = "postgres://postgres:postgres@localhost/pink_spider_development";
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PaginatedCollection<I> {
     pub page:     i64,
     pub per_page: i64,
     pub total:    i64,
     pub items:    Vec<I>,
 }
-
-impl<I: ToJson> ToJson for PaginatedCollection<I> {
-    fn to_json(&self) -> Json {
-        let mut d = BTreeMap::new();
-        let items = Json::Array(self.items.iter().map(|x| x.to_json()).collect());
-        d.insert("page".to_string()    , self.page.to_string().to_json());
-        d.insert("per_page".to_string(), self.per_page.to_json());
-        d.insert("total".to_string()   , self.total.to_json());
-        d.insert("items".to_string()   , items);
-        Json::Object(d)
-    }
-}
-
 
 pub fn conn() -> Result<Connection, ConnectError> {
     let opt_url = env::var("DATABASE_URL");
@@ -61,7 +48,7 @@ pub fn conn() -> Result<Connection, ConnectError> {
     }
 }
 
-pub trait Model where Self: std::marker::Sized + ToJson + Clone {
+pub trait Model<'a> where Self: std::marker::Sized + Serialize + Deserialize<'a> + Clone {
     fn table_name() -> String;
     fn props_str(prefix: &str) -> String;
     fn rows_to_items(rows: postgres::rows::Rows) -> Vec<Self>;
