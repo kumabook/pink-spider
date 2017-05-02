@@ -1,7 +1,6 @@
 use std::fmt;
-use rustc_serialize::json::{ToJson, Json};
 
-#[derive(Debug, Copy, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 pub enum Provider {
     AppleMusic,
     YouTube,
@@ -44,12 +43,6 @@ impl Provider {
             "spotify"    => Provider::Spotify,
             _            => Provider::Raw,
         }
-    }
-}
-
-impl ToJson for Provider {
-    fn to_json(&self) -> Json {
-        self.to_string().to_json()
     }
 }
 
