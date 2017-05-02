@@ -1,7 +1,6 @@
 use std::fmt;
-use rustc_serialize::json::{ToJson, Json};
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum State {
     Alive,
     Dead,
@@ -29,12 +28,6 @@ impl State {
             "dead"  => State::Dead,
             _       => State::Dead,
         }
-    }
-}
-
-impl ToJson for State {
-    fn to_json(&self) -> Json {
-        self.to_string().to_json()
     }
 }
 
