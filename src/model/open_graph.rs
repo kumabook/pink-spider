@@ -1,7 +1,4 @@
-use std::collections::BTreeMap;
-use rustc_serialize::json::{ToJson, Json};
-
-#[derive(Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct Object {
     pub title:            String,
     pub obj_type:         ObjectType,
@@ -59,66 +56,38 @@ impl Object {
     }
 }
 
-impl ToJson for Object {
-    fn to_json(&self) -> Json {
-        let mut d = BTreeMap::new();
-        d.insert("title".to_string()           , self.title.to_json());
-        d.insert("type".to_string()            , self.obj_type.to_json());
-        d.insert("url".to_string()             , self.url.to_json());
-
-        d.insert("images".to_string(),
-                 Json::Array(self.images.iter().map(|x| x.to_json()).collect()));
-        d.insert("audios".to_string(),
-                 Json::Array(self.audios.iter().map(|x| x.to_json()).collect()));
-        d.insert("videos".to_string(),
-                 Json::Array(self.videos.iter().map(|x| x.to_json()).collect()));
-
-        d.insert("description".to_string()     , self.description.to_json());
-        d.insert("determiner".to_string()      , self.determiner.to_json());
-        d.insert("locale".to_string()          , self.locale.to_json());
-        d.insert("locale_alternate".to_string(), self.locale.to_json());
-        d.insert("site_name".to_string()       , self.locale.to_json());
-
-        Json::Object(d)
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum ObjectType {
     // No Vetical
+    #[serde(rename = "article")]
     Article,
+    #[serde(rename = "book")]
     Book,
+    #[serde(rename = "profile")]
     Profile,
+    #[serde(rename = "website")]
     Website,
     // Music
+    #[serde(rename = "music.song")]
     Song,
+    #[serde(rename = "music.album")]
     Album,
+    #[serde(rename = "music.playlist")]
     Playlist,
+    #[serde(rename = "music.radio_station")]
     RadioStation,
     // Video
+    #[serde(rename = "video.movie")]
     Movie,
+    #[serde(rename = "video.episode")]
     Episode,
+    #[serde(rename = "video.tv_show")]
     TVShow,
+    #[serde(rename = "video.other")]
     VideoOther,
 }
 
 impl ObjectType {
-    fn to_string(&self) -> String {
-        match *self {
-            ObjectType::Article      => "article",
-            ObjectType::Book         => "book",
-            ObjectType::Profile      => "profile",
-            ObjectType::Website      => "website",
-            ObjectType::Song         => "music.song",
-            ObjectType::Album        => "music.album",
-            ObjectType::Playlist     => "music.playlist",
-            ObjectType::RadioStation => "music.radio_station",
-            ObjectType::Movie        => "video.movie",
-            ObjectType::Episode      => "video.episode",
-            ObjectType::TVShow       => "video.tv_show",
-            ObjectType::VideoOther   => "video.other"
-        }.to_string()
-    }
     pub fn new(str: String) -> ObjectType {
         match str.as_ref() {
             "article"             => ObjectType::Article,
@@ -142,31 +111,21 @@ impl Default for ObjectType {
     fn default() -> ObjectType  { ObjectType::Website }
 }
 
-impl ToJson for ObjectType {
-    fn to_json(&self) -> Json {
-        self.to_string().to_json()
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Determiner {
+    #[serde(rename = "a")]
     A,
+    #[serde(rename = "an")]
     An,
+    #[serde(rename = "the")]
     The,
+    #[serde(rename = "")]
     Blank,
+    #[serde(rename = "auto")]
     Auto,
 }
 
 impl Determiner {
-    fn to_string(&self) -> String {
-        match *self {
-            Determiner::A     => "a",
-            Determiner::An    => "an",
-            Determiner::The   => "the",
-            Determiner::Blank => "",
-            Determiner::Auto  => "auto",
-        }.to_string()
-    }
     pub fn new(str: String) -> Determiner {
         match str.as_ref() {
             "a"     => Determiner::A,
@@ -182,13 +141,7 @@ impl Default for Determiner {
     fn default() -> Determiner  { Determiner::Blank }
 }
 
-impl ToJson for Determiner {
-    fn to_json(&self) -> Json {
-        self.to_string().to_json()
-    }
-}
-
-#[derive(Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct Image {
     pub url:        String,
     pub secure_url: Option<String>,
@@ -209,19 +162,7 @@ impl Image {
     }
 }
 
-impl ToJson for Image {
-    fn to_json(&self) -> Json {
-        let mut d = BTreeMap::new();
-        d.insert("url".to_string()       , self.url.to_json());
-        d.insert("secure_url".to_string(), self.secure_url.to_json());
-        d.insert("type".to_string()      , self.obj_type.to_json());
-        d.insert("width".to_string()     , self.width.to_json());
-        d.insert("height".to_string()    , self.height.to_json());
-        Json::Object(d)
-    }
-}
-
-#[derive(Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct Video {
     pub url:        String,
     pub secure_url: Option<String>,
@@ -242,19 +183,7 @@ impl Video {
     }
 }
 
-impl ToJson for Video {
-    fn to_json(&self) -> Json {
-        let mut d = BTreeMap::new();
-        d.insert("url".to_string()       , self.url.to_json());
-        d.insert("secure_url".to_string(), self.secure_url.to_json());
-        d.insert("type".to_string()      , self.obj_type.to_json());
-        d.insert("width".to_string()     , self.width.to_json());
-        d.insert("height".to_string()    , self.height.to_json());
-        Json::Object(d)
-    }
-}
-
-#[derive(Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct Audio {
     pub url:        String,
     pub secure_url: Option<String>,
@@ -264,15 +193,5 @@ pub struct Audio {
 impl Audio {
     pub fn new(url: String) -> Audio {
         Audio { url: url, secure_url: None, obj_type: None }
-    }
-}
-
-impl ToJson for Audio {
-    fn to_json(&self) -> Json {
-        let mut d = BTreeMap::new();
-        d.insert("url".to_string()       , self.url.to_json());
-        d.insert("secure_url".to_string(), self.secure_url.to_json());
-        d.insert("type".to_string()      , self.obj_type.to_json());
-        Json::Object(d)
     }
 }
