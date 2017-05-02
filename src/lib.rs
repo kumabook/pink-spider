@@ -1,7 +1,6 @@
 extern crate hyper;
 extern crate hyper_native_tls;
 extern crate iron;
-extern crate rustc_serialize;
 extern crate html5ever;
 extern crate tendril;
 extern crate scraper as scraping;
@@ -14,6 +13,10 @@ extern crate postgres;
 extern crate chrono;
 extern crate queryst;
 extern crate toml;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde;
+extern crate serde_json;
 
 #[macro_use]
 extern crate lazy_static;

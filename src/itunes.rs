@@ -1,13 +1,12 @@
-extern crate rustc_serialize;
 use std::io::Read;
-use rustc_serialize::json;
+use serde_json;
 
 use http;
 
 static BASE_URL: &'static str = "https://itunes.apple.com/";
 
 #[allow(non_snake_case)]
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Track {
     pub wrapperType:            String, // track
     pub kind:                   Option<String>,
@@ -43,7 +42,7 @@ pub struct Track {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Album {
     pub wrapperType:            String, // collection
     pub kind:                   String,
@@ -64,19 +63,19 @@ pub struct Album {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LookupResponse<T> {
     pub resultCount: i32,
     pub results:     Vec<T>,
 }
 
-pub fn fetch_songs(id: &str, country: &str) -> json::DecodeResult<LookupResponse<Track>> {
+pub fn fetch_songs(id: &str, country: &str) -> serde_json::Result<LookupResponse<Track>> {
     let url = format!("{}/lookup/?id={}&country={}&entity=song", BASE_URL, id, country);
     let mut res = http::client().get(&url)
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    json::decode::<LookupResponse<Track>>(&body)
+    serde_json::from_str(&body)
 }
 
 #[cfg(test)]
