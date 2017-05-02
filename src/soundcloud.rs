@@ -1,7 +1,6 @@
 use std::io::Read;
 use hyper::header::Connection;
-use rustc_serialize::json;
-use rustc_serialize::json::{DecodeResult};
+use serde_json;
 use get_env;
 use http;
 
@@ -17,7 +16,7 @@ lazy_static! {
     };
 }
 
-#[derive(Debug, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Playlist {
     pub id:            i32,
     pub created_at:    String,
@@ -31,7 +30,7 @@ pub struct Playlist {
     pub genre:         Option<String>,
 }
 
-#[derive(Debug, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Track {
     pub id:            i32,
     pub created_at:    String,
@@ -47,7 +46,7 @@ pub struct Track {
     pub stream_url:    String,
 }
 
-#[derive(Debug, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct User {
     pub id:            i32,
     pub username:      String,
@@ -57,7 +56,7 @@ pub struct User {
     pub avatar_url:    String,
 }
 
-pub fn fetch_track(id: &str) -> DecodeResult<Track> {
+pub fn fetch_track(id: &str) -> serde_json::Result<Track> {
     let params = format!("client_id={}", *API_KEY);
     let url    = format!("{}/tracks/{}?{}", BASE_URL, id, params);
     let mut res = http::client().get(&url)
@@ -65,10 +64,10 @@ pub fn fetch_track(id: &str) -> DecodeResult<Track> {
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    return json::decode::<Track>(&body)
+    return serde_json::from_str(&body)
 }
 
-pub fn fetch_playlist(id: &str) -> DecodeResult<Playlist> {
+pub fn fetch_playlist(id: &str) -> serde_json::Result<Playlist> {
     let params = format!("client_id={}", *API_KEY);
     let url    = format!("{}/playlists/{}?{}", BASE_URL, id, params);
     let mut res = http::client().get(&url)
@@ -76,11 +75,11 @@ pub fn fetch_playlist(id: &str) -> DecodeResult<Playlist> {
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    return  json::decode::<Playlist>(&body)
+    return serde_json::from_str(&body)
 }
 
 
-pub fn fetch_user_tracks(id: &str) -> DecodeResult<Vec<Track>> {
+pub fn fetch_user_tracks(id: &str) -> serde_json::Result<Vec<Track>> {
     let params = format!("client_id={}", *API_KEY);
     let url    = format!("{}/users/{}/tracks?{}", BASE_URL, id, params);
     let mut res = http::client().get(&url)
@@ -88,6 +87,6 @@ pub fn fetch_user_tracks(id: &str) -> DecodeResult<Vec<Track>> {
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    return  json::decode::<Vec<Track>>(&body)
+    return  serde_json::from_str(&body)
 }
 
