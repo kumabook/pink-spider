@@ -1,7 +1,8 @@
 extern crate rustc_serialize;
 use std::io::Read;
 use rustc_serialize::json;
-use hyper::Client;
+
+use http;
 
 static BASE_URL: &'static str = "https://itunes.apple.com/";
 
@@ -70,10 +71,9 @@ pub struct LookupResponse<T> {
 }
 
 pub fn fetch_songs(id: &str, country: &str) -> json::DecodeResult<LookupResponse<Track>> {
-    let client = Client::new();
     let url = format!("{}/lookup/?id={}&country={}&entity=song", BASE_URL, id, country);
-    let mut res = client.get(&url)
-                        .send().unwrap();
+    let mut res = http::client().get(&url)
+                                .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
     json::decode::<LookupResponse<Track>>(&body)

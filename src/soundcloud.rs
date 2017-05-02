@@ -1,9 +1,9 @@
 use std::io::Read;
-use hyper::Client;
 use hyper::header::Connection;
 use rustc_serialize::json;
 use rustc_serialize::json::{DecodeResult};
 use get_env;
+use http;
 
 static BASE_URL: &'static str = "https://api.soundcloud.com";
 
@@ -60,10 +60,9 @@ pub struct User {
 pub fn fetch_track(id: &str) -> DecodeResult<Track> {
     let params = format!("client_id={}", *API_KEY);
     let url    = format!("{}/tracks/{}?{}", BASE_URL, id, params);
-    let client = Client::new();
-    let mut res = client.get(&url)
-                        .header(Connection::close())
-                        .send().unwrap();
+    let mut res = http::client().get(&url)
+                                .header(Connection::close())
+                                .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
     return json::decode::<Track>(&body)
@@ -72,10 +71,9 @@ pub fn fetch_track(id: &str) -> DecodeResult<Track> {
 pub fn fetch_playlist(id: &str) -> DecodeResult<Playlist> {
     let params = format!("client_id={}", *API_KEY);
     let url    = format!("{}/playlists/{}?{}", BASE_URL, id, params);
-    let client = Client::new();
-    let mut res = client.get(&url)
-                        .header(Connection::close())
-                        .send().unwrap();
+    let mut res = http::client().get(&url)
+                                .header(Connection::close())
+                                .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
     return  json::decode::<Playlist>(&body)
@@ -85,10 +83,9 @@ pub fn fetch_playlist(id: &str) -> DecodeResult<Playlist> {
 pub fn fetch_user_tracks(id: &str) -> DecodeResult<Vec<Track>> {
     let params = format!("client_id={}", *API_KEY);
     let url    = format!("{}/users/{}/tracks?{}", BASE_URL, id, params);
-    let client = Client::new();
-    let mut res = client.get(&url)
-                        .header(Connection::close())
-                        .send().unwrap();
+    let mut res = http::client().get(&url)
+                                .header(Connection::close())
+                                .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
     return  json::decode::<Vec<Track>>(&body)

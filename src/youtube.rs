@@ -1,10 +1,10 @@
 use std::io::Read;
-use hyper::Client;
 use hyper::header::Connection;
 use std::collections::BTreeMap;
 use rustc_serialize::json;
 
 use get_env;
+use http;
 
 static BASE_URL:    &'static str = "https://www.googleapis.com/youtube/v3";
 static MAX_RESULTS: i32          = 50;
@@ -170,11 +170,10 @@ pub fn fetch_playlist(id: &str) -> json::DecodeResult<PlaylistResponse> {
                          *API_KEY,
                          id,
                          MAX_RESULTS);
-    let url    = format!("{}/{}?{}", BASE_URL, "playlists", params);
-    let client = Client::new();
-    let mut res = client.get(&url)
-                        .header(Connection::close())
-                        .send().unwrap();
+    let url     = format!("{}/{}?{}", BASE_URL, "playlists", params);
+    let mut res = http::client().get(&url)
+                                .header(Connection::close())
+                                .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
     json::decode::<PlaylistResponse>(&body)
@@ -186,10 +185,9 @@ pub fn fetch_playlist_items(id: &str) -> json::DecodeResult<PlaylistItemResponse
                          id,
                          MAX_RESULTS);
     let url    = format!("{}/{}?{}", BASE_URL, "playlistItems", params);
-    let client = Client::new();
-    let mut res = client.get(&url)
-                        .header(Connection::close())
-                        .send().unwrap();
+    let mut res = http::client().get(&url)
+                                .header(Connection::close())
+                                .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
     json::decode::<PlaylistItemResponse>(&body)
@@ -198,10 +196,9 @@ pub fn fetch_playlist_items(id: &str) -> json::DecodeResult<PlaylistItemResponse
 pub fn fetch_video(id: &str) -> json::DecodeResult<Video> {
     let params = format!("key={}&part=snippet&id={}", *API_KEY, id);
     let url    = format!("{}/{}?{}", BASE_URL, "videos", params);
-    let client = Client::new();
-    let mut res = client.get(&url)
-                        .header(Connection::close())
-                        .send().unwrap();
+    let mut res = http::client().get(&url)
+                                .header(Connection::close())
+                                .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
     let res = try!(json::decode::<VideoResponse>(&body));

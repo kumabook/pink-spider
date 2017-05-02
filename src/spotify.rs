@@ -5,7 +5,6 @@ use std::collections::BTreeMap;
 use std::sync::Mutex;
 use chrono::{NaiveDateTime, UTC, Duration};
 use rustc_serialize::json;
-use hyper::Client;
 use hyper::header::{
     Headers,
     Authorization,
@@ -16,6 +15,7 @@ use hyper::header::{
 };
 use regex::Regex;
 use get_env;
+use http;
 
 static BASE_URL:          &'static str = "https://api.spotify.com/v1";
 pub static TRACK_URI:     &'static str = r"spotify:track:([a-zA-Z0-9_-]+)";
@@ -224,7 +224,6 @@ fn fetch<T>(path: &str) -> json::DecodeResult<T>
     where T: rustc_serialize::Decodable {
     let token  = try!(update_token_if_needed());
     let url    = format!("{}{}", BASE_URL, path);
-    let client = Client::new();
     let mut headers = Headers::new();
     headers.set(
         Authorization(
@@ -234,9 +233,9 @@ fn fetch<T>(path: &str) -> json::DecodeResult<T>
         )
     );
     headers.set(Connection::close());
-    let mut res = client.get(&url)
-                        .headers(headers)
-                        .send().unwrap();
+    let mut res = http::client().get(&url)
+                                .headers(headers)
+                                .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
     json::decode::<T>(&body)
@@ -252,7 +251,6 @@ fn fetch<T>(path: &str) -> json::DecodeResult<T>
 /// ```
 pub fn fetch_token() -> json::DecodeResult<Token> {
     let url         = "https://accounts.spotify.com/api/token";
-    let client      = Client::new();
     let mut headers = Headers::new();
     headers.set(
         Authorization(
@@ -264,10 +262,10 @@ pub fn fetch_token() -> json::DecodeResult<Token> {
     );
     headers.set(ContentType("application/x-www-form-urlencoded".parse().unwrap()));
     headers.set(Connection::close());
-    let mut res = client.post(url)
-                        .body("grant_type=client_credentials")
-                        .headers(headers)
-                        .send().unwrap();
+    let mut res = http::client().post(url)
+                                .body("grant_type=client_credentials")
+                                .headers(headers)
+                                .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
     json::decode::<Token>(&body)

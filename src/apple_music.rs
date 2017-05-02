@@ -8,6 +8,7 @@ use std::fmt;
 use regex::Regex;
 use url::Url;
 use queryst::parse;
+use http;
 
 static BASE_URL:  &'static str = "http://tools.applemusic.com/embed/v1/";
 static MUSIC_URL: &'static str = r#"musicUrl = "([\x00-\x21\x23-\x7F]+)""#; // except \x22(")
@@ -140,9 +141,8 @@ pub fn parse_url(value: &str, regex_str: &str) -> Option<(String, String, String
 }
 
 pub fn fetch_song(id: &str, country: &str) -> ScrapeResult<Song> {
-    let client = Client::new();
     let url = format!("{}/song/{}?country={}", BASE_URL, id, country);
-    let mut res = client.get(&url)
+    let mut res = http::client().get(&url)
         .header(Connection(vec![ConnectionOption::Close]))
         .send()
         .unwrap();
@@ -170,9 +170,8 @@ pub fn fetch_song(id: &str, country: &str) -> ScrapeResult<Song> {
 }
 
 pub fn fetch_album(id: &str, country: &str) -> ScrapeResult<Album> {
-    let client = Client::new();
     let url = format!("{}/album/{}?country={}", BASE_URL, id, country);
-    let mut res = client.get(&url)
+    let mut res = http::client().get(&url)
         .header(Connection(vec![ConnectionOption::Close]))
         .send()
         .unwrap();
@@ -206,9 +205,8 @@ pub fn fetch_album(id: &str, country: &str) -> ScrapeResult<Album> {
 }
 
 pub fn fetch_playlist(id: &str, country: &str) -> ScrapeResult<Playlist> {
-    let client = Client::new();
     let url = format!("{}/playlist/pl.{}?country={}", BASE_URL, id, country);
-    let mut res = client.get(&url)
+    let mut res = http::client().get(&url)
         .header(Connection(vec![ConnectionOption::Close]))
         .send()
         .unwrap();

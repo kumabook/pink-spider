@@ -1,4 +1,5 @@
 extern crate hyper;
+extern crate hyper_native_tls;
 extern crate iron;
 extern crate rustc_serialize;
 extern crate html5ever;
@@ -33,3 +34,4 @@ pub mod youtube;
 pub mod soundcloud;
 pub mod spotify;
 pub mod get_env;
+pub mod http;
