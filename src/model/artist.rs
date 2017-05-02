@@ -1,9 +1,7 @@
-use std::collections::BTreeMap;
-use rustc_serialize::json::{ToJson, Json};
 use postgres;
 use uuid::Uuid;
 use std::fmt;
-use chrono::{NaiveDateTime, UTC, DateTime};
+use chrono::{NaiveDateTime, UTC};
 
 use soundcloud;
 use spotify;
@@ -21,7 +19,7 @@ static PROPS: [&'static str; 9]  = ["id",
                                     "created_at",
                                     "updated_at"];
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Artist {
     pub id:            Uuid,
     pub provider:      Provider,
@@ -34,31 +32,13 @@ pub struct Artist {
     pub updated_at:    NaiveDateTime,
 }
 
-impl ToJson for Artist {
-    fn to_json(&self) -> Json {
-        let created_at   = DateTime::<UTC>::from_utc(self.created_at  , UTC);
-        let updated_at   = DateTime::<UTC>::from_utc(self.updated_at  , UTC);
-        let mut d = BTreeMap::new();
-        d.insert("id".to_string()           , self.id.to_string().to_json());
-        d.insert("provider".to_string()     , self.provider.to_json());
-        d.insert("identifier".to_string()   , self.identifier.to_json());
-        d.insert("url".to_string()          , self.url.to_json());
-        d.insert("name".to_string()         , self.name.to_json());
-        d.insert("thumbnail_url".to_string(), self.thumbnail_url.to_json());
-        d.insert("artwork_url".to_string()  , self.artwork_url.to_json());
-        d.insert("created_at".to_string()   , created_at.to_rfc3339().to_json());
-        d.insert("updated_at".to_string()   , updated_at.to_rfc3339().to_json());
-        Json::Object(d)
-    }
-}
-
 impl fmt::Display for Artist {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}:{}", self.provider, self.identifier)
     }
 }
 
-impl Model for Artist {
+impl<'a> Model<'a> for Artist {
     fn table_name() -> String { "artists".to_string() }
     fn props_str(prefix: &str) -> String {
         PROPS
