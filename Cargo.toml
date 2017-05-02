@@ -27,22 +27,24 @@ hyper           = "*"
 regex           = "*"
 string_cache    = "*"
 urlencoded      = "*"
-rustc-serialize = "*"
 tendril         = "*"
 html5ever       = "*"
 scraper         = "*"
 url             = "*"
 lazy_static     = "*"
 toml            = "0.2.1"
-uuid            = { version = "*", features = ["v4", "rustc-serialize", "serde"] }
+uuid            = { version = "0.5.0", features = ["v4", "serde"] }
 staticfile      = "*"
-chrono          = { version = "*", features = ["serde", "rustc-serialize"] }
+chrono          = { version = "*", features = ["serde"] }
 queryst         = "*"
 bodyparser      = "*"
-serde_json      = "*"
+serde           = "^1"
+serde_json      = "^1"
+serde_derive    = "^1"
 [dependencies.mount]
 git = "https://github.com/iron/mount.git"
 [dependencies.postgres]
-version = "0.12"
+git = "https://github.com/sfackler/rust-postgres.git"
+branch = "master"
 features = ["with-uuid", "with-chrono"]
 optional = true
