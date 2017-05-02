@@ -4,12 +4,12 @@ extern crate router;
 extern crate staticfile;
 extern crate mount;
 extern crate urlencoded;
-extern crate rustc_serialize;
 extern crate html5ever;
 extern crate regex;
 extern crate uuid;
 extern crate chrono;
 extern crate bodyparser;
+extern crate serde;
 extern crate serde_json;
 
 use std::net::SocketAddrV4;
@@ -26,38 +26,34 @@ use urlencoded::UrlEncodedBody;
 use std::str::FromStr;
 use uuid::Uuid;
 
-#[macro_use]
-extern crate string_cache;
 extern crate pink_spider;
 
 use pink_spider::error::Error;
 use pink_spider::scraper::extract;
 use pink_spider::model::{Model, Track, Playlist, Album, Artist, Entry, Enclosure, Provider, PaginatedCollection};
-use rustc_serialize::json::{ToJson, Json};
 use pink_spider::get_env;
+
+fn to_err(e: serde_json::Error) -> Error { Error::from(e) }
 
 pub fn index_entries(req: &mut Request) -> IronResult<Response> {
     let (page, per_page) = pagination_params(req);
     let entries          = Entry::find(page, per_page);
-    let json_obj: Json   = entries.to_json();
-    let json_str: String = json_obj.to_string();
-    Ok(Response::with((status::Ok, application_json(), json_str)))
+    let body             = try!(serde_json::to_string(&entries).map_err(to_err));
+    Ok(Response::with((status::Ok, application_json(), body)))
 }
 
-pub fn index<T: Model>(req: &mut Request) -> IronResult<Response> {
+pub fn index<'a, T: Model<'a>>(req: &mut Request) -> IronResult<Response> {
     let (page, per_page) = pagination_params(req);
     let enclosures       = T::find(page, per_page);
-    let json_obj: Json   = enclosures.to_json();
-    let json_str: String = json_obj.to_string();
-    Ok(Response::with((status::Ok, application_json(), json_str)))
+    let body             = try!(serde_json::to_string(&enclosures).map_err(to_err));
+    Ok(Response::with((status::Ok, application_json(), body)))
 }
 
-pub fn mget<T: Model>(req: &mut Request) -> IronResult<Response> {
+pub fn mget<'a, T: Model<'a>>(req: &mut Request) -> IronResult<Response> {
     let ids              = try!(params_as_uuid_array(req));
     let items            = try!(T::mget(ids));
-    let json_obj: Json   = items.to_json();
-    let json_str: String = json_obj.to_string();
-    Ok(Response::with((status::Ok, application_json(), json_str)))
+    let body             = try!(serde_json::to_string(&items).map_err(to_err));
+    Ok(Response::with((status::Ok, application_json(), body)))
 }
 
 fn params_as_uuid_array(req: &mut Request) -> IronResult<Vec<Uuid>> {
@@ -73,7 +69,7 @@ fn params_as_uuid_array(req: &mut Request) -> IronResult<Vec<Uuid>> {
     }
 }
 
-pub fn index_by_entry<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
+pub fn index_by_entry<'a, T: Enclosure<'a>>(req: &mut Request) -> IronResult<Response> {
     let ref entry_id = req.extensions.get::<Router>().unwrap().find("entry_id").unwrap();
     let uuid = try!(Uuid::parse_str(entry_id).map_err(|_| Error::Unprocessable));
     let items = T::find_by_entry_id(uuid);
@@ -83,9 +79,8 @@ pub fn index_by_entry<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
         total:    items.len() as i64,
         items:    items,
     };
-    let json_obj: Json   = col.to_json();
-    let json_str: String = json_obj.to_string();
-    Ok(Response::with((status::Ok, application_json(), json_str)))
+    let body = try!(serde_json::to_string(&col).map_err(to_err));
+    Ok(Response::with((status::Ok, application_json(), body)))
 }
 
 pub fn legacy_playlistify(req: &mut Request) -> IronResult<Response> {
@@ -101,9 +96,8 @@ pub fn legacy_playlistify(req: &mut Request) -> IronResult<Response> {
             .filter(|t| t.provider == Provider::YouTube || t.provider == Provider::SoundCloud)
             .map(|t| t.clone())
             .collect();
-        let json_obj    = entry.to_json() as Json;
-        let json_str    = json_obj.to_string() as String;
-        Ok(Response::with((status::Ok, application_json(), json_str)))
+        let body = try!(serde_json::to_string(&entry).map_err(to_err));
+        Ok(Response::with((status::Ok, application_json(), body)))
     }
     playlistify2(req).map_err(|err| IronError::from(err))
 }
@@ -116,9 +110,8 @@ pub fn playlistify(req: &mut Request) -> IronResult<Response> {
         let force_param = params.get("force").unwrap_or(defaults);
         let force       = force_param.len() > 0 && &force_param[0] == "true";
         let entry       = try!(find_or_playlistify_entry(&url[0], force));
-        let json_obj    = entry.to_json() as Json;
-        let json_str    = json_obj.to_string() as String;
-        Ok(Response::with((status::Ok, application_json(), json_str)))
+        let body        = try!(serde_json::to_string(&entry).map_err(to_err));
+        Ok(Response::with((status::Ok, application_json(), body)))
     }
     playlistify2(req).map_err(|err| IronError::from(err))
 }
@@ -190,40 +183,30 @@ pub fn playlistify_entry(entry: Entry) -> Result<Entry, Error> {
     Ok(e)
 }
 
-pub fn update<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
+pub fn update<'a, T: Enclosure<'a>>(req: &mut Request) -> IronResult<Response> {
     let mut enclosure = try!(T::find_by_id(&query_as_string(req, "id")));
     try!(enclosure.fetch_props().save());
-    let res = enclosure.to_json().to_string();
-    Ok(Response::with((status::Ok, application_json(), res)))
+    let body = try!(serde_json::to_string(&enclosure).map_err(to_err));
+    Ok(Response::with((status::Ok, application_json(), body)))
 }
 
-pub fn show<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
+pub fn show<'a, T: Enclosure<'a>>(req: &mut Request) -> IronResult<Response> {
     let provider   = req.extensions.get::<Router>().unwrap().find("provider").unwrap();
     let identifier = req.extensions.get::<Router>().unwrap().find("id").unwrap();
     let p = &Provider::new(provider.to_string());
-    match T::find_by(p, identifier) {
-        Ok(enclosure) => {
-            Ok(Response::with((status::Ok,
-                               application_json(),
-                               enclosure.to_json().to_string())))
-        },
-        Err(e) => Ok(e.as_response())
-    }
+    let enclosure = try!(T::find_by(p, identifier));
+    let body      = try!(serde_json::to_string(&enclosure).map_err(to_err));
+    Ok(Response::with((status::Ok, application_json(), body)))
 }
 
-pub fn show_by_id<T: Model>(req: &mut Request) -> IronResult<Response> {
+pub fn show_by_id<'a, T: Model<'a>>(req: &mut Request) -> IronResult<Response> {
     let ref id = req.extensions.get::<Router>().unwrap().find("id").unwrap();
-    match T::find_by_id(id) {
-        Ok(enclosure) => {
-            Ok(Response::with((status::Ok,
-                               application_json(),
-                               enclosure.to_json().to_string())))
-        },
-        Err(e) => Ok(e.as_response())
-    }
+    let enclosure = try!(T::find_by_id(id));
+    let body      = try!(serde_json::to_string(&enclosure).map_err(to_err));
+    Ok(Response::with((status::Ok, application_json(), body)))
 }
 
-pub fn create<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
+pub fn create<'a, T: Enclosure<'a>>(req: &mut Request) -> IronResult<Response> {
     let identifier     = try!(param_as_string(req, "identifier").ok_or(Error::BadRequest));
     let provider       = try!(param_as_string(req, "provider").ok_or(Error::BadRequest));
     let owner_id       = param_as_string(req, "owner_id");
@@ -236,9 +219,8 @@ pub fn create<T: Enclosure>(req: &mut Request) -> IronResult<Response> {
     }
     enclosure.fetch_props();
     try!(enclosure.save());
-    Ok(Response::with((status::Ok,
-                       application_json(),
-                       enclosure.to_json().to_string())))
+    let body = try!(serde_json::to_string(&enclosure).map_err(to_err));
+    Ok(Response::with((status::Ok, application_json(), body)))
 }
 
 fn param_as_string(req: &mut Request, key: &str) -> Option<String> {
