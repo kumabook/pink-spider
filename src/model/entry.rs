@@ -1,9 +1,7 @@
-use std::collections::BTreeMap;
-use rustc_serialize::json::{ToJson, Json};
 use postgres;
 use uuid::Uuid;
 use error::Error;
-use chrono::{NaiveDateTime, UTC, DateTime};
+use chrono::{NaiveDateTime, UTC};
 use super::{conn, Model};
 use model::enclosure::Enclosure;
 use Track;
@@ -19,7 +17,7 @@ static PROPS: [&'static str; 8]  = ["id",
                                     "created_at",
                                     "updated_at"];
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Entry {
     pub id:          Uuid,
     pub url:         String,
@@ -34,30 +32,7 @@ pub struct Entry {
     pub albums:      Vec<Album>,
 }
 
-impl ToJson for Entry {
-    fn to_json(&self) -> Json {
-        let created_at = DateTime::<UTC>::from_utc(self.created_at  , UTC);
-        let updated_at = DateTime::<UTC>::from_utc(self.updated_at  , UTC);
-        let mut d      = BTreeMap::new();
-        let tracks     = Json::Array(self.tracks.iter().map(|x| x.to_json()).collect());
-        let playlists  = Json::Array(self.playlists.iter().map(|x| x.to_json()).collect());
-        let albums     = Json::Array(self.albums.iter().map(|x| x.to_json()).collect());
-        d.insert("id".to_string()         , self.id.to_string().to_json());
-        d.insert("url".to_string()        , self.url.to_json());
-        d.insert("title".to_string()      , self.title.to_json());
-        d.insert("description".to_string(), self.description.to_json());
-        d.insert("visual_url".to_string() , self.visual_url.to_json());
-        d.insert("locale".to_string()     , self.locale.to_json());
-        d.insert("created_at".to_string() , created_at.to_rfc3339().to_json());
-        d.insert("updated_at".to_string() , updated_at.to_rfc3339().to_json());
-        d.insert("tracks".to_string()     , tracks);
-        d.insert("playlists".to_string()  , playlists);
-        d.insert("albums".to_string()     , albums);
-        Json::Object(d)
-    }
-}
-
-impl Model for Entry {
+impl<'a> Model<'a> for Entry {
     fn table_name() -> String {
         "entries".to_string()
     }
