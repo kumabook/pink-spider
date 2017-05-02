@@ -1,4 +1,3 @@
-#[macro_use]
 extern crate pink_spider;
 use pink_spider::youtube;
 use pink_spider::soundcloud;
