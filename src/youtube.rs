@@ -1,7 +1,8 @@
 use std::io::Read;
 use hyper::header::Connection;
 use std::collections::BTreeMap;
-use rustc_serialize::json;
+use serde_json;
+use serde::de::Error;
 
 use get_env;
 use http;
@@ -38,7 +39,7 @@ pub trait HasThumbnail {
     }
 }
 
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Thumbnail {
     pub url:    String,
     pub width:  i32,
@@ -52,7 +53,7 @@ impl PartialEq for Thumbnail {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PlaylistResponse {
     pub kind:          String,
     pub etag:          String,
@@ -62,7 +63,7 @@ pub struct PlaylistResponse {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Playlist {
     pub kind:    String,
     pub etag:    String,
@@ -71,7 +72,7 @@ pub struct Playlist {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PlaylistSnippet {
     pub title:         String,
     pub description:   String,
@@ -83,7 +84,7 @@ pub struct PlaylistSnippet {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PlaylistItemResponse {
     pub kind:          String,
     pub etag:          String,
@@ -93,7 +94,7 @@ pub struct PlaylistItemResponse {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PlaylistItem {
     pub kind:    String,
     pub etag:    String,
@@ -102,7 +103,7 @@ pub struct PlaylistItem {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct PlaylistItemSnippet {
     pub title:         String,
     pub description:   String,
@@ -116,7 +117,7 @@ pub struct PlaylistItemSnippet {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct VideoResponse {
     pub kind:          String,
     pub etag:          String,
@@ -125,7 +126,7 @@ pub struct VideoResponse {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Video {
     pub kind:    String,
     pub etag:    String,
@@ -134,7 +135,7 @@ pub struct Video {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Clone, RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct VideoSnippet {
     pub title:                String,
     pub description:          String,
@@ -165,7 +166,7 @@ impl HasThumbnail for VideoSnippet {
     }
 }
 
-pub fn fetch_playlist(id: &str) -> json::DecodeResult<PlaylistResponse> {
+pub fn fetch_playlist(id: &str) -> serde_json::Result<PlaylistResponse> {
     let params = format!("key={}&part=snippet&id={}&maxResults={}",
                          *API_KEY,
                          id,
@@ -176,10 +177,10 @@ pub fn fetch_playlist(id: &str) -> json::DecodeResult<PlaylistResponse> {
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    json::decode::<PlaylistResponse>(&body)
+    serde_json::from_str(&body)
 }
 
-pub fn fetch_playlist_items(id: &str) -> json::DecodeResult<PlaylistItemResponse> {
+pub fn fetch_playlist_items(id: &str) -> serde_json::Result<PlaylistItemResponse> {
     let params = format!("key={}&part=snippet&playlistId={}&maxResults={}",
                          *API_KEY,
                          id,
@@ -190,10 +191,10 @@ pub fn fetch_playlist_items(id: &str) -> json::DecodeResult<PlaylistItemResponse
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    json::decode::<PlaylistItemResponse>(&body)
+    serde_json::from_str(&body)
 }
 
-pub fn fetch_video(id: &str) -> json::DecodeResult<Video> {
+pub fn fetch_video(id: &str) -> serde_json::Result<Video> {
     let params = format!("key={}&part=snippet&id={}", *API_KEY, id);
     let url    = format!("{}/{}?{}", BASE_URL, "videos", params);
     let mut res = http::client().get(&url)
@@ -201,9 +202,9 @@ pub fn fetch_video(id: &str) -> json::DecodeResult<Video> {
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    let res = try!(json::decode::<VideoResponse>(&body));
-    if res.items.len() > 0 {
-        return Ok(res.items[0].clone());
+    let vr: VideoResponse = try!(serde_json::from_str(&body));
+    if vr.items.len() > 0 {
+        return Ok(vr.items[0].clone());
     }
-    Err(json::DecoderError::ApplicationError("track not found".to_string()))
+    Err(serde_json::error::Error::custom("track not found".to_string()))
 }
