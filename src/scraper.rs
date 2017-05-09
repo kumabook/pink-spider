@@ -1,4 +1,11 @@
-use html5ever::rcdom::{Document, Doctype, Text, Comment, Element};
+use html5ever::rcdom::NodeData::{
+    Document,
+    Doctype,
+    Text,
+    Comment,
+    Element,
+    ProcessingInstruction
+};
 use html5ever::rcdom::{RcDom, Handle};
 use html5ever::{parse_document, Attribute};
 use tendril::stream::TendrilSink;
@@ -82,17 +89,16 @@ fn walk(handle:    Handle,
         albums:    &mut Vec<Album>,
         tracks:    &mut Vec<Track>,
         og_props:  &mut Vec<(String, String)>) {
-    let node = handle.borrow();
-    match node.node {
-        Document         => (),
-        Doctype(_, _, _) => (),
-        Text(_)          => (),
-        Comment(_)       => (),
-        Element(ref name, _, ref attrs) => {
+    match handle.data {
+        Document       => (),
+        Doctype { .. } => (),
+        Text { .. }    => (),
+        Comment { .. } => (),
+        Element { ref name, ref attrs, .. } => {
             let tag_name = name.local.as_ref();
-            let mut ps = extract_opengraph_metadata_from_tag(tag_name, attrs);
+            let mut ps = extract_opengraph_metadata_from_tag(tag_name, &attrs.borrow());
             og_props.append(&mut ps);
-            let (ps, als, ts) = extract_enclosures_from_tag(tag_name, attrs);
+            let (ps, als, ts) = extract_enclosures_from_tag(tag_name, &attrs.borrow());
             for playlist in ps.iter().cloned() {
                 if !(playlists).iter().any(|p| playlist == *p) {
                     (*playlists).push(playlist)
@@ -108,9 +114,10 @@ fn walk(handle:    Handle,
                     (*tracks).push(track)
                 }
             }
-        }
+        },
+        ProcessingInstruction { .. } => unreachable!()
     }
-    for child in node.children.iter() {
+    for child in handle.children.borrow().iter() {
         walk(child.clone(), playlists, albums, tracks, og_props);
     }
 }
