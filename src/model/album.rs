@@ -176,7 +176,7 @@ impl<'a> Enclosure<'a> for Album {
         self.owner_id = owner_id;
         self
     }
-    fn fetch_props(&mut self) -> &mut Album {
+    fn fetch_props(&mut self) -> Result<(), Error> {
         match self.provider {
             Provider::AppleMusic => {
                 let country = apple_music::country(&self.url);
@@ -190,6 +190,10 @@ impl<'a> Enclosure<'a> for Album {
                 Err(_)    => self.disable(),
             },
             _ => self,
+        };
+        match self.state {
+            State::Alive => Ok(()),
+            State::Dead  => Err(Error::NotFound),
         }
     }
     fn find_by_entry_id(entry_id: Uuid) -> Vec<Album> {

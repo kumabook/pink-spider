@@ -7,7 +7,7 @@ pub trait Enclosure<'a> where Self: Model<'a> {
     fn new(provider: Provider, identifier: String) -> Self;
     fn set_owner_id(&mut self, owner_id: Option<String>) -> &mut Self;
     fn set_url(&mut self, url: String) -> &mut Self;
-    fn fetch_props(&mut self) -> &mut Self;
+    fn fetch_props(&mut self) -> Result<(), Error>;
     fn find_by_entry_id(entry_id: Uuid) -> Vec<Self>;
     fn find_by(provider: &Provider, identifier: &str) -> Result<Self, Error> {
         let conn = conn().unwrap();

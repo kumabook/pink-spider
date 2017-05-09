@@ -191,7 +191,7 @@ impl<'a> Enclosure<'a> for Track {
         self
     }
 
-    fn fetch_props(&mut self) -> &mut Track {
+    fn fetch_props(&mut self) -> Result<(), Error> {
         match self.provider {
             Provider::YouTube => match youtube::fetch_video(&self.identifier) {
                 Ok(video) => self.update_with_yt_video(&video),
@@ -213,6 +213,10 @@ impl<'a> Enclosure<'a> for Track {
                 Err(_)       => self.disable(),
             },
             _ => self,
+        };
+        match self.state {
+            State::Alive => Ok(()),
+            State::Dead  => Err(Error::NotFound),
         }
     }
 

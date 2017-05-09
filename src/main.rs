@@ -185,7 +185,8 @@ pub fn playlistify_entry(entry: Entry) -> Result<Entry, Error> {
 
 pub fn update<'a, T: Enclosure<'a>>(req: &mut Request) -> IronResult<Response> {
     let mut enclosure = try!(T::find_by_id(&query_as_string(req, "id")));
-    try!(enclosure.fetch_props().save());
+    try!(enclosure.fetch_props());
+    try!(enclosure.save());
     let body = try!(serde_json::to_string(&enclosure).map_err(to_err));
     Ok(Response::with((status::Ok, application_json(), body)))
 }
@@ -217,7 +218,7 @@ pub fn create<'a, T: Enclosure<'a>>(req: &mut Request) -> IronResult<Response> {
     if let Some(url) = url {
         enclosure.set_url(url);
     }
-    enclosure.fetch_props();
+    try!(enclosure.fetch_props());
     try!(enclosure.save());
     let body = try!(serde_json::to_string(&enclosure).map_err(to_err));
     Ok(Response::with((status::Ok, application_json(), body)))

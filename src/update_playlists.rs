@@ -13,7 +13,7 @@ pub fn main() {
     println!("len {}\n", playlists.len());
     for mut playlist in playlists {
         thread::sleep(Duration::from_millis(500));
-        playlist.fetch_props();
+        let _ = playlist.fetch_props();
         println!("description {:?}", playlist.description);
         match playlist.save() {
             Ok(_) => {

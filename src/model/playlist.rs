@@ -174,7 +174,7 @@ impl<'a> Enclosure<'a> for Playlist {
         self.owner_id = owner_id;
         self
     }
-    fn fetch_props(&mut self) -> &mut Playlist {
+    fn fetch_props(&mut self) -> Result<(), Error> {
         match self.provider {
             Provider::YouTube => {
                 let items = youtube::fetch_playlist_items(&self.identifier)
@@ -182,36 +182,41 @@ impl<'a> Enclosure<'a> for Playlist {
                     .unwrap_or(vec![]);
                 if let Ok(res) = youtube::fetch_playlist(&self.identifier) {
                     if let Some(playlist) = res.items.iter().nth(0) {
-                        return self.update_with_yt_playlist(&playlist, &items);
+                        self.update_with_yt_playlist(&playlist, &items);
                     }
                 }
-                return self.disable();
+                self.disable();
             },
             Provider::SoundCloud => {
                 match soundcloud::fetch_playlist(&self.identifier) {
-                    Ok(playlist) => return self.update_with_sc_playlist(&playlist),
-                    Err(_)       => return self.disable()
-                }
+                    Ok(playlist) => self.update_with_sc_playlist(&playlist),
+                    Err(_)       => self.disable()
+                };
             },
             Provider::AppleMusic => {
                 let country = apple_music::country(&self.url);
                 match apple_music::fetch_playlist(&self.identifier, &country) {
-                    Ok(playlist) => return self.update_with_am_playlist(&playlist),
-                    Err(_)       => return self.disable(),
-                }
+                    Ok(playlist) => self.update_with_am_playlist(&playlist),
+                    Err(_)       => self.disable(),
+                };
             },
             Provider::Spotify => {
-                if self.owner_id.is_none() {
-                    return self;
-                }
-                let owner_id = self.clone().owner_id.unwrap();
-                match spotify::fetch_playlist(&owner_id, &self.identifier) {
-                    Ok(playlist) => return self.update_with_sp_playlist(&playlist),
-                    Err(_)       => return self.disable(),
-
+                if let Some(owner_id) = self.clone().owner_id {
+                    match spotify::fetch_playlist(&owner_id, &self.identifier) {
+                        Ok(playlist) => {
+                            self.update_with_sp_playlist(&playlist);
+                        },
+                        Err(_)       => {
+                            self.disable();
+                        },
+                    }
                 }
             },
-            _ => self,
+            _ => (),
+        };
+        match self.state {
+            State::Alive => Ok(()),
+            State::Dead  => Err(Error::NotFound),
         }
     }
     fn find_by_entry_id(entry_id: Uuid) -> Vec<Playlist> {

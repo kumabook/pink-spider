@@ -187,7 +187,7 @@ fn extract_identifier(value: &str, regex_str: &str) -> Option<String> {
 
 fn create_spotify_playlist(user_id: String, playlist_id: String) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
     let mut playlist = Playlist::new(Provider::Spotify, playlist_id);
-    playlist.set_owner_id(Some(user_id)).fetch_props();
+    let _ = playlist.set_owner_id(Some(user_id)).fetch_props();
     (vec![playlist], vec![], vec![])
 }
 
