@@ -2,7 +2,9 @@ use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum State {
+    #[serde(rename = "alive")]
     Alive,
+    #[serde(rename = "dead")]
     Dead,
 }
 
