@@ -4,6 +4,8 @@
 
 [![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
 
+<img height="260" src="public/no_image.png">
+
 ## What's this?
 
 Pink Spider is a music spider. Currently crawl YouTube and SoundCloud api
