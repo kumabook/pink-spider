@@ -11,10 +11,10 @@ use html5ever::{parse_document, Attribute};
 use tendril::stream::TendrilSink;
 use std::default::Default;
 use regex::Regex;
-use hyper::Client;
 use hyper::header::Connection;
 use hyper::header::ConnectionOption;
 use hyper::header::UserAgent;
+use http;
 
 use Provider;
 use Track;
@@ -49,7 +49,7 @@ pub struct ScraperProduct {
 }
 
 pub fn extract(url: &str) -> Result<ScraperProduct, Error> {
-    let client = Client::new();
+    let client      = http::client();
     let mut builder = client.get(url)
         .header(Connection(vec![ConnectionOption::Close]));
     if *USER_AGENT != "" {
