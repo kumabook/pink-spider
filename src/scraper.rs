@@ -42,6 +42,7 @@ const EXPAND_SOUNDCLOUD_PLAYLIST: bool = true;
 
 #[derive(Debug)]
 pub struct ScraperProduct {
+    pub content:   String,
     pub playlists: Vec<Playlist>,
     pub albums:    Vec<Album>,
     pub tracks:    Vec<Track>,
@@ -61,17 +62,19 @@ pub fn extract(url: &str) -> Result<ScraperProduct, Error> {
             .from_utf8()
             .read_from(&mut res)
             .unwrap();
+        let mut content   = String::new();
         let mut playlists = Vec::new();
         let mut tracks    = Vec::new();
         let mut albums    = Vec::new();
         let mut og_props  = Vec::new();
-        walk(dom.document, &mut playlists, &mut albums, &mut tracks, &mut og_props);
+        walk(dom.document, None, &mut content, &mut playlists, &mut albums, &mut tracks, &mut og_props);
         let og_obj = if og_props.len() > 0 {
             Some(opengraph::Object::new(&og_props))
         } else {
             None
         };
         Ok(ScraperProduct {
+            content:   content,
             playlists: playlists,
             albums:    albums,
             tracks:    tracks,
@@ -83,19 +86,35 @@ pub fn extract(url: &str) -> Result<ScraperProduct, Error> {
     }
 }
 
+pub fn escape_default(s: &str) -> String {
+    s.chars().flat_map(|c| c.escape_default()).collect()
+}
+
 // This is not proper HTML serialization, of course.
 fn walk(handle:    Handle,
+        tag:       Option<&str>,
+        content:   &mut String,
         playlists: &mut Vec<Playlist>,
         albums:    &mut Vec<Album>,
         tracks:    &mut Vec<Track>,
         og_props:  &mut Vec<(String, String)>) {
+    let mut tag = tag;
     match handle.data {
         Document       => (),
         Doctype { .. } => (),
-        Text { .. }    => (),
+        Text { ref contents } => {
+            match tag {
+                Some("script") => (),
+                Some("SCRIPT") => (),
+                Some("style")  => (),
+                Some("STYLE")  => (),
+                _              => content.push_str(&contents.borrow().trim()),
+            }
+        },
         Comment { .. } => (),
         Element { ref name, ref attrs, .. } => {
             let tag_name = name.local.as_ref();
+            tag = Some(tag_name);
             let mut ps = extract_opengraph_metadata_from_tag(tag_name, &attrs.borrow());
             og_props.append(&mut ps);
             let (ps, als, ts) = extract_enclosures_from_tag(tag_name, &attrs.borrow());
@@ -118,7 +137,7 @@ fn walk(handle:    Handle,
         ProcessingInstruction { .. } => unreachable!()
     }
     for child in handle.children.borrow().iter() {
-        walk(child.clone(), playlists, albums, tracks, og_props);
+        walk(child.clone(), tag, content, playlists, albums, tracks, og_props);
     }
 }
 
