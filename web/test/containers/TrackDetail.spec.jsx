@@ -1,4 +1,5 @@
 import 'url-search-params-polyfill';
+import nisemono         from 'nisemono';
 import React            from 'react';
 import assert           from 'assert';
 import { mount }        from 'enzyme';
@@ -8,10 +9,18 @@ import { Card }         from 'material-ui/Card';
 import createTestStore  from '../createTestStore';
 import TrackDetail      from '../../js/containers/TrackDetail';
 import track            from '../../js/api/track';
-import nisemono         from 'nisemono';
 
 describe('<TrackDetail />', () => {
   let show = null;
+  before(() => {
+    const mock = nisemono.func();
+    nisemono.expects(mock).resolves({});
+    show = track.show;
+    track.show = mock;
+  });
+  after(() => {
+    track.show = show;
+  });
   it('render', () => {
     const params = new URLSearchParams();
     params.append('page', 0);

@@ -1,4 +1,5 @@
 const { JSDOM } = require('jsdom');
+const injectTapEventPlugin = require('react-tap-event-plugin');
 
 const jsdom = new JSDOM('<!doctype html><html><body></body></html>');
 const { window } = jsdom;
@@ -17,5 +18,4 @@ global.navigator = {
 };
 copyProps(window, global);
 
-const injectTapEventPlugin = require('react-tap-event-plugin');
 injectTapEventPlugin();
