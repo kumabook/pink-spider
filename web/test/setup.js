@@ -16,3 +16,6 @@ global.navigator = {
   userAgent: 'node.js'
 };
 copyProps(window, global);
+
+const injectTapEventPlugin = require('react-tap-event-plugin');
+injectTapEventPlugin();

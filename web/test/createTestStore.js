@@ -1,4 +1,4 @@
-import { hashHistory }      from 'react-router';
+import createHistory        from 'history/createHashHistory';
 import { routerMiddleware } from 'react-router-redux';
 import thunk                from 'redux-thunk';
 import {
@@ -8,6 +8,7 @@ import {
 import reducers from '../js/reducers';
 
 export default () => {
-  const middleware = routerMiddleware(hashHistory);
+  const history = createHistory();
+  const middleware = routerMiddleware(history);
   return createStore(reducers, applyMiddleware(middleware, thunk));
 };
