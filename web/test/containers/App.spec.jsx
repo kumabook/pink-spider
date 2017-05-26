@@ -5,7 +5,6 @@ import { MemoryRouter, Switch } from 'react-router-dom'
 import MuiThemeProvider         from 'material-ui/styles/MuiThemeProvider';
 import AppBar                   from 'material-ui/AppBar';
 import Drawer                   from 'material-ui/Drawer';
-import injectTapEventPlugin     from 'react-tap-event-plugin';
 import createTestStore          from '../createTestStore';
 import App                      from '../../js/containers/App';
 

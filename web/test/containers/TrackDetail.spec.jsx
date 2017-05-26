@@ -1,3 +1,4 @@
+import 'url-search-params-polyfill';
 import React            from 'react';
 import assert           from 'assert';
 import { mount }        from 'enzyme';
@@ -6,7 +7,6 @@ import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import { Card }         from 'material-ui/Card';
 import createTestStore  from '../createTestStore';
 import TrackDetail      from '../../js/containers/TrackDetail';
-import 'url-search-params-polyfill';
 import track            from '../../js/api/track';
 import nisemono         from 'nisemono';
 

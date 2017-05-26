@@ -1,13 +1,12 @@
+import 'url-search-params-polyfill';
 import React                from 'react';
 import assert               from 'assert';
 import { mount }            from 'enzyme';
 import { MemoryRouter }     from 'react-router-dom'
 import MuiThemeProvider     from 'material-ui/styles/MuiThemeProvider';
 import { Table }            from 'material-ui/Table';
-import injectTapEventPlugin from 'react-tap-event-plugin';
 import createTestStore      from '../createTestStore';
 import EntryList            from '../../js/containers/EntryList';
-import 'url-search-params-polyfill';
 
 describe('<EntryList />', () => {
   it('render', () => {

@@ -10,7 +10,6 @@ import TrackList        from '../../js/containers/TrackList';
 describe('<TrackList />', () => {
   it('render', () => {
     const location = {query: { page: 0, perPage: 10 }};
-    const params   = {entry_id: 'entry_id' };
     const store    = createTestStore();
     const match = {
       params: { entry_id: 'entry_id' }
