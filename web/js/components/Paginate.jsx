@@ -20,9 +20,9 @@ const Paginate = ({ page, pageCount, onChange }) => (
 );
 
 Paginate.propTypes = {
-  page:      React.PropTypes.number,
-  pageCount: React.PropTypes.number,
-  onChange:  React.PropTypes.func,
+  page:      React.PropTypes.number.isRequired,
+  pageCount: React.PropTypes.number.isRequired,
+  onChange:  React.PropTypes.func.isRequired,
 };
 
 export default Paginate;

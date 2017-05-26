@@ -22,11 +22,11 @@ class TrackList extends React.Component {
   static get propTypes() {
     return {
       tracks:                  React.PropTypes.object.isRequired,
-      page:                    React.PropTypes.number,
-      fetchTracks:             React.PropTypes.func,
-      handleDetailButtonClick: React.PropTypes.func,
-      handleUpdateButtonClick: React.PropTypes.func,
-      handlePageChange:        React.PropTypes.func,
+      page:                    React.PropTypes.number.isRequired,
+      fetchTracks:             React.PropTypes.func.isRequired,
+      handleDetailButtonClick: React.PropTypes.func.isRequired,
+      handleUpdateButtonClick: React.PropTypes.func.isRequired,
+      handlePageChange:        React.PropTypes.func.isRequired,
     };
   }
   componentDidUpdate() {

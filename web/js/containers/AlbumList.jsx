@@ -22,11 +22,11 @@ class AlbumList extends React.Component {
   static get propTypes() {
     return {
       albums:                  React.PropTypes.object.isRequired,
-      page:                    React.PropTypes.number,
-      fetchAlbums:             React.PropTypes.func,
-      handleDetailButtonClick: React.PropTypes.func,
-      handleUpdateButtonClick: React.PropTypes.func,
-      handlePageChange:        React.PropTypes.func,
+      page:                    React.PropTypes.number.isRequired,
+      fetchAlbums:             React.PropTypes.func.isRequired,
+      handleDetailButtonClick: React.PropTypes.func.isRequired,
+      handleUpdateButtonClick: React.PropTypes.func.isRequired,
+      handlePageChange:        React.PropTypes.func.isRequired,
     };
   }
   componentDidUpdate() {

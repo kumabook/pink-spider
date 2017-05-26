@@ -31,9 +31,9 @@ class ArtistList extends React.Component {
   static get propTypes() {
     return {
       artists:          React.PropTypes.object.isRequired,
-      page:             React.PropTypes.number,
-      fetchArtists:     React.PropTypes.func,
-      handlePageChange: React.PropTypes.func,
+      page:             React.PropTypes.number.isRequired,
+      fetchArtists:     React.PropTypes.func.isRequired,
+      handlePageChange: React.PropTypes.func.isRequired,
     };
   }
   componentDidUpdate() {
@@ -49,16 +49,17 @@ class ArtistList extends React.Component {
           <a href={getUrl(artist)}>
             <img
               src={getThumbnailUrl(artist)}
-              role="presentation"
               className="artist-list-thumb"
+              alt="thumbnail"
             />
           </a>
         </TableRowColumn>
         <TableRowColumn>
           <img
-            role="presentation"
             src={getImageOfProvider(artist.provider)}
-            width="16" height="16"
+            width="16"
+            height="16"
+            alt="provider"
           />
           {artist.name || `${artist.provider} id: ${artist.identifier}`}
         </TableRowColumn>

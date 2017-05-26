@@ -27,8 +27,8 @@ class TrackDetail extends React.Component {
     return {
       item:                    React.PropTypes.object.isRequired,
       status:                  React.PropTypes.string.isRequired,
-      fetchTrackIfNeeded:      React.PropTypes.func,
-      handleUpdateButtonClick: React.PropTypes.func,
+      fetchTrackIfNeeded:      React.PropTypes.func.isRequired,
+      handleUpdateButtonClick: React.PropTypes.func.isRequired,
     };
   }
   componentDidMount() {
@@ -71,7 +71,7 @@ class TrackDetail extends React.Component {
           avatar={getImageOfProvider(provider)}
         />
         <CardMedia style={style} overlay={overlay} >
-          <img role="presentation" src={state === 'alive' ? artworkUrl : DEAD_IMAGE} />
+          <img alt="artwork" src={state === 'alive' ? artworkUrl : DEAD_IMAGE} />
         </CardMedia>
         <CardTitle title={title} />
         <CardActions>

@@ -11,7 +11,6 @@ import {
   TableRowColumn,
 } from 'material-ui/Table';
 import Dialog           from 'material-ui/Dialog';
-import RaisedButton     from 'material-ui/RaisedButton';
 import CircularProgress from 'material-ui/CircularProgress';
 import { Status }       from '../reducers/entries';
 import parseIntOr       from '../utils/parseIntOr';
@@ -19,7 +18,6 @@ import datePrettify     from '../utils/datePrettify';
 import Paginate         from '../components/Paginate';
 import {
   fetchEntries,
-  playlistify,
 } from '../actions';
 
 import { DEFAULT_PER_PAGE } from '../api/pagination';
@@ -28,10 +26,10 @@ import { NO_IMAGE }         from '../utils/thumbnail';
 class EntryList extends React.Component {
   static get propTypes() {
     return {
-      entries:             React.PropTypes.object.isRequired,
-      page:                React.PropTypes.number,
-      fetchEntries:        React.PropTypes.func,
-      handlePageChange:    React.PropTypes.func,
+      entries:          React.PropTypes.object.isRequired,
+      page:             React.PropTypes.number.isRequired,
+      fetchEntries:     React.PropTypes.func.isRequired,
+      handlePageChange: React.PropTypes.func.isRequired,
     };
   }
   componentDidUpdate() {
@@ -47,8 +45,8 @@ class EntryList extends React.Component {
           <a href={entry.url}>
             <img
               src={entry.visual_url || NO_IMAGE}
-              role="presentation"
               className="entry-list-thumb"
+              alt="visual_url"
             />
           </a>
         </TableRowColumn>
@@ -94,7 +92,7 @@ class EntryList extends React.Component {
               <TableHeaderColumn>title</TableHeaderColumn>
               <TableHeaderColumn>description</TableHeaderColumn>
               <TableHeaderColumn>updated at</TableHeaderColumn>
-              <TableHeaderColumn>tracks</TableHeaderColumn>
+              <TableHeaderColumn>links</TableHeaderColumn>
             </TableRow>
           </TableHeader>
           <TableBody displayRowCheckbox={false}>

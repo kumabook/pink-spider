@@ -28,8 +28,8 @@ const PlaylistListTableRow = ({ playlist, onDetailButtonClick }) => (
       <a href={getUrl(playlist)}>
         <img
           src={getThumbnailUrl(playlist)}
-          role="presentation"
           className="playlist-list-thumb"
+          alt="thumbnail"
         />
       </a>
     </TableRowColumn>
@@ -38,9 +38,10 @@ const PlaylistListTableRow = ({ playlist, onDetailButtonClick }) => (
     </TableRowColumn>
     <TableRowColumn>
       <img
-        role="presentation"
         src={getImageOfProvider(playlist.provider)}
-        width="16" height="16"
+        width="16"
+        height="16"
+        alt="provider"
       />
       {getOwnerName(playlist)}
     </TableRowColumn>
@@ -64,8 +65,8 @@ PlaylistListTableRow.propTypes = {
     provider:      React.PropTypes.string.isRequired,
     identifier:    React.PropTypes.string.isRequired,
     thumbnail_url: React.PropTypes.string,
-  }),
-  onDetailButtonClick: React.PropTypes.func,
+  }).isRequired,
+  onDetailButtonClick: React.PropTypes.func.isRequired,
 };
 
 export default PlaylistListTableRow;

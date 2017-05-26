@@ -25,8 +25,8 @@ const AlbumListTableRow = ({ album, onDetailButtonClick }) => (
       <a href={getUrl(album.url)}>
         <img
           src={getThumbnailUrl(album)}
-          role="presentation"
           className="album-list-thumb"
+          alt="thumbnail"
         />
       </a>
     </TableRowColumn>
@@ -35,9 +35,10 @@ const AlbumListTableRow = ({ album, onDetailButtonClick }) => (
     </TableRowColumn>
     <TableRowColumn>
       <img
-        role="presentation"
         src={getImageOfProvider(album.provider)}
-        width="16" height="16"
+        width="16"
+        height="16"
+        alt="provider"
       />
       {album.owner_name}
     </TableRowColumn>
@@ -61,8 +62,13 @@ AlbumListTableRow.propTypes = {
     provider:      React.PropTypes.string.isRequired,
     identifier:    React.PropTypes.string.isRequired,
     thumbnail_url: React.PropTypes.string,
-  }),
-  onDetailButtonClick: React.PropTypes.func,
+  }).isRequired,
+  onDetailButtonClick: React.PropTypes.func.isRequired,
+};
+
+AlbumListTableRow.defaultProps = {
+  owner_name:    '',
+  thumbnail_url: null,
 };
 
 export default AlbumListTableRow;

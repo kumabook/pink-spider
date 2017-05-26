@@ -22,10 +22,10 @@ class PlaylistList extends React.Component {
   static get propTypes() {
     return {
       playlists:               React.PropTypes.object.isRequired,
-      page:                    React.PropTypes.number,
-      fetchPlaylists:          React.PropTypes.func,
-      handleDetailButtonClick: React.PropTypes.func,
-      handlePageChange:        React.PropTypes.func,
+      page:                    React.PropTypes.number.isRequired,
+      fetchPlaylists:          React.PropTypes.func.isRequired,
+      handleDetailButtonClick: React.PropTypes.func.isRequired,
+      handlePageChange:        React.PropTypes.func.isRequired,
     };
   }
   componentDidUpdate() {

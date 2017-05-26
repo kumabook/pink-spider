@@ -10,14 +10,14 @@ import { toggleDrawler } from '../actions';
 class App extends React.Component {
   static get propTypes() {
     return {
-      children:                 React.PropTypes.element,
-      handleClick:              React.PropTypes.func,
-      handleEntriesMenuClick:   React.PropTypes.func,
-      handlePlaylistsMenuClick: React.PropTypes.func,
-      handleAlbumsMenuClick:    React.PropTypes.func,
-      handleTracksMenuClick:    React.PropTypes.func,
-      handleArtistsMenuClick:   React.PropTypes.func,
-      drawlerIsOpen:            React.PropTypes.bool,
+      children:                 React.PropTypes.element.isRequired,
+      handleClick:              React.PropTypes.func.isRequired,
+      handleEntriesMenuClick:   React.PropTypes.func.isRequired,
+      handlePlaylistsMenuClick: React.PropTypes.func.isRequired,
+      handleAlbumsMenuClick:    React.PropTypes.func.isRequired,
+      handleTracksMenuClick:    React.PropTypes.func.isRequired,
+      handleArtistsMenuClick:   React.PropTypes.func.isRequired,
+      drawlerIsOpen:            React.PropTypes.bool.isRequired,
     };
   }
   render() {

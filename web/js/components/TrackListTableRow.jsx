@@ -25,8 +25,8 @@ const TrackListTableRow = ({ track, onDetailButtonClick, onUpdateButtonClick }) 
       <a href={getUrl(track.url)}>
         <img
           src={getThumbnailUrl(track)}
-          role="presentation"
           className="track-list-thumb"
+          alt="thumbnail"
         />
       </a>
     </TableRowColumn>
@@ -35,9 +35,10 @@ const TrackListTableRow = ({ track, onDetailButtonClick, onUpdateButtonClick }) 
     </TableRowColumn>
     <TableRowColumn>
       <img
-        role="presentation"
         src={getImageOfProvider(track.provider)}
-        width="16" height="16"
+        width="16"
+        height="16"
+        alt="provider"
       />
       {track.owner_name}
     </TableRowColumn>
@@ -68,9 +69,9 @@ TrackListTableRow.propTypes = {
     provider:      React.PropTypes.string.isRequired,
     identifier:    React.PropTypes.string.isRequired,
     thumbnail_url: React.PropTypes.string,
-  }),
-  onDetailButtonClick: React.PropTypes.func,
-  onUpdateButtonClick: React.PropTypes.func,
+  }).isRequired,
+  onDetailButtonClick: React.PropTypes.func.isRequired,
+  onUpdateButtonClick: React.PropTypes.func.isRequired,
 };
 
 export default TrackListTableRow;
