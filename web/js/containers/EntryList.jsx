@@ -1,7 +1,7 @@
-import React             from 'react';
-import { connect }       from 'react-redux';
-import { Link }          from 'react-router';
-import { push, replace } from 'react-router-redux';
+import React                from 'react';
+import { connect }          from 'react-redux';
+import { withRouter, Link } from 'react-router-dom';
+import { push, replace }    from 'react-router-redux';
 import {
   Table,
   TableBody,
@@ -11,12 +11,16 @@ import {
   TableRowColumn,
 } from 'material-ui/Table';
 import Dialog           from 'material-ui/Dialog';
+import RaisedButton     from 'material-ui/RaisedButton';
 import CircularProgress from 'material-ui/CircularProgress';
-import { fetchEntries } from '../actions';
 import { Status }       from '../reducers/entries';
 import parseIntOr       from '../utils/parseIntOr';
 import datePrettify     from '../utils/datePrettify';
 import Paginate         from '../components/Paginate';
+import {
+  fetchEntries,
+  playlistify,
+} from '../actions';
 
 import { DEFAULT_PER_PAGE } from '../api/pagination';
 import { NO_IMAGE }         from '../utils/thumbnail';
@@ -24,10 +28,10 @@ import { NO_IMAGE }         from '../utils/thumbnail';
 class EntryList extends React.Component {
   static get propTypes() {
     return {
-      entries:          React.PropTypes.object.isRequired,
-      page:             React.PropTypes.number,
-      fetchEntries:     React.PropTypes.func,
-      handlePageChange: React.PropTypes.func,
+      entries:             React.PropTypes.object.isRequired,
+      page:                React.PropTypes.number,
+      fetchEntries:        React.PropTypes.func,
+      handlePageChange:    React.PropTypes.func,
     };
   }
   componentDidUpdate() {
@@ -111,20 +115,25 @@ class EntryList extends React.Component {
   }
 }
 
-function mapStateToProps(state, ownProps) {
+function mapStateToProps(state, { location: { search } }) {
+  const query = new URLSearchParams(search);
   return {
     entries: state.entries,
-    page:    parseIntOr(ownProps.location.query.page, 0),
+    page:    parseIntOr(query.get('page'), 0),
   };
 }
 
-function mapDispatchToProps(dispatch, ownProps) {
+function mapDispatchToProps(dispatch, { location: { search } }) {
+  const query = new URLSearchParams(search);
   return {
     fetchEntries:     (page, perPage) => dispatch(fetchEntries(page, perPage)),
     handlePageChange: (data) => {
-      const perPage  = parseIntOr(ownProps.location.query.per_page, DEFAULT_PER_PAGE);
-      const location = { pathname: 'entries', query: { page: data.selected, per_page: perPage } };
-      if (parseIntOr(ownProps.location.query.page, 0) === data.selected) {
+      const perPage  = parseIntOr(query.get('per_page'), DEFAULT_PER_PAGE);
+      const params = new URLSearchParams();
+      params.append('page', data.selected);
+      params.append('per_page', perPage);
+      const location = { pathname: 'entries', search: params.toString() };
+      if (parseIntOr(query.get('page'), 0) === data.selected) {
         dispatch(replace(location));
       } else {
         dispatch(push(location));
@@ -133,4 +142,4 @@ function mapDispatchToProps(dispatch, ownProps) {
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(EntryList);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(EntryList));

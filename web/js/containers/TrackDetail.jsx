@@ -112,8 +112,8 @@ function mapStateToProps(state) {
   };
 }
 
-function mapDispatchToProps(dispatch, ownProps) {
-  const trackId = ownProps.params.track_id;
+function mapDispatchToProps(dispatch, { match }) {
+  const trackId = match.params.track_id;
   return {
     fetchTrackIfNeeded: (status) => {
       if (status === Status.Dirty) {

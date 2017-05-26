@@ -41,8 +41,10 @@ const page = (state = 0, action) => {
   switch (action.type) {
     case 'RECEIVE_TRACKS':
       return action.page;
-    case LOCATION_CHANGE:
-      return parseIntOr(action.payload.query.page, 0);
+    case LOCATION_CHANGE: {
+      const query = new URLSearchParams(action.payload.search);
+      return parseIntOr(query.page, 0);
+    }
     default:
       return state;
   }
@@ -52,8 +54,10 @@ const perPage = (state = 10, action) => {
   switch (action.type) {
     case 'RECEIVE_TRACKS':
       return action.perPage;
-    case LOCATION_CHANGE:
-      return parseIntOr(action.payload.query.per_page, 10);
+    case LOCATION_CHANGE: {
+      const query = new URLSearchParams(action.payload.search);
+      return parseIntOr(query.per_page, 10);
+    }
     default:
       return state;
   }

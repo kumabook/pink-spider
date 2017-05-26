@@ -1,4 +1,5 @@
 import React from 'react';
+import { withRouter } from 'react-router-dom';
 import {
   Card,
   CardActions,
@@ -110,8 +111,8 @@ function mapStateToProps(state) {
   };
 }
 
-function mapDispatchToProps(dispatch, ownProps) {
-  const albumId = ownProps.params.album_id;
+function mapDispatchToProps(dispatch, { match }) {
+  const albumId = match.params.album_id;
   return {
     fetchAlbumIfNeeded: (status) => {
       if (status === Status.Dirty) {
@@ -121,4 +122,4 @@ function mapDispatchToProps(dispatch, ownProps) {
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(AlbumDetail);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(AlbumDetail));

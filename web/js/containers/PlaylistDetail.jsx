@@ -1,4 +1,5 @@
 import React from 'react';
+import { withRouter } from 'react-router-dom';
 import {
   Card,
   CardActions,
@@ -108,8 +109,8 @@ function mapStateToProps(state) {
   };
 }
 
-function mapDispatchToProps(dispatch, ownProps) {
-  const playlistId = ownProps.params.playlist_id;
+function mapDispatchToProps(dispatch, { match }) {
+  const playlistId = match.params.playlist_id;
   return {
     fetchPlaylistIfNeeded: (status) => {
       if (status === Status.Dirty) {
@@ -119,4 +120,4 @@ function mapDispatchToProps(dispatch, ownProps) {
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(PlaylistDetail);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(PlaylistDetail));

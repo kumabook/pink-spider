@@ -1,5 +1,6 @@
 import React             from 'react';
 import { connect }       from 'react-redux';
+import { withRouter }    from 'react-router-dom';
 import { push, replace } from 'react-router-redux';
 import {
   Table,
@@ -82,31 +83,36 @@ class AlbumList extends React.Component {
   }
 }
 
-function mapStateToProps(state, ownProps) {
+function mapStateToProps(state, { location, match }) {
+  const query = new URLSearchParams(location.search);
   return {
     albums:   state.albums,
-    page:     parseIntOr(ownProps.location.query.page, 0),
-    entry_id: ownProps.params.entry_id,
+    page:     parseIntOr(query.get('page'), 0),
+    entry_id: match.params.entry_id,
   };
 }
 
-function mapDispatchToProps(dispatch, ownProps) {
-  const page = parseIntOr(ownProps.location.query.page, 0);
-  const perPage = parseIntOr(ownProps.location.query.per_page, DEFAULT_PER_PAGE);
-  const entryId = ownProps.params.entry_id;
+function mapDispatchToProps(dispatch, { location, match }) {
+  const query = new URLSearchParams(location.search);
+  const page = parseIntOr(query.get('page'), 0);
+  const perPage = parseIntOr(query.get('per_page'), DEFAULT_PER_PAGE);
+  const entryId = match.params.entry_id;
   return {
     fetchAlbums:             () => dispatch(fetchAlbums(page, undefined, entryId)),
     handleDetailButtonClick: album => dispatch(push({ pathname: `albums/${album.id}` })),
     handlePageChange:        (data) => {
       const path = entryId ? `entries/${entryId}/albums` : 'albums';
-      const location = { pathname: path, query: { page: data.selected, per_page: perPage } };
-      if (parseIntOr(ownProps.location.query.page, 0) === data.selected) {
-        dispatch(replace(location));
+      const params = new URLSearchParams();
+      params.append('page', data.selected);
+      params.append('per_page', perPage);
+      const loc = { pathname: path, search: params.toString() };
+      if (parseIntOr(query.get('page'), 0) === data.seltected) {
+        dispatch(replace(loc));
       } else {
-        dispatch(push(location));
+        dispatch(push(loc));
       }
     },
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(AlbumList);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(AlbumList));

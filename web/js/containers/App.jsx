@@ -4,6 +4,7 @@ import Drawer            from 'material-ui/Drawer';
 import MenuItem          from 'material-ui/MenuItem';
 import { connect }       from 'react-redux';
 import { push }          from 'react-router-redux';
+import { withRouter }    from 'react-router-dom';
 import { toggleDrawler } from '../actions';
 
 class App extends React.Component {
@@ -76,4 +77,4 @@ function mapDispatchToProps(dispatch) {
   };
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(App);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(App));
