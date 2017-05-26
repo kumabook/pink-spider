@@ -64,7 +64,7 @@ const TrackListTableRow = ({ track, onDetailButtonClick, onUpdateButtonClick }) 
 TrackListTableRow.propTypes = {
   track: React.PropTypes.shape({
     title:         React.PropTypes.string.isRequired,
-    owner_name:    React.PropTypes.string.isRequired,
+    owner_name:    React.PropTypes.string,
     provider:      React.PropTypes.string.isRequired,
     identifier:    React.PropTypes.string.isRequired,
     thumbnail_url: React.PropTypes.string,
