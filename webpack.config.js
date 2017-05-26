@@ -8,27 +8,29 @@ module.exports = {
     publicPath: "bundle.js",
   },
   module: {
-    preLoaders: [
+    rules: [
       {
+        enforce: "pre",
         test: /\.jsx?$/,
         exclude: /node_modules/,
-        loader: "eslint-loader"
-      }
-    ],
-    loaders: [
+        loader: "eslint-loader",
+        options: {
+          configFile: '.eslintrc',
+          fix: true,
+        }
+      },
       {
         test: /.jsx?$/,
         exclude: /(node_modules|bower_components)/,
         loader: 'babel-loader'
       },
-      { test: /\.css$/, loader: "style!css" }
+      {
+        test: /\.css$/,
+        loader: "style!css"
+      },
     ]
   },
-  eslint: {
-    configFile: '.eslintrc',
-    fix: true,
-  },
   resolve: {
-    extensions: ['', '.js', '.jsx'],
+    extensions: ['.js', '.jsx'],
   }
 };
