@@ -1,4 +1,5 @@
 import React                from 'react';
+import PropTypes            from 'prop-types';
 import { connect }          from 'react-redux';
 import { withRouter, Link } from 'react-router-dom';
 import { push, replace }    from 'react-router-redux';
@@ -26,10 +27,10 @@ import { NO_IMAGE }         from '../utils/thumbnail';
 class EntryList extends React.Component {
   static get propTypes() {
     return {
-      entries:          React.PropTypes.object.isRequired,
-      page:             React.PropTypes.number.isRequired,
-      fetchEntries:     React.PropTypes.func.isRequired,
-      handlePageChange: React.PropTypes.func.isRequired,
+      entries:          PropTypes.object.isRequired,
+      page:             PropTypes.number.isRequired,
+      fetchEntries:     PropTypes.func.isRequired,
+      handlePageChange: PropTypes.func.isRequired,
     };
   }
   componentDidUpdate() {

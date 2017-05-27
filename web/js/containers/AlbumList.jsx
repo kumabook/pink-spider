@@ -1,4 +1,5 @@
 import React             from 'react';
+import PropTypes         from 'prop-types';
 import { connect }       from 'react-redux';
 import { withRouter }    from 'react-router-dom';
 import { push, replace } from 'react-router-redux';
@@ -21,12 +22,12 @@ import Paginate                     from '../components/Paginate';
 class AlbumList extends React.Component {
   static get propTypes() {
     return {
-      albums:                  React.PropTypes.object.isRequired,
-      page:                    React.PropTypes.number.isRequired,
-      fetchAlbums:             React.PropTypes.func.isRequired,
-      handleDetailButtonClick: React.PropTypes.func.isRequired,
-      handleUpdateButtonClick: React.PropTypes.func.isRequired,
-      handlePageChange:        React.PropTypes.func.isRequired,
+      albums:                  PropTypes.object.isRequired,
+      page:                    PropTypes.number.isRequired,
+      fetchAlbums:             PropTypes.func.isRequired,
+      handleDetailButtonClick: PropTypes.func.isRequired,
+      handleUpdateButtonClick: PropTypes.func.isRequired,
+      handlePageChange:        PropTypes.func.isRequired,
     };
   }
   componentDidUpdate() {

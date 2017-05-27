@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
 import {
   Card,
@@ -26,10 +27,10 @@ import {
 class AlbumDetail extends React.Component {
   static get propTypes() {
     return {
-      item:                    React.PropTypes.object.isRequired,
-      status:                  React.PropTypes.string.isRequired,
-      fetchAlbumIfNeeded:      React.PropTypes.func.isRequired,
-      handleUpdateButtonClick: React.PropTypes.func.isRequired,
+      item:                    PropTypes.object.isRequired,
+      status:                  PropTypes.string.isRequired,
+      fetchAlbumIfNeeded:      PropTypes.func.isRequired,
+      handleUpdateButtonClick: PropTypes.func.isRequired,
     };
   }
   componentDidMount() {

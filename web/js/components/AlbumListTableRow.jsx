@@ -1,4 +1,5 @@
 import React        from 'react';
+import PropTypes    from 'prop-types';
 import {
   TableRow,
   TableRowColumn,
@@ -56,14 +57,14 @@ const AlbumListTableRow = ({ album, onDetailButtonClick }) => (
 );
 
 AlbumListTableRow.propTypes = {
-  album: React.PropTypes.shape({
-    title:         React.PropTypes.string.isRequired,
-    owner_name:    React.PropTypes.string,
-    provider:      React.PropTypes.string.isRequired,
-    identifier:    React.PropTypes.string.isRequired,
-    thumbnail_url: React.PropTypes.string,
+  album: PropTypes.shape({
+    title:         PropTypes.string.isRequired,
+    owner_name:    PropTypes.string,
+    provider:      PropTypes.string.isRequired,
+    identifier:    PropTypes.string.isRequired,
+    thumbnail_url: PropTypes.string,
   }).isRequired,
-  onDetailButtonClick: React.PropTypes.func.isRequired,
+  onDetailButtonClick: PropTypes.func.isRequired,
 };
 
 AlbumListTableRow.defaultProps = {

@@ -1,4 +1,5 @@
 import React         from 'react';
+import PropTypes     from 'prop-types';
 import ReactPaginate from 'react-paginate';
 
 const breakLabel = <a href="">...</a>;
@@ -20,9 +21,9 @@ const Paginate = ({ page, pageCount, onChange }) => (
 );
 
 Paginate.propTypes = {
-  page:      React.PropTypes.number.isRequired,
-  pageCount: React.PropTypes.number.isRequired,
-  onChange:  React.PropTypes.func.isRequired,
+  page:      PropTypes.number.isRequired,
+  pageCount: PropTypes.number.isRequired,
+  onChange:  PropTypes.func.isRequired,
 };
 
 export default Paginate;

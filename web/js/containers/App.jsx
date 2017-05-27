@@ -1,4 +1,5 @@
 import React             from 'react';
+import PropTypes         from 'prop-types';
 import AppBar            from 'material-ui/AppBar';
 import Drawer            from 'material-ui/Drawer';
 import MenuItem          from 'material-ui/MenuItem';
@@ -10,14 +11,14 @@ import { toggleDrawler } from '../actions';
 class App extends React.Component {
   static get propTypes() {
     return {
-      children:                 React.PropTypes.element.isRequired,
-      handleClick:              React.PropTypes.func.isRequired,
-      handleEntriesMenuClick:   React.PropTypes.func.isRequired,
-      handlePlaylistsMenuClick: React.PropTypes.func.isRequired,
-      handleAlbumsMenuClick:    React.PropTypes.func.isRequired,
-      handleTracksMenuClick:    React.PropTypes.func.isRequired,
-      handleArtistsMenuClick:   React.PropTypes.func.isRequired,
-      drawlerIsOpen:            React.PropTypes.bool.isRequired,
+      children:                 PropTypes.element.isRequired,
+      handleClick:              PropTypes.func.isRequired,
+      handleEntriesMenuClick:   PropTypes.func.isRequired,
+      handlePlaylistsMenuClick: PropTypes.func.isRequired,
+      handleAlbumsMenuClick:    PropTypes.func.isRequired,
+      handleTracksMenuClick:    PropTypes.func.isRequired,
+      handleArtistsMenuClick:   PropTypes.func.isRequired,
+      drawlerIsOpen:            PropTypes.bool.isRequired,
     };
   }
   render() {

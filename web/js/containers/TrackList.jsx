@@ -1,4 +1,5 @@
 import React             from 'react';
+import PropTypes         from 'prop-types';
 import { connect }       from 'react-redux';
 import { withRouter }    from 'react-router-dom';
 import { push, replace } from 'react-router-redux';
@@ -21,12 +22,12 @@ import Paginate                     from '../components/Paginate';
 class TrackList extends React.Component {
   static get propTypes() {
     return {
-      tracks:                  React.PropTypes.object.isRequired,
-      page:                    React.PropTypes.number.isRequired,
-      fetchTracks:             React.PropTypes.func.isRequired,
-      handleDetailButtonClick: React.PropTypes.func.isRequired,
-      handleUpdateButtonClick: React.PropTypes.func.isRequired,
-      handlePageChange:        React.PropTypes.func.isRequired,
+      tracks:                  PropTypes.object.isRequired,
+      page:                    PropTypes.number.isRequired,
+      fetchTracks:             PropTypes.func.isRequired,
+      handleDetailButtonClick: PropTypes.func.isRequired,
+      handleUpdateButtonClick: PropTypes.func.isRequired,
+      handlePageChange:        PropTypes.func.isRequired,
     };
   }
   componentDidUpdate() {

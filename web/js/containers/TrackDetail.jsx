@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import {
   Card,
   CardActions,
@@ -25,10 +26,10 @@ import {
 class TrackDetail extends React.Component {
   static get propTypes() {
     return {
-      item:                    React.PropTypes.object.isRequired,
-      status:                  React.PropTypes.string.isRequired,
-      fetchTrackIfNeeded:      React.PropTypes.func.isRequired,
-      handleUpdateButtonClick: React.PropTypes.func.isRequired,
+      item:                    PropTypes.object.isRequired,
+      status:                  PropTypes.string.isRequired,
+      fetchTrackIfNeeded:      PropTypes.func.isRequired,
+      handleUpdateButtonClick: PropTypes.func.isRequired,
     };
   }
   componentDidMount() {

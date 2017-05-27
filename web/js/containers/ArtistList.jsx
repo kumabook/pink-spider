@@ -1,4 +1,5 @@
 import React             from 'react';
+import PropTypes         from 'prop-types';
 import { connect }       from 'react-redux';
 import { withRouter }    from 'react-router-dom';
 import { push, replace } from 'react-router-redux';
@@ -30,10 +31,10 @@ function getThumbnailUrl(artist) {
 class ArtistList extends React.Component {
   static get propTypes() {
     return {
-      artists:          React.PropTypes.object.isRequired,
-      page:             React.PropTypes.number.isRequired,
-      fetchArtists:     React.PropTypes.func.isRequired,
-      handlePageChange: React.PropTypes.func.isRequired,
+      artists:          PropTypes.object.isRequired,
+      page:             PropTypes.number.isRequired,
+      fetchArtists:     PropTypes.func.isRequired,
+      handlePageChange: PropTypes.func.isRequired,
     };
   }
   componentDidUpdate() {

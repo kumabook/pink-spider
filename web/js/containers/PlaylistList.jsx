@@ -1,4 +1,5 @@
 import React             from 'react';
+import PropTypes         from 'prop-types';
 import { connect }       from 'react-redux';
 import { withRouter }    from 'react-router-dom';
 import { push, replace } from 'react-router-redux';
@@ -21,11 +22,11 @@ import Paginate             from '../components/Paginate';
 class PlaylistList extends React.Component {
   static get propTypes() {
     return {
-      playlists:               React.PropTypes.object.isRequired,
-      page:                    React.PropTypes.number.isRequired,
-      fetchPlaylists:          React.PropTypes.func.isRequired,
-      handleDetailButtonClick: React.PropTypes.func.isRequired,
-      handlePageChange:        React.PropTypes.func.isRequired,
+      playlists:               PropTypes.object.isRequired,
+      page:                    PropTypes.number.isRequired,
+      fetchPlaylists:          PropTypes.func.isRequired,
+      handleDetailButtonClick: PropTypes.func.isRequired,
+      handlePageChange:        PropTypes.func.isRequired,
     };
   }
   componentDidUpdate() {
