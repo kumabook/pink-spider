@@ -3,7 +3,6 @@ import ReactDOM             from 'react-dom';
 import MuiThemeProvider     from 'material-ui/styles/MuiThemeProvider';
 import { Provider }         from 'react-redux';
 import { Route, Switch }    from 'react-router-dom';
-import thunk                from 'redux-thunk';
 import injectTapEventPlugin from 'react-tap-event-plugin';
 import createHistory        from 'history/createHashHistory';
 import {
@@ -14,23 +13,26 @@ import {
   ConnectedRouter,
   routerMiddleware,
 } from 'react-router-redux';
-import App            from './containers/App';
-import EntryList      from './containers/EntryList';
-import TrackList      from './containers/TrackList';
-import TrackDetail    from './containers/TrackDetail';
-import PlaylistList   from './containers/PlaylistList';
-import PlaylistDetail from './containers/PlaylistDetail';
-import AlbumList      from './containers/AlbumList';
-import AlbumDetail    from './containers/AlbumDetail';
-import ArtistList     from './containers/ArtistList';
-import reducers       from './reducers';
+import createSagaMiddleware from 'redux-saga';
+import App                  from './containers/App';
+import EntryList            from './containers/EntryList';
+import TrackList            from './containers/TrackList';
+import TrackDetail          from './containers/TrackDetail';
+import PlaylistList         from './containers/PlaylistList';
+import PlaylistDetail       from './containers/PlaylistDetail';
+import AlbumList            from './containers/AlbumList';
+import AlbumDetail          from './containers/AlbumDetail';
+import ArtistList           from './containers/ArtistList';
+import reducers             from './reducers';
+import rootSaga             from './sagas';
 
 injectTapEventPlugin();
 
 const history = createHistory();
-
-const middleware = routerMiddleware(history);
-const store = createStore(reducers, applyMiddleware(middleware, thunk));
+const sagaMiddleware = createSagaMiddleware();
+const store = createStore(reducers, applyMiddleware(sagaMiddleware,
+                                                    routerMiddleware(history)));
+sagaMiddleware.run(rootSaga);
 ReactDOM.render(
   <MuiThemeProvider>
     <Provider store={store}>
