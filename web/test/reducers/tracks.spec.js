@@ -1,5 +1,5 @@
-import assert              from 'assert';
-import reducer, { Status } from '../../js/reducers/tracks';
+import assert  from 'assert';
+import reducer from '../../js/reducers/tracks';
 
 describe('tracks reducer', () => {
   it('should return the initial state', () => {
