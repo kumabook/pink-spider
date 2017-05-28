@@ -1,7 +1,57 @@
+import ContentLink from 'material-ui/svg-icons/content/link';
+import ActionUpdate from 'material-ui/svg-icons/action/update';
 import {
   formatOpenURL,
   parse,
 } from 'spotify-uri';
+
+export const schema = {
+  title: 'Track',
+  type:  'object',
+
+  properties: {
+    id:            { type: 'string' },
+    provider:      { type: 'string' },
+    identifier:    { type: 'string' },
+    owner_id:      { type: 'string' },
+    owner_name:    { type: 'string' },
+    url:           { type: 'string' },
+    title:         { type: 'string' },
+    description:   { type: 'string' },
+    thumbnail_url: { type: 'string', format: 'data-url' },
+    artwork_url:   { type: 'string', format: 'data-url' },
+    audio_url:     { type: 'string', format: 'data-url' },
+    duration:      { type: 'integer' },
+    published_at:  { type: 'string', format: 'date-time' },
+    state:         { type: 'string' },
+  },
+  required: [],
+};
+
+export const tableSchema = {
+  'ui:order':   ['thumbnail_url', 'title', 'published_at'],
+  'ui:actions': [
+    { name: 'detail', icon: ContentLink },
+    { name: 'reload', icon: ActionUpdate },
+  ],
+  thumbnail_url: { 'ui:widget': 'img' },
+  id:            { 'ui:widget': 'hidden' },
+  provider:      { 'ui:widget': 'hidden' },
+  identifier:    { 'ui:widget': 'hidden' },
+  owner_id:      { 'ui:widget': 'hidden' },
+  owner_name:    { 'ui:widget': 'hidden' },
+  url:           { 'ui:widget': 'hidden' },
+  title:         {},
+  description:   { 'ui:widget': 'hidden' },
+  artwork_url:   { 'ui:widget': 'hidden' },
+  audio_url:     { 'ui:widget': 'hidden' },
+  duration:      { 'ui:widget': 'hidden' },
+  published_at:  {},
+  state:         { 'ui:widget': 'hidden' },
+};
+
+export const formSchema = {
+};
 
 export const getCountry = (urlString) => {
   const regex = /\/geo\.itunes\.apple\.com\/([a-zA-Z]+)\//;
