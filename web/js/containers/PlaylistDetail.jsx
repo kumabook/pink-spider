@@ -12,8 +12,7 @@ import {
 import { List, ListItem } from 'material-ui/List';
 import RaisedButton       from 'material-ui/RaisedButton';
 import { connect }        from 'react-redux';
-import { Status }         from '../reducers/playlist';
-import { fetchPlaylist }  from '../actions';
+import { update }         from '../actions/playlist';
 import tryGet             from '../utils/tryGet';
 import datePrettify       from '../utils/datePrettify';
 import { getUrl }         from '../model/Playlist';
@@ -27,16 +26,8 @@ class PlaylistDetail extends React.Component {
   static get propTypes() {
     return {
       item:                    PropTypes.object.isRequired,
-      status:                  PropTypes.string.isRequired,
-      fetchPlaylistIfNeeded:   PropTypes.func.isRequired,
       handleUpdateButtonClick: PropTypes.func.isRequired,
     };
-  }
-  componentDidMount() {
-    this.props.fetchPlaylistIfNeeded(this.props.status);
-  }
-  componentDidUpdate() {
-    this.props.fetchPlaylistIfNeeded(this.props.status);
   }
   render() {
     const id          = tryGet(this.props.item, 'id', 'unknown id');
@@ -106,18 +97,13 @@ class PlaylistDetail extends React.Component {
 
 function mapStateToProps(state) {
   return {
-    ...state.playlist,
+    item: state.playlists.item,
   };
 }
 
-function mapDispatchToProps(dispatch, { match }) {
-  const playlistId = match.params.playlist_id;
+function mapDispatchToProps(dispatch) {
   return {
-    fetchPlaylistIfNeeded: (status) => {
-      if (status === Status.Dirty) {
-        dispatch(fetchPlaylist(playlistId));
-      }
-    },
+    handleUpdateButtonClick: item => dispatch(update(item)),
   };
 }
 

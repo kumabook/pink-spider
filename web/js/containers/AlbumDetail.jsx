@@ -12,8 +12,7 @@ import {
 import { List, ListItem }          from 'material-ui/List';
 import RaisedButton                from 'material-ui/RaisedButton';
 import { connect }                 from 'react-redux';
-import { Status }                  from '../reducers/album';
-import { fetchAlbum }              from '../actions';
+import { update }                  from '../actions/album';
 import { getUrl, getOwnerUrl }     from '../model/Album';
 import tryGet                      from '../utils/tryGet';
 import datePrettify                from '../utils/datePrettify';
@@ -28,16 +27,8 @@ class AlbumDetail extends React.Component {
   static get propTypes() {
     return {
       item:                    PropTypes.object.isRequired,
-      status:                  PropTypes.string.isRequired,
-      fetchAlbumIfNeeded:      PropTypes.func.isRequired,
       handleUpdateButtonClick: PropTypes.func.isRequired,
     };
-  }
-  componentDidMount() {
-    this.props.fetchAlbumIfNeeded(this.props.status);
-  }
-  componentDidUpdate() {
-    this.props.fetchAlbumIfNeeded(this.props.status);
   }
   render() {
     const id          = tryGet(this.props.item, 'id', 'unknown id');
@@ -108,18 +99,13 @@ class AlbumDetail extends React.Component {
 
 function mapStateToProps(state) {
   return {
-    ...state.album,
+    item: state.albums.item,
   };
 }
 
-function mapDispatchToProps(dispatch, { match }) {
-  const albumId = match.params.album_id;
+function mapDispatchToProps(dispatch) {
   return {
-    fetchAlbumIfNeeded: (status) => {
-      if (status === Status.Dirty) {
-        dispatch(fetchAlbum(albumId));
-      }
-    },
+    handleUpdateButtonClick: item => dispatch(update(item)),
   };
 }
 

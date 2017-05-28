@@ -8,14 +8,13 @@ import {
   CardTitle,
   CardText,
 } from 'material-ui/Card';
-import { List, ListItem }          from 'material-ui/List';
-import RaisedButton                from 'material-ui/RaisedButton';
-import { connect }                 from 'react-redux';
-import { Status }                  from '../reducers/track';
-import { fetchTrack, updateTrack } from '../actions';
-import { getUrl, getOwnerUrl }     from '../model/Track';
-import tryGet                      from '../utils/tryGet';
-import datePrettify                from '../utils/datePrettify';
+import { List, ListItem }      from 'material-ui/List';
+import RaisedButton            from 'material-ui/RaisedButton';
+import { connect }             from 'react-redux';
+import { update }              from '../actions/track';
+import { getUrl, getOwnerUrl } from '../model/Track';
+import tryGet                  from '../utils/tryGet';
+import datePrettify            from '../utils/datePrettify';
 
 import {
   NO_IMAGE,
@@ -27,16 +26,8 @@ class TrackDetail extends React.Component {
   static get propTypes() {
     return {
       item:                    PropTypes.object.isRequired,
-      status:                  PropTypes.string.isRequired,
-      fetchTrackIfNeeded:      PropTypes.func.isRequired,
       handleUpdateButtonClick: PropTypes.func.isRequired,
     };
-  }
-  componentDidMount() {
-    this.props.fetchTrackIfNeeded(this.props.status);
-  }
-  componentDidUpdate() {
-    this.props.fetchTrackIfNeeded(this.props.status);
   }
   render() {
     const id          = tryGet(this.props.item, 'id', 'unknown id');
@@ -109,19 +100,13 @@ class TrackDetail extends React.Component {
 
 function mapStateToProps(state) {
   return {
-    ...state.track,
+    item: state.tracks.item,
   };
 }
 
-function mapDispatchToProps(dispatch, { match }) {
-  const trackId = match.params.track_id;
+function mapDispatchToProps(dispatch) {
   return {
-    fetchTrackIfNeeded: (status) => {
-      if (status === Status.Dirty) {
-        dispatch(fetchTrack(trackId));
-      }
-    },
-    handleUpdateButtonClick: track => dispatch(updateTrack(track.id)),
+    handleUpdateButtonClick: track => dispatch(update(track)),
   };
 }
 
