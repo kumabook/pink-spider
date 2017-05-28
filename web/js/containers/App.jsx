@@ -77,23 +77,23 @@ function mapDispatchToProps(dispatch) {
   return {
     handleClick:            () => dispatch(toggleDrawler()),
     handleEntriesMenuClick: () => {
-      dispatch(push({ pathname: 'entries', query: { page: 0 } }));
+      dispatch(push({ pathname: '/entries', query: { page: 0 } }));
       dispatch(toggleDrawler());
     },
     handlePlaylistsMenuClick: () => {
-      dispatch(push({ pathname: 'playlists', query: { page: 0 } }));
+      dispatch(push({ pathname: '/playlists', query: { page: 0 } }));
       dispatch(toggleDrawler());
     },
     handleAlbumsMenuClick: () => {
-      dispatch(push({ pathname: 'albums', query: { page: 0 } }));
+      dispatch(push({ pathname: '/albums', query: { page: 0 } }));
       dispatch(toggleDrawler());
     },
     handleTracksMenuClick: () => {
-      dispatch(push({ pathname: 'tracks', query: { page: 0 } }));
+      dispatch(push({ pathname: '/tracks', query: { page: 0 } }));
       dispatch(toggleDrawler());
     },
     handleArtistsMenuClick: () => {
-      dispatch(push({ pathname: 'artists', query: { page: 0 } }));
+      dispatch(push({ pathname: '/artists', query: { page: 0 } }));
       dispatch(toggleDrawler());
     },
   };
