@@ -5,6 +5,7 @@ import {
   formatOpenURL,
   parse,
 } from 'spotify-uri';
+import Owner from '../components/Owner';
 
 export const schema = {
   title: 'Playlist',
@@ -38,7 +39,7 @@ export const tableSchema = {
   provider:      { 'ui:widget': 'hidden' },
   identifier:    { 'ui:widget': 'hidden' },
   owner_id:      { 'ui:widget': 'hidden' },
-  owner_name:    { 'ui:widget': 'hidden' },
+  owner_name:    { 'ui:widget': Owner },
   url:           { 'ui:widget': 'hidden' },
   title:         {},
   description:   { 'ui:widget': 'hidden' },

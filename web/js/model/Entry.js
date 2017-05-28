@@ -1,8 +1,6 @@
-import ContentLink from 'material-ui/svg-icons/content/link';
-import ActionUpdate from 'material-ui/svg-icons/action/update';
 import AVLibraryMusic from 'material-ui/svg-icons/av/library-music';
-import AVMusicVideo from 'material-ui/svg-icons/av/music-video';
-import AVQueueMusic from 'material-ui/svg-icons/av/queue-music';
+import AVMusicVideo   from 'material-ui/svg-icons/av/music-video';
+import AVQueueMusic   from 'material-ui/svg-icons/av/queue-music';
 
 export const schema = {
   title: 'Entry',
@@ -22,8 +20,6 @@ export const schema = {
 export const tableSchema = {
   'ui:order':   ['visual_url', 'title'],
   'ui:actions': [
-    { name: 'detail', icon: ContentLink },
-    { name: 'reload', icon: ActionUpdate },
     { name: 'tracks', icon: AVMusicVideo },
     { name: 'albums', icon: AVLibraryMusic },
     { name: 'playlists', icon: AVQueueMusic },
