@@ -48,7 +48,6 @@ ReactDOM.render(
             <Route path="/entries/:entry_id/tracks" component={TrackList} />
             <Route path="/entries/:entry_id/playlists" component={PlaylistList} />
             <Route path="/entries/:entry_id/albums" component={AlbumList} />
-            <Route path="/entries/:entry_id/albums" component={AlbumList} />
             <Route path="/entries" component={EntryList} />
             <Route path="/artists" component={ArtistList} />
             <Route path="/" component={EntryList} />
