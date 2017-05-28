@@ -1,143 +1,105 @@
-import React                from 'react';
-import PropTypes            from 'prop-types';
-import { connect }          from 'react-redux';
-import { withRouter, Link } from 'react-router-dom';
-import { push, replace }    from 'react-router-redux';
+import React              from 'react';
+import PropTypes          from 'prop-types';
+import { connect }        from 'react-redux';
+import { withRouter }     from 'react-router-dom';
+import { push }           from 'react-router-redux';
+import { Table }          from 'material-jsonschema';
+import parseIntOr         from '../utils/parseIntOr';
+import { creators }       from '../actions/entry';
+import { defaultPerPage } from '../config';
 import {
-  Table,
-  TableBody,
-  TableHeader,
-  TableHeaderColumn,
-  TableRow,
-  TableRowColumn,
-} from 'material-ui/Table';
-import Dialog           from 'material-ui/Dialog';
-import CircularProgress from 'material-ui/CircularProgress';
-import { Status }       from '../reducers/entries';
-import parseIntOr       from '../utils/parseIntOr';
-import datePrettify     from '../utils/datePrettify';
-import Paginate         from '../components/Paginate';
-import {
-  fetchEntries,
-} from '../actions';
+  schema,
+  tableSchema,
+  formSchema,
+} from '../model/Entry';
 
-import { DEFAULT_PER_PAGE } from '../api/pagination';
-import { NO_IMAGE }         from '../utils/thumbnail';
+const { update } = creators;
 
 class EntryList extends React.Component {
   static get propTypes() {
     return {
-      entries:          PropTypes.object.isRequired,
-      page:             PropTypes.number.isRequired,
-      fetchEntries:     PropTypes.func.isRequired,
-      handlePageChange: PropTypes.func.isRequired,
+      items:        PropTypes.array.isRequired,
+      total:        PropTypes.number.isRequired,
+      page:         PropTypes.number.isRequired,
+      perPage:      PropTypes.number.isRequired,
+      index:        PropTypes.func.isRequired,
+      update:       PropTypes.func.isRequired,
+      itemsOfEntry: PropTypes.func.isRequired,
     };
   }
-  componentDidUpdate() {
-    if (this.props.entries.status === Status.Dirty) {
-      this.props.fetchEntries(this.props.entries.page,
-                              this.props.entries.perPage);
+  handleAction(name, item) {
+    switch (name) {
+      case 'reload':
+        this.props.update(item);
+        break;
+      case 'tracks':
+        this.props.itemsOfEntry('tracks', item.id);
+        break;
+      case 'albums':
+        this.props.itemsOfEntry('albums', item.id);
+        break;
+      case 'playlists':
+        this.props.itemsOfEntry('playlists', item.id);
+        break;
+      default:
+        break;
     }
   }
   render() {
-    const rows = this.props.entries.items.map(entry => (
-      <TableRow key={entry.id}>
-        <TableRowColumn>
-          <a href={entry.url}>
-            <img
-              src={entry.visual_url || NO_IMAGE}
-              className="entry-list-thumb"
-              alt="visual_url"
-            />
-          </a>
-        </TableRowColumn>
-        <TableRowColumn>
-          {entry.title || `No title: ${entry.url}`}
-        </TableRowColumn>
-        <TableRowColumn>
-          {entry.description}
-        </TableRowColumn>
-        <TableRowColumn>
-          {datePrettify(entry.updated_at)}
-        </TableRowColumn>
-        <TableRowColumn>
-          <Link to={`entries/${entry.id}/tracks`}>
-            {`${entry.tracks.length} tracks`}
-          </Link>
-          <br />
-          <Link to={`entries/${entry.id}/playlists`}>
-            {`${entry.playlists.length} playlists`}
-          </Link>
-          <br />
-          <Link to={`entries/${entry.id}/albums`}>
-            {`${entry.albums.length} albums`}
-          </Link>
-        </TableRowColumn>
-      </TableRow>
-    ));
     return (
-      <div>
-        <Table selectable={false}>
-          <TableHeader displaySelectAll={false}>
-            <TableRow>
-              <TableHeaderColumn colSpan="5" style={{ textAlign: 'center' }}>
-                <Paginate
-                  page={this.props.page}
-                  pageCount={this.props.entries.total / this.props.entries.perPage}
-                  onChange={this.props.handlePageChange}
-                />
-              </TableHeaderColumn>
-            </TableRow>
-            <TableRow>
-              <TableHeaderColumn>thumbnail</TableHeaderColumn>
-              <TableHeaderColumn>title</TableHeaderColumn>
-              <TableHeaderColumn>description</TableHeaderColumn>
-              <TableHeaderColumn>updated at</TableHeaderColumn>
-              <TableHeaderColumn>links</TableHeaderColumn>
-            </TableRow>
-          </TableHeader>
-          <TableBody displayRowCheckbox={false}>
-            {rows}
-          </TableBody>
-        </Table>
-        <Dialog
-          modal
-          title="Loading..."
-          titleStyle={{ textAlign: 'center' }}
-          bodyStyle={{ textAlign: 'center' }}
-          open={this.props.entries.status === Status.Dirty}
-        >
-          <CircularProgress mode="indeterminate" />
-        </Dialog>
-      </div>
+      <Table
+        schema={schema}
+        tableSchema={tableSchema}
+        formSchema={formSchema}
+        items={this.props.items}
+        page={this.props.page}
+        perPage={this.props.perPage}
+        pageCount={this.props.total / 10}
+        onPageChange={this.props.index}
+        canCreate={false}
+        canEdit={false}
+        canDestroy={false}
+        onAction={(name, item) => this.handleAction(name, item)}
+      />
     );
   }
 }
 
-function mapStateToProps(state, { location: { search } }) {
-  const query = new URLSearchParams(search);
+function mapStateToProps(state) {
+  const search  = state.router.location ? state.router.location.search : '';
+  const query   = new URLSearchParams(search);
+  const page    = parseIntOr(query.get('page'), 0);
+  const perPage = parseIntOr(query.get('per_page'), defaultPerPage);
   return {
-    entries: state.entries,
-    page:    parseIntOr(query.get('page'), 0),
+    item:  state.entries.item,
+    items: state.entries.items,
+    total: state.entries.total,
+    page,
+    perPage,
   };
 }
 
-function mapDispatchToProps(dispatch, { location: { search } }) {
-  const query = new URLSearchParams(search);
+function mapDispatchToProps(dispatch) {
   return {
-    fetchEntries:     (page, perPage) => dispatch(fetchEntries(page, perPage)),
-    handlePageChange: (data) => {
-      const perPage  = parseIntOr(query.get('per_page'), DEFAULT_PER_PAGE);
+    index: (page, perPage) => {
       const params = new URLSearchParams();
-      params.append('page', data.selected);
+      params.append('page', page);
       params.append('per_page', perPage);
-      const location = { pathname: 'entries', search: params.toString() };
-      if (parseIntOr(query.get('page'), 0) === data.selected) {
-        dispatch(replace(location));
-      } else {
-        dispatch(push(location));
-      }
+      dispatch(push({
+        pathname: '/entries',
+        search:   params.toString(),
+      }));
     },
+    itemsOfEntry: (resourceName, entryId) => {
+      const params = new URLSearchParams();
+      params.append('page', 0);
+      params.append('per_page', defaultPerPage);
+      dispatch(push({
+        pathname: `/entries/${entryId}/${resourceName}`,
+        search:   params.toString(),
+      }));
+    },
+    update: item => dispatch(update.start(item)),
   };
 }
 
