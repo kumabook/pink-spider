@@ -1,20 +1,19 @@
-import axios from 'axios';
-import { DEFAULT_PAGE, DEFAULT_PER_PAGE } from './pagination';
+import axios              from 'axios';
+import { defaultPerPage } from '../config';
 
 export default {
   show:  id => axios.get(`/v1/playlists/${id}`).then(response => response.data),
-  index: (page = DEFAULT_PAGE, perPage = DEFAULT_PER_PAGE) => axios.get('/v1/playlists', {
-    params: {
-      page,
-      per_page: perPage,
-    },
-  }).then(response => response.data),
-  indexByEntry: (entryId, page = DEFAULT_PAGE, perPage = DEFAULT_PER_PAGE) =>
-    axios.get(`/v1/entries/${entryId}/playlists`, {
+  index: (page = 0, perPage = defaultPerPage, entryId) => {
+    let path = '/v1/playlists';
+    if (entryId) {
+      path = `/v1/entries/${entryId}/playlists`;
+    }
+    return axios.get(path, {
       params: {
         page,
         per_page: perPage,
       },
-    }).then(response => response.data),
-  update: playlistId => axios.post(`/v1/playlists/${playlistId}`),
+    }).then(response => response.data);
+  },
+  update: playlist => axios.post(`/v1/playlists/${playlist.id}`),
 };
