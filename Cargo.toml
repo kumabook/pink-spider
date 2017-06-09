@@ -8,14 +8,11 @@ authors = ["kumabook@live.jp"]
 
 [[bin]]
 name = "app"
+path = "src/main.rs"
 
 [[bin]]
 name = "update_tracks"
 path = "src/update_tracks.rs"
-
-[[bin]]
-name = "update_playlists"
-path = "src/update_playlists.rs"
 
 [features]
 default = ["postgres"]
