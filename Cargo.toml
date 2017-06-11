@@ -45,5 +45,5 @@ git = "https://github.com/iron/mount.git"
 [dependencies.postgres]
 git = "https://github.com/sfackler/rust-postgres.git"
 branch = "master"
-features = ["with-uuid", "with-chrono"]
+features = ["with-uuid", "with-chrono", "with-serde_json"]
 optional = true
