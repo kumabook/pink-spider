@@ -134,7 +134,7 @@ fn attr(attr_name: &str, attrs: &Vec<Attribute>) -> Option<String> {
 pub fn extract_enclosures_from_tag(tag_name: &str,
                                    attrs: &Vec<Attribute>) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
     if tag_name == "iframe" {
-        match attr("src", attrs) {
+        match attr("src", attrs).or(attr("data-src", attrs)) {
             Some(ref src) => extract_enclosures_from_url(src.to_string()),
             None => (vec![], vec![], vec![])
         }
