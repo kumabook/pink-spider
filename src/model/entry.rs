@@ -286,6 +286,23 @@ impl Entry {
         Err(Error::Unexpected)
     }
 
+    pub fn update_with_feed_entry(&mut self, entry: &feed_rs::Entry) {
+        self.title       = entry.title.clone();
+        self.summary     = entry.summary.clone();
+        self.content     = entry.content.clone();
+        self.author      = entry.author.clone();
+        self.crawled     = UTC::now().naive_utc();
+        self.published   = entry.published;
+        self.updated     = entry.updated;
+        self.fingerprint = entry.fingerprint.clone();
+        self.origin_id   = entry.id.clone();
+        self.alternate   = json!(entry.alternate);
+        self.keywords    = json!(entry.keywords);
+        self.enclosure   = json!(entry.enclosure);
+
+        self.updated_at  = UTC::now().naive_utc();
+    }
+
     pub fn add_track(&mut self, track: Track) -> Result<(), Error> {
         let conn = try!(conn());
         let stmt = try!(conn.prepare("INSERT INTO track_entries (track_id, entry_id)
