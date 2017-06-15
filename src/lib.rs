@@ -16,12 +16,14 @@ extern crate toml;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;
+#[macro_use]
 extern crate serde_json;
 
 #[macro_use]
 extern crate lazy_static;
 
 extern crate opengraph;
+extern crate feed_rs;
 
 pub use self::model::Feed;
 pub use self::model::Track;
@@ -31,6 +33,7 @@ pub use self::model::Provider;
 
 pub mod error;
 pub mod scraper;
+pub mod rss;
 pub mod model;
 pub mod apple_music;
 pub mod itunes;

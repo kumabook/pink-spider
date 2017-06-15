@@ -11,6 +11,10 @@ name = "app"
 path = "src/main.rs"
 
 [[bin]]
+name = "crawler"
+path = "src/crawler.rs"
+
+[[bin]]
 name = "update_tracks"
 path = "src/update_tracks.rs"
 
@@ -40,6 +44,7 @@ serde            = "^1"
 serde_json       = "^1"
 serde_derive     = "^1"
 opengraph        = "^0"
+feed-rs          = "^0"
 [dependencies.mount]
 git = "https://github.com/iron/mount.git"
 [dependencies.postgres]
