@@ -303,6 +303,51 @@ impl Entry {
         self.updated_at  = UTC::now().naive_utc();
     }
 
+    pub fn playlistify(&mut self) -> Result<(), Error> {
+        let product = try!(scraper::extract(&self.url));
+        match product.og_obj {
+            Some(og_obj) => {
+                self.title       = Some(og_obj.title);
+                self.description = og_obj.description;
+                self.locale      = og_obj.locale;
+                self.visual_url  = og_obj.images.first().map(|i| i.url.clone());
+            },
+            None => (),
+        }
+        for t in product.tracks {
+            let new_track = try!(Track::find_or_create(t.provider, t.identifier.to_string()));
+            let mut track = t.clone();
+            track.id      = new_track.id;
+            try!(track.fetch_detail().save());
+            match self.tracks.iter().find(|&t| t.id == track.id) {
+                Some(_) => (),
+                None    => try!(self.add_track(track.clone())),
+            }
+        }
+        for p in product.playlists {
+            let new_playlist = try!(Playlist::find_or_create(p.provider, p.identifier.to_string()));
+            let mut playlist = p.clone();
+            playlist.id      = new_playlist.id;
+            try!(playlist.save());
+            match self.playlists.iter().find(|&p| p.id == playlist.id) {
+                Some(_) => (),
+                None    => try!(self.add_playlist(playlist.clone())),
+            }
+        }
+        for a in product.albums {
+            let new_album = try!(Album::find_or_create(a.provider, a.identifier.to_string()));
+            let mut album = a.clone();
+            album.id      = new_album.id;
+            try!(album.save());
+            match self.albums.iter().find(|&a| a.id == album.id) {
+                Some(_) => (),
+                None    => try!(self.add_album(album.clone())),
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn add_track(&mut self, track: Track) -> Result<(), Error> {
         let conn = try!(conn());
         let stmt = try!(conn.prepare("INSERT INTO track_entries (track_id, entry_id)

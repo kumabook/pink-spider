@@ -118,69 +118,23 @@ pub fn playlistify(req: &mut Request) -> IronResult<Response> {
 
 pub fn find_or_playlistify_entry(url: &str, force: bool) -> Result<Entry, Error> {
     match Entry::find_by_url(url) {
-        Ok(entry) => {
+        Ok(mut entry) => {
             println!("Get entry from database cache: {}", url);
             if force {
                 println!("Update entry: {}", url);
-                let entry = try!(playlistify_entry(entry));
+                try!(entry.playlistify());
                 Ok(entry)
             } else {
                 Ok(entry)
             }
         },
         Err(_) => {
-            let entry = try!(Entry::create_by_url(url.to_string()));
-            let entry = try!(playlistify_entry(entry));
+            let mut entry = try!(Entry::create_by_url(url.to_string()));
+            try!(entry.playlistify());
             println!("Create new entry to database cache: {}", url);
             Ok(entry)
         },
     }
-}
-
-pub fn playlistify_entry(entry: Entry) -> Result<Entry, Error> {
-    let mut e = entry.clone();
-    let product = try!(extract(&entry.url));
-    match product.og_obj {
-        Some(og_obj) => {
-            e.title       = Some(og_obj.title);
-            e.description = og_obj.description;
-            e.locale      = og_obj.locale;
-            e.visual_url  = og_obj.images.first().map(|i| i.url.clone());
-        },
-        None => (),
-    }
-    for t in product.tracks {
-        let new_track = try!(Track::find_or_create(t.provider, t.identifier.to_string()));
-        let mut track = t.clone();
-        track.id      = new_track.id;
-        try!(track.fetch_detail().save());
-        match entry.tracks.iter().find(|&t| t.id == track.id) {
-            Some(_) => (),
-            None    => try!(e.add_track(track.clone())),
-        }
-    }
-    for p in product.playlists {
-        let new_playlist = try!(Playlist::find_or_create(p.provider, p.identifier.to_string()));
-        let mut playlist = p.clone();
-        playlist.id      = new_playlist.id;
-        try!(playlist.save());
-        match entry.playlists.iter().find(|&p| p.id == playlist.id) {
-            Some(_) => (),
-            None    => try!(e.add_playlist(playlist.clone())),
-        }
-    }
-    for a in product.albums {
-        let new_album = try!(Album::find_or_create(a.provider, a.identifier.to_string()));
-        let mut album = a.clone();
-        album.id      = new_album.id;
-        try!(album.save());
-        match entry.albums.iter().find(|&a| a.id == album.id) {
-            Some(_) => (),
-            None    => try!(e.add_album(album.clone())),
-        }
-    }
-    try!(e.save());
-    Ok(e)
 }
 
 pub fn update<'a, T: Enclosure<'a>>(req: &mut Request) -> IronResult<Response> {
