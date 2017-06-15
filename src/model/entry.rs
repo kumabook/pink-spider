@@ -4,18 +4,37 @@ use error::Error;
 use chrono::{NaiveDateTime, UTC};
 use super::{conn, Model};
 use model::enclosure::Enclosure;
+use scraper;
 use Track;
 use Playlist;
 use Album;
+use model::PaginatedCollection;
+use serde_json::Value;
+use feed_rs;
 
-static PROPS: [&'static str; 8]  = ["id",
-                                    "url",
-                                    "title",
-                                    "description",
-                                    "visual_url",
-                                    "locale",
-                                    "created_at",
-                                    "updated_at"];
+static PROPS: [&'static str; 20]  = ["id",
+                                     "url",
+                                     "title",
+                                     "description",
+                                     "visual_url",
+                                     "locale",
+
+                                     "summary",
+                                     "content",
+                                     "author",
+                                     "crawled",
+                                     "published",
+                                     "updated",
+                                     "fingerprint",
+                                     "origin_id",
+                                     "alternate",
+                                     "keywords",
+                                     "enclosure",
+
+                                     "feed_id",
+
+                                     "created_at",
+                                     "updated_at"];
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Entry {
@@ -25,6 +44,18 @@ pub struct Entry {
     pub description: Option<String>,
     pub visual_url:  Option<String>,
     pub locale:      Option<String>,
+    pub summary:     Option<String>,
+    pub content:     Option<String>,
+    pub author:      Option<String>,
+    pub crawled:     NaiveDateTime,
+    pub published:   NaiveDateTime,
+    pub updated:     Option<NaiveDateTime>,
+    pub fingerprint: String,
+    pub origin_id:   String,
+    pub alternate:   Value,
+    pub keywords:    Value,
+    pub enclosure:   Value,
+    pub feed_id:     Option<Uuid>,
     pub created_at:  NaiveDateTime,
     pub updated_at:  NaiveDateTime,
     pub tracks:      Vec<Track>,
@@ -52,8 +83,20 @@ impl<'a> Model<'a> for Entry {
                 description: row.get(3),
                 visual_url:  row.get(4),
                 locale:      row.get(5),
-                created_at:  row.get(6),
-                updated_at:  row.get(7),
+                summary:     row.get(6),
+                content:     row.get(7),
+                author:      row.get(8),
+                crawled:     row.get(9),
+                published:   row.get(10),
+                updated:     row.get(11),
+                fingerprint: row.get(12),
+                origin_id:   row.get(13),
+                alternate:   row.get(14),
+                keywords:    row.get(15),
+                enclosure:   row.get(16),
+                feed_id:     row.get(17),
+                created_at:  row.get(18),
+                updated_at:  row.get(19),
                 tracks:      Track::find_by_entry_id(row.get(0)),
                 playlists:   Playlist::find_by_entry_id(row.get(0)),
                 albums:      Album::find_by_entry_id(row.get(0)),
@@ -80,8 +123,20 @@ impl<'a> Model<'a> for Entry {
                                    description = $4,
                                    visual_url  = $5,
                                    locale      = $6,
-                                   created_at  = $7,
-                                   updated_at  = $8
+                                   summary     = $7,
+                                   content     = $8,
+                                   author      = $9,
+                                   crawled     = $10,
+                                   published   = $11,
+                                   updated     = $12,
+                                   fingerprint = $13,
+                                   origin_id   = $14,
+                                   alternate   = $15,
+                                   keywords    = $16,
+                                   enclosure   = $17,
+                                   feed_id     = $18,
+                                   created_at  = $19,
+                                   updated_at  = $20
                                  WHERE id = $1"));
         let result = stmt.query(&[&self.id,
                                   &self.url,
@@ -89,6 +144,18 @@ impl<'a> Model<'a> for Entry {
                                   &self.description,
                                   &self.visual_url,
                                   &self.locale,
+                                  &self.summary,
+                                  &self.content,
+                                  &self.author,
+                                  &self.crawled,
+                                  &self.published,
+                                  &self.updated,
+                                  &self.fingerprint,
+                                  &self.origin_id,
+                                  &self.alternate,
+                                  &self.keywords,
+                                  &self.enclosure,
+                                  &self.feed_id,
                                   &self.created_at,
                                   &self.updated_at]);
         try!(result);
@@ -109,8 +176,23 @@ impl Entry {
                 description: None,
                 visual_url:  None,
                 locale:      None,
+
+                summary:     None,
+                content:     None,
+                author:      None,
+                crawled:     UTC::now().naive_utc(),
+                published:   UTC::now().naive_utc(),
+                updated:     None,
+                fingerprint: "".to_string(),
+                origin_id:   "".to_string(),
+                alternate:   Value::Null,
+                keywords:    Value::Null,
+                enclosure:   Value::Null,
+                feed_id:     None,
+
                 created_at:  UTC::now().naive_utc(),
                 updated_at:  UTC::now().naive_utc(),
+
                 tracks:      Vec::new(),
                 playlists:   Vec::new(),
                 albums:      Vec::new(),
@@ -152,8 +234,23 @@ impl Entry {
                 description: None,
                 visual_url:  None,
                 locale:      None,
+
+                summary:     None,
+                content:     None,
+                author:      None,
+                crawled:     UTC::now().naive_utc(),
+                published:   UTC::now().naive_utc(),
+                updated:     None,
+                fingerprint: "".to_string(),
+                origin_id:   "".to_string(),
+                alternate:   Value::Null,
+                keywords:    Value::Null,
+                enclosure:   Value::Null,
+                feed_id:     None,
+
                 created_at:  UTC::now().naive_utc(),
                 updated_at:  UTC::now().naive_utc(),
+
                 tracks:      Vec::new(),
                 playlists:   Vec::new(),
                 albums:      Vec::new(),
