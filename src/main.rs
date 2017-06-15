@@ -33,6 +33,8 @@ use pink_spider::scraper::extract;
 use pink_spider::model::{Model, Track, Playlist, Album, Artist, Entry, Enclosure, Provider, PaginatedCollection};
 use pink_spider::get_env;
 
+const DEFAULT_PER_PAGE: i64 = 25;
+
 fn to_err(e: serde_json::Error) -> Error { Error::from(e) }
 
 pub fn index<'a, T: Model<'a>>(req: &mut Request) -> IronResult<Response> {
@@ -217,11 +219,16 @@ fn query_as_string(req: &mut Request, key: &str) -> String {
 
 fn pagination_params(req: &mut Request) -> (i64, i64) {
     match req.get_ref::<UrlEncodedQuery>() {
-        Ok(ref params) =>
-            (params.get("page").unwrap()[0].to_string().parse::<i64>().unwrap(),
-             params.get("per_page").unwrap()[0].to_string().parse::<i64>().unwrap()),
-        Err(_) =>
-            (0, 10)
+        Ok(ref params) => {
+            let page = params.get("page")
+                             .and_then(|v| v[0].to_string().parse::<i64>().ok())
+                             .unwrap_or(0);
+            let per_page = params.get("per_page")
+                                 .and_then(|v| v[0].to_string().parse::<i64>().ok())
+                                 .unwrap_or(DEFAULT_PER_PAGE);
+            (page, per_page)
+        },
+        Err(_) => (0, DEFAULT_PER_PAGE)
     }
 }
 
