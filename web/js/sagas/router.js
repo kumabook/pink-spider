@@ -3,6 +3,7 @@ import {
   createHashHistory,
 } from 'redux-saga-router';
 import { fork, put }                   from 'redux-saga/effects';
+import { creators as feedActions }    from '../actions/feed';
 import { creators as entryActions }    from '../actions/entry';
 import { creators as trackActions }    from '../actions/track';
 import { creators as albumActions }    from '../actions/album';
@@ -17,6 +18,19 @@ export const getPage = () => parseIntOr(getSerachParams().get('page'), 0);
 export const getPerPage = () => parseIntOr(getSerachParams().get('per_page'), defaultPerPage);
 
 const routes = {
+  '/feeds': function* fetchFeeds() {
+    yield put(feedActions.index.start({
+      page:    getPage(),
+      perPage: getPerPage(),
+    }));
+  },
+  '(?:/feeds/:feedId)?/entries': function* fetchEntriesOfFeed({ feedId }) {
+    yield put(entryActions.index.start({
+      page:    getPage(),
+      perPage: getPerPage(),
+      feedId,
+    }));
+  },
   '/entries': function* fetchEntries() {
     yield put(entryActions.index.start({
       page:    getPage(),

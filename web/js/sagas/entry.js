@@ -17,13 +17,16 @@ import {
 } from '../actions/entry';
 import { defaultPerPage } from '../config';
 
-export function* fetchEntries({ payload: { page = 0, perPage = defaultPerPage } }) {
+export function* fetchEntries({ payload: { page = 0, perPage = defaultPerPage, feedId } }) {
   try {
-    const items = yield call(api.index, page, perPage);
+    yield put(showProgress());
+    const items = yield call(api.index, page, perPage, feedId);
     yield put(creators.index.succeeded(items));
   } catch (e) {
     yield put(creators.index.failed(e));
     yield put(showMessage(e.message));
+  } finally {
+    yield put(hideProgress());
   }
 }
 
@@ -33,11 +36,14 @@ export function* watchFetchEntries() {
 
 export function* fetchEntry() {
   try {
+    yield put(showProgress());
     const items = yield call(api.show);
     yield put(creators.show.succeeded(items));
   } catch (e) {
     yield put(creators.show.failed(e));
     yield put(showMessage(e.message));
+  } finally {
+    yield put(hideProgress());
   }
 }
 

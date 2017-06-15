@@ -2,6 +2,11 @@ import {
   fork,
 } from 'redux-saga/effects';
 import {
+  watchFetchFeeds,
+  watchFetchFeed,
+  watchUpdateFeed,
+} from './feed';
+import {
   watchFetchEntries,
   watchFetchEntry,
   watchUpdateEntry,
@@ -30,6 +35,9 @@ import routerSaga from './router';
 
 export default function* root() {
   yield [
+    fork(watchFetchFeeds),
+    fork(watchFetchFeed),
+    fork(watchUpdateFeed),
     fork(watchFetchEntries),
     fork(watchFetchEntry),
     fork(watchUpdateEntry),
