@@ -24,6 +24,7 @@ class App extends React.Component {
     return {
       children:                 PropTypes.element.isRequired,
       handleClick:              PropTypes.func.isRequired,
+      handleFeedsMenuClick:     PropTypes.func.isRequired,
       handleEntriesMenuClick:   PropTypes.func.isRequired,
       handlePlaylistsMenuClick: PropTypes.func.isRequired,
       handleAlbumsMenuClick:    PropTypes.func.isRequired,
@@ -51,6 +52,7 @@ class App extends React.Component {
             title="Menu"
             onLeftIconButtonTouchTap={this.props.handleClick}
           />
+          <MenuItem onTouchTap={this.props.handleFeedsMenuClick}>Feeds</MenuItem>
           <MenuItem onTouchTap={this.props.handleEntriesMenuClick}>Entries</MenuItem>
           <MenuItem onTouchTap={this.props.handlePlaylistsMenuClick}>Playlists</MenuItem>
           <MenuItem onTouchTap={this.props.handleAlbumsMenuClick}>Albums</MenuItem>
@@ -75,7 +77,11 @@ function mapStateToProps(state) {
 
 function mapDispatchToProps(dispatch) {
   return {
-    handleClick:            () => dispatch(toggleDrawler()),
+    handleClick:          () => dispatch(toggleDrawler()),
+    handleFeedsMenuClick: () => {
+      dispatch(push({ pathname: '/feeds', query: { page: 0 } }));
+      dispatch(toggleDrawler());
+    },
     handleEntriesMenuClick: () => {
       dispatch(push({ pathname: '/entries', query: { page: 0 } }));
       dispatch(toggleDrawler());

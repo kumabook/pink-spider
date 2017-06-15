@@ -15,6 +15,7 @@ import {
 } from 'react-router-redux';
 import createSagaMiddleware from 'redux-saga';
 import App                  from './containers/App';
+import FeedList             from './containers/FeedList';
 import EntryList            from './containers/EntryList';
 import TrackList            from './containers/TrackList';
 import TrackDetail          from './containers/TrackDetail';
@@ -50,6 +51,8 @@ ReactDOM.render(
             <Route path="/entries/:entry_id/albums" component={AlbumList} />
             <Route path="/entries" component={EntryList} />
             <Route path="/artists" component={ArtistList} />
+            <Route path="/feeds/:feed_id/entries" component={EntryList} />
+            <Route path="/feeds" component={FeedList} />
             <Route path="/" component={EntryList} />
           </Switch>
         </App>

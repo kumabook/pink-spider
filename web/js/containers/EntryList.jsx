@@ -85,10 +85,7 @@ function mapDispatchToProps(dispatch) {
       const params = new URLSearchParams();
       params.append('page', page);
       params.append('per_page', perPage);
-      dispatch(push({
-        pathname: '/entries',
-        search:   params.toString(),
-      }));
+      dispatch(push({ search: params.toString() }));
     },
     itemsOfEntry: (resourceName, entryId) => {
       const params = new URLSearchParams();
