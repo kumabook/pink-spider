@@ -35,17 +35,39 @@ use pink_spider::get_env;
 
 fn to_err(e: serde_json::Error) -> Error { Error::from(e) }
 
-pub fn index_entries(req: &mut Request) -> IronResult<Response> {
+pub fn index<'a, T: Model<'a>>(req: &mut Request) -> IronResult<Response> {
     let (page, per_page) = pagination_params(req);
-    let entries          = Entry::find(page, per_page);
-    let body             = try!(serde_json::to_string(&entries).map_err(to_err));
+    let items            = T::find(page, per_page);
+    let body             = try!(serde_json::to_string(&items).map_err(to_err));
     Ok(Response::with((status::Ok, application_json(), body)))
 }
 
-pub fn index<'a, T: Model<'a>>(req: &mut Request) -> IronResult<Response> {
+pub fn index_entries(req: &mut Request) -> IronResult<Response> {
+    pub fn index_entries2(req: &mut Request) -> Result<Response, Error> {
+        let (page, per_page) = pagination_params(req);
+        let ref params       = try!(req.get_ref::<UrlEncodedQuery>());
+        let url              = params.get("url");
+        let newer_than       = params.get("newer_than");
+        let entries = if let (Some(url), Some(newer_than)) = (url, newer_than) {
+            let feed = try!(Feed::find_by_url(&url[0]));
+            let newer_than = newer_than[0].parse::<i64>()
+                .map(|t| NaiveDateTime::from_timestamp(t, 0)).ok();
+            Entry::find_by_feed_id(feed.id, newer_than, page, per_page)
+        } else {
+            Entry::find(page, per_page)
+        };
+        let body = try!(serde_json::to_string(&entries).map_err(to_err));
+        Ok(Response::with((status::Ok, application_json(), body)))
+    }
+    index_entries2(req).map_err(|err| IronError::from(err))
+}
+
+pub fn index_entries_by_feed(req: &mut Request) -> IronResult<Response> {
     let (page, per_page) = pagination_params(req);
-    let enclosures       = T::find(page, per_page);
-    let body             = try!(serde_json::to_string(&enclosures).map_err(to_err));
+    let ref id           = req.extensions.get::<Router>().unwrap().find("id").unwrap();
+    let feed             = try!(Feed::find_by_id(id));
+    let entries          = Entry::find_by_feed_id(feed.id, None, page, per_page);
+    let body             = try!(serde_json::to_string(&entries).map_err(to_err));
     Ok(Response::with((status::Ok, application_json(), body)))
 }
 
