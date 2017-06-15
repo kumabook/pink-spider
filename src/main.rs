@@ -25,12 +25,12 @@ use urlencoded::UrlEncodedQuery;
 use urlencoded::UrlEncodedBody;
 use std::str::FromStr;
 use uuid::Uuid;
+use chrono::NaiveDateTime;
 
 extern crate pink_spider;
 
 use pink_spider::error::Error;
-use pink_spider::scraper::extract;
-use pink_spider::model::{Model, Track, Playlist, Album, Artist, Entry, Enclosure, Provider, PaginatedCollection};
+use pink_spider::model::{Model, Feed, Entry, Track, Playlist, Album, Artist, Enclosure, Provider, PaginatedCollection};
 use pink_spider::get_env;
 
 const DEFAULT_PER_PAGE: i64 = 25;
@@ -48,7 +48,7 @@ pub fn index_entries(req: &mut Request) -> IronResult<Response> {
     pub fn index_entries2(req: &mut Request) -> Result<Response, Error> {
         let (page, per_page) = pagination_params(req);
         let ref params       = try!(req.get_ref::<UrlEncodedQuery>());
-        let url              = params.get("url");
+        let url              = params.get("feed_url");
         let newer_than       = params.get("newer_than");
         let entries = if let (Some(url), Some(newer_than)) = (url, newer_than) {
             let feed = try!(Feed::find_by_url(&url[0]));
@@ -261,8 +261,13 @@ pub fn main() {
         legacy_playlistify:       get  "/playlistify"                    => legacy_playlistify,
         playlistify:              get  "/v1/playlistify"                 => playlistify,
 
+        index_feeds:              get  "/v1/feeds"                       => index::<Feed>,
+        show_feed:                get  "/v1/feeds/:id"                   => show_by_id::<Feed>,
+        mget_feeds:               get  "/v1/feeds/.mget"                 => mget::<Feed>,
         create_feed:              post "/v1/feeds"                       => create_feed_by_url,
+
         index_entries:            get  "/v1/entries"                     => index_entries,
+        index_entries_by_feed:    get  "/v1/feeds/:id/entries"           => index_entries_by_feed,
         index_artists:            get  "/v1/artists"                     => index::<Artist>,
         mget_artists:             post "/v1/artists/.mget"               => mget::<Artist>,
 
