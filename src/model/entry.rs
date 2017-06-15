@@ -218,7 +218,33 @@ impl Entry {
     pub fn find_or_create_by_url(url: String) -> Result<Entry, Error> {
         match Entry::find_by_url(&url) {
             Ok(entry) => Ok(entry),
-            Err(_)    => Entry::create_by_url(url)
+            Err(Error::NotFound) => Entry::create_by_url(url),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn find_by_feed_id(feed_id: Uuid, newer_than: Option<NaiveDateTime>, page: i64, per_page: i64) -> PaginatedCollection<Entry> {
+        let conn = conn().unwrap();
+        let stmt = conn.prepare(
+            &format!("SELECT {} FROM entries
+                        WHERE entries.feed_id = $1 AND entries.published >= $2
+                        ORDER BY entries.published DESC
+                        LIMIT $4 OFFSET $3",
+                     Entry::props_str(""))).unwrap();
+        let offset = page * per_page;
+        let published = newer_than.unwrap_or(NaiveDateTime::from_timestamp(0, 0));
+        let rows   = stmt.query(&[&feed_id, &published, &offset, &per_page]).unwrap();
+        let items  = Self::rows_to_items(rows);
+        let mut total: i64 = 0;
+        let sql = "SELECT COUNT(*) FROM entries WHERE entries.feed_id = $1";
+        for row in conn.query(&sql, &[&feed_id]).unwrap().iter() {
+            total = row.get(0);
+        }
+        PaginatedCollection {
+            page:     page,
+            per_page: per_page,
+            total:    total,
+            items:    items,
         }
     }
 
