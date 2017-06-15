@@ -202,6 +202,22 @@ pub fn create<'a, T: Enclosure<'a>>(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, application_json(), body)))
 }
 
+pub fn create_feed_by_url(req: &mut Request) -> IronResult<Response> {
+    let json = req.get::<bodyparser::Json>()
+        .map_err(|_| IronError::from(Error::Unprocessable))
+        .and_then(|v| v.ok_or(IronError::from(Error::Unprocessable)))?;
+    let url = json.get("url")
+        .and_then(|v| v.as_str())
+        .ok_or(IronError::from(Error::Unprocessable))?;
+    println!("--------------- Create {:?} ---------------", url);
+    let mut item = try!(Feed::find_or_create_by_url(url.to_string()));
+    try!(item.fetch_props());
+    println!("Result {:?}  {:?}", url, item);
+    try!(item.save());
+    let body = try!(serde_json::to_string(&item).map_err(to_err));
+    Ok(Response::with((status::Ok, application_json(), body)))
+}
+
 fn param_as_string(req: &mut Request, key: &str) -> Option<String> {
     match req.get_ref::<UrlEncodedBody>() {
         Ok(ref params) => match params.get(key) {
@@ -244,6 +260,8 @@ pub fn main() {
         web:                      get  "/*"                        => mount,
         legacy_playlistify:       get  "/playlistify"                    => legacy_playlistify,
         playlistify:              get  "/v1/playlistify"                 => playlistify,
+
+        create_feed:              post "/v1/feeds"                       => create_feed_by_url,
         index_entries:            get  "/v1/entries"                     => index_entries,
         index_artists:            get  "/v1/artists"                     => index::<Artist>,
         mget_artists:             post "/v1/artists/.mget"               => mget::<Artist>,
