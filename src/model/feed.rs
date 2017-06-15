@@ -215,15 +215,11 @@ impl Feed {
                 continue;
             }
             let alt = entry.alternate.first().unwrap();
-            if let Ok(_) = Entry::find_by_url(&alt.href) {
-                continue;
-            }
-            match Entry::create_by_url(alt.href.to_string()) {
+            match Entry::find_or_create_by_url_if_invalid(alt.href.to_string()) {
                 Ok(mut e) => {
                     println!("Found new entry: {}", e.url);
                     e.update_with_feed_entry(&entry);
                     e.feed_id = Some(self.id);
-                    try!(e.save());
                     let _ = e.playlistify();
                     if let Ok(_) = e.save() {
                         entries.push(e);

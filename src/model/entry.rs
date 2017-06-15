@@ -106,8 +106,8 @@ impl<'a> Model<'a> for Entry {
     }
     fn create(&self) -> Result<Entry, Error> {
         let conn = try!(conn());
-        let stmt = try!(conn.prepare("INSERT INTO entries (url) VALUES ($1) RETURNING id"));
-        let rows = try!(stmt.query(&[&self.url]));
+        let stmt = try!(conn.prepare("INSERT INTO entries (url, published) VALUES ($1, $2) RETURNING id"));
+        let rows = try!(stmt.query(&[&self.url, &NaiveDateTime::from_timestamp(0, 0)]));
         let mut entry = self.clone();
         for row in rows.iter() {
             entry.id = row.get(0);
@@ -180,8 +180,8 @@ impl Entry {
                 summary:     None,
                 content:     None,
                 author:      None,
-                crawled:     UTC::now().naive_utc(),
-                published:   UTC::now().naive_utc(),
+                crawled:     NaiveDateTime::from_timestamp(0, 0),
+                published:   NaiveDateTime::from_timestamp(0, 0), // exclude from api response
                 updated:     None,
                 fingerprint: "".to_string(),
                 origin_id:   "".to_string(),
@@ -232,7 +232,7 @@ impl Entry {
                         LIMIT $4 OFFSET $3",
                      Entry::props_str(""))).unwrap();
         let offset = page * per_page;
-        let published = newer_than.unwrap_or(NaiveDateTime::from_timestamp(0, 0));
+        let published = newer_than.unwrap_or(NaiveDateTime::from_timestamp(1000, 0)); // ignore 0 timestamp
         let rows   = stmt.query(&[&feed_id, &published, &offset, &per_page]).unwrap();
         let items  = Self::rows_to_items(rows);
         let mut total: i64 = 0;
@@ -250,8 +250,8 @@ impl Entry {
 
     pub fn create_by_url(url: String) -> Result<Entry, Error> {
         let conn = try!(conn());
-        let stmt = try!(conn.prepare("INSERT INTO entries (url) VALUES ($1) RETURNING id"));
-        let rows = try!(stmt.query(&[&url]));
+        let stmt = try!(conn.prepare("INSERT INTO entries (url, published) VALUES ($1, $2) RETURNING id"));
+        let rows = try!(stmt.query(&[&url, &NaiveDateTime::from_timestamp(0, 0)]));
         for row in rows.iter() {
             let entry = Entry {
                 id:          row.get(0),
@@ -284,6 +284,25 @@ impl Entry {
             return Ok(entry);
         }
         Err(Error::Unexpected)
+    }
+
+    pub fn is_valid(&self) -> bool {
+        self.published.timestamp() >= 1000
+    }
+
+    pub fn find_or_create_by_url_if_invalid(url: String) -> Result<Entry, Error> {
+        match Entry::find_by_url(&url) {
+            Ok(entry) => {
+                if !entry.is_valid() {
+                    Ok(entry)
+                } else {
+                    Err(Error::NotFound)
+                }
+            },
+            Err(_) => {
+                Entry::create_by_url(url)
+            }
+        }
     }
 
     pub fn update_with_feed_entry(&mut self, entry: &feed_rs::Entry) {
