@@ -24,7 +24,7 @@ default = ["postgres"]
 [dependencies]
 iron             = "*"
 router           = "*"
-hyper            = "*"
+hyper            = "0.10.12"
 hyper-native-tls = "^0"
 regex            = "*"
 string_cache     = "*"
