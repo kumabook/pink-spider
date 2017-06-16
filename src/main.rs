@@ -32,6 +32,7 @@ extern crate pink_spider;
 use pink_spider::error::Error;
 use pink_spider::model::{Model, Feed, Entry, Track, Playlist, Album, Artist, Enclosure, Provider, PaginatedCollection};
 use pink_spider::get_env;
+use pink_spider::rss;
 
 const DEFAULT_PER_PAGE: i64 = 25;
 
@@ -209,11 +210,13 @@ pub fn create_feed_by_url(req: &mut Request) -> IronResult<Response> {
     let url = json.get("url")
         .and_then(|v| v.as_str())
         .ok_or(IronError::from(Error::Unprocessable))?;
-    println!("--------------- Create {:?} ---------------", url);
+    println!("--------------- Creating {:?} ---------------", url);
+    let rss_feed = try!(rss::fetch(url));
     let mut item = try!(Feed::find_or_create_by_url(url.to_string()));
-    try!(item.fetch_props());
+    item.update_props(rss_feed);
     println!("Result {:?}  {:?}", url, item);
     try!(item.save());
+    println!("--------------- Created {:?} ---------------", url);
     let body = try!(serde_json::to_string(&item).map_err(to_err));
     Ok(Response::with((status::Ok, application_json(), body)))
 }

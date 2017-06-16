@@ -2,6 +2,7 @@ use postgres;
 use uuid::Uuid;
 use error::Error;
 use chrono::{NaiveDateTime, UTC};
+use feed_rs;
 use super::{conn, Model, Entry};
 use model::state::State;
 use rss;
@@ -193,6 +194,11 @@ impl Feed {
 
     pub fn fetch_props(&mut self) -> Result<(), Error> {
         let rss_feed      = try!(rss::fetch(&self.url));
+        self.update_props(rss_feed);
+        Ok(())
+    }
+
+    pub fn update_props(&mut self, rss_feed: feed_rs::Feed) {
         let now           = UTC::now().naive_utc();
         self.title        = rss_feed.title.unwrap_or("".to_string());
         self.description  = rss_feed.description;
@@ -204,7 +210,6 @@ impl Feed {
         self.visual_url   = rss_feed.visual_url;
         self.icon_url     = rss_feed.icon_url;
         self.cover_url    = rss_feed.cover_url;
-        Ok(())
     }
 
     pub fn crawl(&mut self) -> Result<Vec<Entry>, Error> {
