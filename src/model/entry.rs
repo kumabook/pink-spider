@@ -326,7 +326,9 @@ impl Entry {
         let product = try!(scraper::extract(&self.url));
         match product.og_obj {
             Some(og_obj) => {
-                self.title       = Some(og_obj.title);
+                if !og_obj.title.is_empty() {
+                    self.title = Some(og_obj.title);
+                }
                 self.description = og_obj.description;
                 self.locale      = og_obj.locale;
                 self.visual_url  = og_obj.images.first().map(|i| i.url.clone());
