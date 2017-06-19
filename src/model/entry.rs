@@ -322,11 +322,16 @@ impl Entry {
         self.updated_at  = UTC::now().naive_utc();
     }
 
+    pub fn has_title(&self) -> bool {
+        let title = &self.title.clone().unwrap_or("".to_string());
+        !title.is_empty()
+    }
+
     pub fn playlistify(&mut self) -> Result<(), Error> {
         let product = try!(scraper::extract(&self.url));
         match product.og_obj {
             Some(og_obj) => {
-                if !og_obj.title.is_empty() {
+                if !self.has_title() {
                     self.title = Some(og_obj.title);
                 }
                 self.description = og_obj.description;
