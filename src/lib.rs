@@ -13,6 +13,8 @@ extern crate postgres;
 extern crate chrono;
 extern crate queryst;
 extern crate toml;
+extern crate encoding;
+
 #[macro_use]
 extern crate serde_derive;
 extern crate serde;

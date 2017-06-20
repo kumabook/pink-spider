@@ -45,6 +45,7 @@ serde_json       = "^1"
 serde_derive     = "^1"
 opengraph        = "^0"
 feed-rs          = "^0"
+encoding         = "^0.2"
 [dependencies.mount]
 git = "https://github.com/iron/mount.git"
 [dependencies.postgres]

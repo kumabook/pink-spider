@@ -19,14 +19,19 @@ pub fn main() {
         feeds = Feed::find(page, per_page);
         for mut feed in feeds.items {
             println!("Crawl {} ", feed.url);
-            if let Ok(entries) = feed.crawl() {
-                println!("Found {} entries", entries.len());
-                println!("Found {} tracks",
-                         entries.iter().fold(0, |sum, e| sum + e.tracks.len()));
-                println!("Found {} albums",
-                         entries.iter().fold(0, |sum, e| sum + e.albums.len()));
-                println!("Found {} playlists",
-                         entries.iter().fold(0, |sum, e| sum + e.playlists.len()));
+            match feed.crawl() {
+                Ok(entries) => {
+                    println!("Found {} entries", entries.len());
+                    println!("Found {} tracks",
+                             entries.iter().fold(0, |sum, e| sum + e.tracks.len()));
+                    println!("Found {} albums",
+                             entries.iter().fold(0, |sum, e| sum + e.albums.len()));
+                    println!("Found {} playlists",
+                             entries.iter().fold(0, |sum, e| sum + e.playlists.len()));
+                },
+                Err(e) => {
+                    println!("Failed to crawl {}: {:?}", feed.url, e);
+                },
             }
         }
         page += 1;
