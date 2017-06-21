@@ -16,16 +16,16 @@ use serde::de::Error;
 use get_env;
 use http;
 
-static BASE_URL:          &'static str = "https://api.spotify.com/v1";
-pub static TRACK_URI:     &'static str = r"spotify:track:([a-zA-Z0-9_-]+)";
-pub static TRACK_OPEN:    &'static str = r"open.spotify.com/track/([a-zA-Z0-9_-]+)";
-pub static TRACK_EMBED:   &'static str = r"open.spotify.com/embed/track/([a-zA-Z0-9_-]+)";
-pub static PLAYLIST_URI:  &'static str = r"(spotify:user:([a-zA-Z0-9_-]+):playlist:([a-zA-Z0-9_-]+))";
-pub static PLAYLIST_OPEN: &'static str = r"(open.spotify.com/user/([a-zA-Z0-9_-]+)/playlist/([a-zA-Z0-9_-]+))";
+static BASE_URL:           &'static str = "https://api.spotify.com/v1";
+pub static TRACK_URI:      &'static str = r"spotify:track:([a-zA-Z0-9_-]+)";
+pub static TRACK_OPEN:     &'static str = r"open.spotify.com/track/([a-zA-Z0-9_-]+)";
+pub static TRACK_EMBED:    &'static str = r"open.spotify.com/embed/track/([a-zA-Z0-9_-]+)";
+pub static PLAYLIST_URI:   &'static str = r"(spotify:user:([a-zA-Z0-9_-]+):playlist:([a-zA-Z0-9_-]+))";
+pub static PLAYLIST_OPEN:  &'static str = r"(open.spotify.com/user/([a-zA-Z0-9_-]+)/playlist/([a-zA-Z0-9_-]+))";
 pub static PLAYLIST_EMBED: &'static str = r"(open.spotify.com/embed/user/([a-zA-Z0-9_-]+)/playlist/([a-zA-Z0-9_-]+))";
-pub static ALBUM_URI:     &'static str = r"spotify:album:([a-zA-Z0-9_-]+)";
-pub static ALBUM_OPEN:    &'static str = r"open.spotify.com/album/([a-zA-Z0-9_-]+)";
-pub static ALBUM_EMBED:   &'static str = r"open.spotify.com/embed/album/([a-zA-Z0-9_-]+)";
+pub static ALBUM_URI:      &'static str = r"spotify:album:([a-zA-Z0-9_-]+)";
+pub static ALBUM_OPEN:     &'static str = r"open.spotify.com/album/([a-zA-Z0-9_-]+)";
+pub static ALBUM_EMBED:    &'static str = r"open.spotify.com/embed/album/([a-zA-Z0-9_-]+)";
 
 lazy_static! {
     static ref CLIENT_ID: String = {
