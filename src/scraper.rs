@@ -346,6 +346,10 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
         Some(identifier) => return (vec![], vec![], fetch_spotify_track(identifier)),
         None             => ()
     }
+    match extract_identifier(&decoded, spotify::TRACK_EMBED) {
+        Some(identifier) => return (vec![], vec![], fetch_spotify_track(identifier)),
+        None             => ()
+    }
     match extract_identifier(&decoded, spotify::PLAYLIST_URI).and_then(
         |uri| spotify::parse_uri_as_playlist(&uri)) {
         Some((uid, pid)) => return create_spotify_playlist(uid, pid),
@@ -356,11 +360,20 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
         Some((uid, pid)) => return create_spotify_playlist(uid, pid),
         None => ()
     }
+    match extract_identifier(&decoded, spotify::PLAYLIST_EMBED).and_then(
+        |url| spotify::parse_open_url_as_playlist(&url)) {
+        Some((uid, pid)) => return create_spotify_playlist(uid, pid),
+        None => ()
+    }
     match extract_identifier(&decoded, spotify::ALBUM_URI) {
         Some(identifier) => return fetch_spotify_album(identifier),
         None             => ()
     }
     match extract_identifier(&decoded, spotify::ALBUM_OPEN) {
+        Some(identifier) => return fetch_spotify_album(identifier),
+        None             => ()
+    }
+    match extract_identifier(&decoded, spotify::ALBUM_EMBED) {
         Some(identifier) => return fetch_spotify_album(identifier),
         None             => ()
     }
