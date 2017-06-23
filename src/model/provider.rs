@@ -6,6 +6,7 @@ pub enum Provider {
     YouTube,
     SoundCloud,
     Spotify,
+    Custom,
     Raw
 }
 
@@ -16,7 +17,8 @@ impl PartialEq for Provider {
             Provider::YouTube    => match *p { Provider::YouTube    => true, _ => false },
             Provider::SoundCloud => match *p { Provider::SoundCloud => true, _ => false },
             Provider::Spotify    => match *p { Provider::Spotify    => true, _ => false },
-            Provider::Raw        => match *p { Provider::Raw        => true, _ => false }
+            Provider::Custom     => match *p { Provider::Custom     => true, _ => false },
+            Provider::Raw        => match *p { Provider::Raw        => true, _ => false },
         }
     }
 }
@@ -28,6 +30,7 @@ impl Provider {
             Provider::YouTube    => "YouTube",
             Provider::SoundCloud => "SoundCloud",
             Provider::Spotify    => "Spotify",
+            Provider::Custom     => "Custom",
             Provider::Raw        => "Raw",
         }.to_string()
     }
@@ -41,6 +44,7 @@ impl Provider {
             "soundcloud" => Provider::SoundCloud,
             "Spotify"    => Provider::Spotify,
             "spotify"    => Provider::Spotify,
+            "Custom"     => Provider::Custom,
             _            => Provider::Raw,
         }
     }

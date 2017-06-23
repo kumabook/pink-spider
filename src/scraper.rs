@@ -149,7 +149,7 @@ pub fn extract_enclosures_from_tag(tag_name: &str,
 }
 
 pub fn extract_opengraph_metadata_from_tag(tag_name: &str,
-                                            attrs: &Vec<Attribute>) -> Vec<(String, String)> {
+                                           attrs: &Vec<Attribute>) -> Vec<(String, String)> {
 
     let mut og_props = vec!();
     if tag_name == "meta" {

@@ -42,5 +42,6 @@ pub mod itunes;
 pub mod youtube;
 pub mod soundcloud;
 pub mod spotify;
+pub mod lemoned;
 pub mod get_env;
 pub mod http;

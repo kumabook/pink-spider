@@ -8,6 +8,7 @@ use youtube;
 use youtube::HasThumbnail;
 use soundcloud;
 use spotify;
+use lemoned;
 use error::Error;
 use super::{conn, Model};
 use model::enclosure::Enclosure;
@@ -210,6 +211,10 @@ impl<'a> Enclosure<'a> for Track {
             },
             Provider::Spotify => match spotify::fetch_track(&self.identifier) {
                 Ok(sp_track) => self.update_with_sp_track(&sp_track),
+                Err(_)       => self.disable(),
+            },
+            Provider::Custom => match lemoned::fetch_track(&self.identifier) {
+                Ok(le_track) => self.update_with_le_track(&le_track),
                 Err(_)       => self.disable(),
             },
             _ => self,
@@ -419,6 +424,20 @@ impl Track {
         if album.images.len() > 1 {
             self.thumbnail_url = Some(album.images[1].url.clone());
         }
+        self
+    }
+
+    pub fn update_with_le_track(&mut self, track: &lemoned::Track) -> &mut Track {
+        self.provider      = Provider::Custom;
+        self.url           = track.url.clone();
+        self.title         = track.title.clone().unwrap_or("".to_string());
+        self.description   = track.description.clone();
+        self.thumbnail_url = track.thumbnail_url.clone();
+        self.artwork_url   = track.artwork_url.clone();
+        self.audio_url     = track.audio_url.clone();
+        self.published_at  = NaiveDateTime::from_timestamp(track.published_at.timestamp(), 0);
+        self.owner_id      = track.clone().artist.map(|a| a.id.to_string());
+        self.owner_name    = track.clone().artist.map(|a| a.name);
         self
     }
 
