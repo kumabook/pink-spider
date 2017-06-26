@@ -361,7 +361,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
         None => ()
     }
     match extract_identifier(&decoded, spotify::PLAYLIST_EMBED).and_then(
-        |url| spotify::parse_open_url_as_playlist(&url)) {
+        |url| spotify::parse_embed_url_as_playlist(&url)) {
         Some((uid, pid)) => return create_spotify_playlist(uid, pid),
         None => ()
     }

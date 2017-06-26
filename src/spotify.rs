@@ -179,6 +179,14 @@ pub fn parse_open_url_as_playlist(url: &str) -> Option<(String, String)> {
     }))
 }
 
+pub fn parse_embed_url_as_playlist(url: &str) -> Option<(String, String)> {
+    Regex::new(PLAYLIST_EMBED).ok().and_then(|re| re.captures(url).map(|cap| {
+        let user_id     = cap[2].to_string();
+        let playlist_id = cap[3].to_string();
+        (user_id, playlist_id)
+    }))
+}
+
 /// This function fetches a track info with spotify api.
 ///
 /// # Examples
