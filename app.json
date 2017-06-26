@@ -30,7 +30,10 @@
     "SPOTIFY_CLIENT_SECRET": {
       "description": "spotify web api client id",
       "value": "set_your_spotify_client_secret"
-    }
+    },
+    "CUSTOM_BASE_URL": {
+      "description": "Custom content provider url",
+      "value": "http://lemoned.herokuapp.com"
   },
   "buildpacks": [
       { "url": "https://github.com/kumabook/heroku-buildpack-rust.git" },
