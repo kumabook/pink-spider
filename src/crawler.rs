@@ -12,11 +12,11 @@ pub fn main() {
 
     let mut page  = 0;
     let per_page  = 10;
-    let mut feeds = Feed::find(0, 0);
+    let mut feeds = Feed::find(0, 0, None);
     let total = feeds.total;
     println!("{} feeds", total);
     while feeds.page * feeds.per_page < total {
-        feeds = Feed::find(page, per_page);
+        feeds = Feed::find(page, per_page, None);
         for mut feed in feeds.items {
             println!("Crawl {} ", feed.url);
             match feed.crawl() {

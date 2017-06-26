@@ -30,7 +30,7 @@ use chrono::NaiveDateTime;
 extern crate pink_spider;
 
 use pink_spider::error::Error;
-use pink_spider::model::{Model, Feed, Entry, Track, Playlist, Album, Artist, Enclosure, Provider, PaginatedCollection};
+use pink_spider::model::{Model, Feed, Entry, Track, Playlist, Album, Artist, Enclosure, Provider, PaginatedCollection, Filter, FilterType};
 use pink_spider::get_env;
 use pink_spider::rss;
 
@@ -40,8 +40,18 @@ fn to_err(e: serde_json::Error) -> Error { Error::from(e) }
 
 pub fn index<'a, T: Model<'a>>(req: &mut Request) -> IronResult<Response> {
     let (page, per_page) = pagination_params(req);
-    let items            = T::find(page, per_page);
-    let body             = try!(serde_json::to_string(&items).map_err(to_err));
+    let items = if let Some(q) = param_as_string(req, "query") {
+        let q = format!("%{}%", q);
+        let filter = Filter {
+            filter_type: FilterType::Contains,
+            field: "title",
+            value: &q,
+        };
+        T::find(page, per_page, Some(filter))
+    } else {
+        T::find(page, per_page, None)
+    };
+    let body  = try!(serde_json::to_string(&items).map_err(to_err));
     Ok(Response::with((status::Ok, application_json(), body)))
 }
 
@@ -57,7 +67,7 @@ pub fn index_entries(req: &mut Request) -> IronResult<Response> {
                 .map(|t| NaiveDateTime::from_timestamp(t, 0)).ok();
             Entry::find_by_feed_id(feed.id, newer_than, page, per_page)
         } else {
-            Entry::find(page, per_page)
+            Entry::find(page, per_page, None)
         };
         let body = try!(serde_json::to_string(&entries).map_err(to_err));
         Ok(Response::with((status::Ok, application_json(), body)))
@@ -222,13 +232,20 @@ pub fn create_feed_by_url(req: &mut Request) -> IronResult<Response> {
 }
 
 fn param_as_string(req: &mut Request, key: &str) -> Option<String> {
-    match req.get_ref::<UrlEncodedBody>() {
+    let s = match req.get_ref::<UrlEncodedBody>() {
+        Ok(ref params) => match params.get(key) {
+            Some(val) => Some(val[0].clone()),
+            None      => None
+        },
+        Err(_) => None,
+    };
+    s.or(match req.get_ref::<UrlEncodedQuery>() {
         Ok(ref params) => match params.get(key) {
             Some(val) => Some(val[0].clone()),
             None      => None
         },
         Err(_) => None
-    }
+    })
 }
 
 fn query_as_string(req: &mut Request, key: &str) -> String {

@@ -37,6 +37,32 @@ pub struct PaginatedCollection<I> {
     pub items:    Vec<I>,
 }
 
+pub enum FilterType {
+    Equals,
+    Contains,
+}
+
+pub enum Value {
+    String(String),
+    Int(i64),
+}
+
+pub struct Filter<'a> {
+    pub filter_type: FilterType,
+    pub field:       &'a str,
+    pub value:       &'a postgres::types::ToSql,
+}
+
+impl<'a> Filter<'a> {
+    pub fn to_query(&self, num: i32) -> String {
+        let comparison = match self.filter_type {
+            FilterType::Equals   => "=",
+            FilterType::Contains => "ILIKE",
+        };
+        format!("WHERE {} {} ${}", self.field, comparison, num)
+    }
+}
+
 pub fn conn() -> Result<Connection, ConnectError> {
     let opt_url = env::var("DATABASE_URL");
     match opt_url {
@@ -65,20 +91,42 @@ pub trait Model<'a> where Self: std::marker::Sized + Serialize + Deserialize<'a>
         }
         return Err(Error::NotFound)
     }
-    fn find(page: i64, per_page: i64) -> PaginatedCollection<Self> {
+    fn find(page: i64, per_page: i64, filter: Option<Filter>) -> PaginatedCollection<Self> {
         let conn = conn().unwrap();
-        let stmt = conn.prepare(&format!("SELECT {}  FROM {}
+        let offset = page * per_page;
+        let stmt;
+        let rows = if let Some(ref filter) = filter {
+            stmt = conn.prepare(&format!("SELECT {} FROM {}
+                                            {}
+                                            ORDER BY updated_at DESC
+                                            LIMIT $2 OFFSET $1",
+                                         Self::props_str(""),
+                                         Self::table_name(),
+                                         filter.to_query(3),
+            )).unwrap();
+            stmt.query(&[&offset, &per_page, filter.value]).unwrap()
+        } else {
+            stmt = conn.prepare(&format!("SELECT {} FROM {}
                                             ORDER BY updated_at DESC
                                             LIMIT $2 OFFSET $1",
                                          Self::props_str(""),
                                          Self::table_name())).unwrap();
-        let offset = page * per_page;
-        let rows   = stmt.query(&[&offset, &per_page]).unwrap();
+            stmt.query(&[&offset, &per_page]).unwrap()
+        };
         let items = Self::rows_to_items(rows);
         let mut total: i64 = 0;
-        let sql = format!("SELECT COUNT(*) FROM {}", Self::table_name());
-        for row in conn.query(&sql, &[]).unwrap().iter() {
-            total = row.get(0);
+        if let Some(ref filter) = filter {
+            let stmt = conn.prepare(&format!("SELECT COUNT(*) FROM {} {}",
+                                            Self::table_name(),
+                                            filter.to_query(1))).unwrap();
+            for row in stmt.query(&[filter.value]).unwrap().iter() {
+                total = row.get(0);
+            }
+        } else {
+            let sql = format!("SELECT COUNT(*) FROM {}", Self::table_name());
+            for row in conn.query(&sql, &[]).unwrap().iter() {
+                total = row.get(0);
+            }
         }
         PaginatedCollection {
             page:     page,
