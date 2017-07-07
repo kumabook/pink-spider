@@ -1,5 +1,5 @@
 use std::io::Read;
-use chrono::{DateTime, UTC};
+use chrono::{DateTime, Utc};
 use hyper::header::{
     Headers,
     Connection,
@@ -28,9 +28,9 @@ pub struct Track {
     pub artwork_url:       Option<String>,
     pub audio_url:         Option<String>,
     pub duration:          Option<i64>,
-    pub published_at:      DateTime<UTC>,
-    pub created_at:        DateTime<UTC>,
-    pub updated_at:        DateTime<UTC>,
+    pub published_at:      DateTime<Utc>,
+    pub created_at:        DateTime<Utc>,
+    pub updated_at:        DateTime<Utc>,
     pub artist:            Option<Artist>,
 }
 

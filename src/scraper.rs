@@ -8,7 +8,7 @@ use html5ever::rcdom::NodeData::{
 };
 use html5ever::rcdom::{RcDom, Handle};
 use html5ever::{parse_document, Attribute};
-use tendril::stream::TendrilSink;
+use html5ever::tendril::stream::TendrilSink;
 use std::default::Default;
 use regex::Regex;
 use hyper::header::Connection;

@@ -1,7 +1,7 @@
 use postgres;
 use uuid::Uuid;
 use std::fmt;
-use chrono::{NaiveDateTime, UTC, DateTime};
+use chrono::{NaiveDateTime, Utc, DateTime};
 
 use apple_music;
 use youtube;
@@ -116,7 +116,7 @@ impl<'a> Model<'a> for Track {
     }
 
     fn save(&mut self) -> Result<(), Error> {
-        self.updated_at = UTC::now().naive_utc();
+        self.updated_at = Utc::now().naive_utc();
         let conn = try!(conn());
         let stmt = try!(conn.prepare("UPDATE tracks SET
                                       provider      = $2,
@@ -174,9 +174,9 @@ impl<'a> Enclosure<'a> for Track {
             artwork_url:   None,
             audio_url:     None,
             duration:      0,
-            published_at:  UTC::now().naive_utc(),
-            created_at:    UTC::now().naive_utc(),
-            updated_at:    UTC::now().naive_utc(),
+            published_at:  Utc::now().naive_utc(),
+            created_at:    Utc::now().naive_utc(),
+            updated_at:    Utc::now().naive_utc(),
             state:         State::Alive,
             artists:       None,
         }
@@ -396,7 +396,7 @@ impl Track {
         self.description    = None;
         self.audio_url      = track.preview_url.clone();
         self.state          = State::Alive;
-        self.published_at   = UTC::now().naive_utc();
+        self.published_at   = Utc::now().naive_utc();
         if let Some(album) = track.album.clone() {
             self.update_with_sp_album(&album);
         }

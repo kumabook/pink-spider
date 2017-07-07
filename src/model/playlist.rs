@@ -1,7 +1,7 @@
 use postgres;
 use uuid::Uuid;
 use std::fmt;
-use chrono::{NaiveDateTime, UTC, DateTime};
+use chrono::{NaiveDateTime, Utc, DateTime};
 
 use apple_music;
 use youtube;
@@ -107,7 +107,7 @@ impl<'a> Model<'a> for Playlist {
     }
 
     fn save(&mut self) -> Result<(), Error> {
-        self.updated_at = UTC::now().naive_utc();
+        self.updated_at = Utc::now().naive_utc();
         let conn = try!(conn());
         let stmt = try!(conn.prepare("UPDATE playlists SET
                                       provider      = $2,
@@ -159,9 +159,9 @@ impl<'a> Enclosure<'a> for Playlist {
             description:   None,
             thumbnail_url: None,
             artwork_url:   None,
-            published_at:  UTC::now().naive_utc(),
-            created_at:    UTC::now().naive_utc(),
-            updated_at:    UTC::now().naive_utc(),
+            published_at:  Utc::now().naive_utc(),
+            created_at:    Utc::now().naive_utc(),
+            updated_at:    Utc::now().naive_utc(),
             state:         State::Alive,
             tracks:        vec![],
         }
@@ -308,7 +308,7 @@ impl Playlist {
         self.title          = playlist.name.clone();
         self.description    = playlist.description.clone();
         self.state          = State::Alive;
-        self.published_at   = UTC::now().naive_utc();
+        self.published_at   = Utc::now().naive_utc();
         if playlist.images.len() > 0 {
             self.artwork_url   = Some(playlist.images[0].url.clone());
             self.thumbnail_url = Some(playlist.images[0].url.clone());

@@ -1,7 +1,7 @@
 use postgres;
 use uuid::Uuid;
 use error::Error;
-use chrono::{NaiveDateTime, UTC};
+use chrono::{NaiveDateTime, Utc};
 use super::{conn, Model};
 use model::enclosure::Enclosure;
 use scraper;
@@ -115,7 +115,7 @@ impl<'a> Model<'a> for Entry {
         Ok(entry)
     }
     fn save(&mut self) -> Result<(), Error> {
-        self.updated_at = UTC::now().naive_utc();
+        self.updated_at = Utc::now().naive_utc();
         let conn = try!(conn());
         let stmt = try!(conn.prepare("UPDATE entries SET
                                    url         = $2,
@@ -190,8 +190,8 @@ impl Entry {
                 enclosure:   Value::Null,
                 feed_id:     None,
 
-                created_at:  UTC::now().naive_utc(),
-                updated_at:  UTC::now().naive_utc(),
+                created_at:  Utc::now().naive_utc(),
+                updated_at:  Utc::now().naive_utc(),
 
                 tracks:      Vec::new(),
                 playlists:   Vec::new(),
@@ -264,8 +264,8 @@ impl Entry {
                 summary:     None,
                 content:     None,
                 author:      None,
-                crawled:     UTC::now().naive_utc(),
-                published:   UTC::now().naive_utc(),
+                crawled:     Utc::now().naive_utc(),
+                published:   Utc::now().naive_utc(),
                 updated:     None,
                 fingerprint: "".to_string(),
                 origin_id:   "".to_string(),
@@ -274,8 +274,8 @@ impl Entry {
                 enclosure:   Value::Null,
                 feed_id:     None,
 
-                created_at:  UTC::now().naive_utc(),
-                updated_at:  UTC::now().naive_utc(),
+                created_at:  Utc::now().naive_utc(),
+                updated_at:  Utc::now().naive_utc(),
 
                 tracks:      Vec::new(),
                 playlists:   Vec::new(),
@@ -310,7 +310,7 @@ impl Entry {
         self.summary     = entry.summary.clone();
         self.content     = entry.content.clone();
         self.author      = entry.author.clone();
-        self.crawled     = UTC::now().naive_utc();
+        self.crawled     = Utc::now().naive_utc();
         self.published   = entry.published;
         self.updated     = entry.updated;
         self.fingerprint = entry.fingerprint.clone();
@@ -319,7 +319,7 @@ impl Entry {
         self.keywords    = json!(entry.keywords);
         self.enclosure   = json!(entry.enclosure);
 
-        self.updated_at  = UTC::now().naive_utc();
+        self.updated_at  = Utc::now().naive_utc();
     }
 
     pub fn has_title(&self) -> bool {

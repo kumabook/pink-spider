@@ -1,7 +1,7 @@
 use std::io::Read;
 use std::collections::BTreeMap;
 use std::sync::Mutex;
-use chrono::{NaiveDateTime, UTC, Duration};
+use chrono::{NaiveDateTime, Utc, Duration};
 use hyper::header::{
     Headers,
     Authorization,
@@ -284,7 +284,7 @@ pub fn get_valid_token() -> Option<Token> {
     TOKEN.lock().unwrap().clone().and_then(
         |t|
         if let Some(expires_at) = t.expires_at {
-            if expires_at > UTC::now().naive_utc() {
+            if expires_at > Utc::now().naive_utc() {
                 Some(t)
             } else {
                 None
@@ -302,7 +302,7 @@ pub fn update_token_if_needed() -> serde_json::Result<Token> {
             Ok(token) => {
                 let mut t        = TOKEN.lock().unwrap();
                 let mut token    = token.clone();
-                let now          = UTC::now().naive_utc();
+                let now          = Utc::now().naive_utc();
                 let exires_at    = now + Duration::seconds(token.expires_in);
                 token.expires_at = Some(exires_at);
                 *t = Some(token.clone());

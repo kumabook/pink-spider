@@ -1,7 +1,7 @@
 use postgres;
 use uuid::Uuid;
 use error::Error;
-use chrono::{NaiveDateTime, UTC};
+use chrono::{NaiveDateTime, Utc};
 use feed_rs;
 use super::{conn, Model, Entry};
 use model::state::State;
@@ -106,7 +106,7 @@ impl<'a> Model<'a> for Feed {
         Ok(feed)
     }
     fn save(&mut self) -> Result<(), Error> {
-        self.updated_at = UTC::now().naive_utc();
+        self.updated_at = Utc::now().naive_utc();
         let conn = try!(conn());
         let stmt = try!(conn.prepare("UPDATE feeds SET
                                    url          = $2,
@@ -179,13 +179,13 @@ impl Feed {
                 velocity:     0.0,
                 website:      None,
                 state:        State::Alive,
-                last_updated: UTC::now().naive_utc(),
-                crawled:      UTC::now().naive_utc(),
+                last_updated: Utc::now().naive_utc(),
+                crawled:      Utc::now().naive_utc(),
                 visual_url:   None,
                 icon_url:     None,
                 cover_url:    None,
-                created_at:   UTC::now().naive_utc(),
-                updated_at:   UTC::now().naive_utc(),
+                created_at:   Utc::now().naive_utc(),
+                updated_at:   Utc::now().naive_utc(),
             };
             return Ok(feed);
         }
@@ -199,7 +199,7 @@ impl Feed {
     }
 
     pub fn update_props(&mut self, rss_feed: feed_rs::Feed) {
-        let now           = UTC::now().naive_utc();
+        let now           = Utc::now().naive_utc();
         self.title        = rss_feed.title.unwrap_or("".to_string());
         self.description  = rss_feed.description;
         self.language     = rss_feed.language;

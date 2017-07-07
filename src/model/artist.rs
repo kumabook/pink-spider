@@ -1,7 +1,7 @@
 use postgres;
 use uuid::Uuid;
 use std::fmt;
-use chrono::{NaiveDateTime, UTC};
+use chrono::{NaiveDateTime, Utc};
 
 use soundcloud;
 use spotify;
@@ -78,7 +78,7 @@ impl<'a> Model<'a> for Artist {
     }
 
     fn save(&mut self) -> Result<(), Error> {
-        self.updated_at = UTC::now().naive_utc();
+        self.updated_at = Utc::now().naive_utc();
         let conn = conn().unwrap();
         let stmt = conn.prepare("UPDATE artists SET
                                  provider      = $2,
@@ -117,8 +117,8 @@ impl Artist {
             name:          "".to_string(),
             thumbnail_url: None,
             artwork_url:   None,
-            created_at:    UTC::now().naive_utc(),
-            updated_at:    UTC::now().naive_utc(),
+            created_at:    Utc::now().naive_utc(),
+            updated_at:    Utc::now().naive_utc(),
         }
     }
     fn find_by(provider: &Provider, identifier: &str) -> Result<Artist, Error> {
