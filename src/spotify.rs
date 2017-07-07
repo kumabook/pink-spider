@@ -223,7 +223,8 @@ pub fn fetch_album(id: &str) -> serde_json::Result<Album> {
 /// let playlist = pink_spider::spotify::fetch_playlist("spincoaster", "182jSXyIDGLOYwE7PLhxjI").unwrap();
 ///
 /// assert_eq!(playlist.id, "182jSXyIDGLOYwE7PLhxjI");
-/// assert_eq!(playlist.tracks.total, 100);
+///
+/// assert_eq!(playlist.tracks.total, 101);
 /// ```
 pub fn fetch_playlist(user_id: &str, id: &str) -> serde_json::Result<Playlist> {
     let path = format!("/users/{}/playlists/{}", user_id, id);
