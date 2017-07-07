@@ -243,17 +243,22 @@ pub fn fetch_playlist(id: &str, country: &str) -> ScrapeResult<Playlist> {
 
 fn extract_music_url(html: Html) -> ScrapeResult<String> {
     let selector = Selector::parse("script").unwrap();
-    html.select(&selector)
-        .last()
-        .and_then(|img| img.text().next())
-        .and_then(|script| match Regex::new(MUSIC_URL) {
-            Ok(re) => match re.captures(script) {
-                Some(cap) => Some(cap[1].to_string()),
-                None => None
-            },
-            Err(_) => None
-        })
-        .ok_or(ScrapeError { reason: "music url is not found".to_string() })
+    let mut urls = html.select(&selector)
+        .map(|tag|
+             tag.text().next().and_then(|script| match Regex::new(MUSIC_URL) {
+                 Ok(re) => match re.captures(script) {
+                     Some(cap) => Some(cap[1].to_string()),
+                     None => None
+                 },
+                 Err(_) => None
+             }))
+        .filter(|ref url| url.is_some())
+        .map(|url| url.unwrap());
+    if let Some(url) = urls.next() {
+        Ok(url)
+    } else {
+        Err(ScrapeError { reason: "music url is not found".to_string() })
+    }
 }
 
 fn extract_artwork_url(html: Html) -> ScrapeResult<String> {
