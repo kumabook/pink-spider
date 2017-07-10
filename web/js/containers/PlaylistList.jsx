@@ -84,7 +84,7 @@ function mapDispatchToProps(dispatch, { match: { params } }) {
       }
       dispatch(push({
         pathname: path,
-        search:   params.toString(),
+        search:   searchParams.toString(),
       }));
     },
     show:   ({ id }) => dispatch(push({ pathname: `/playlists/${id}` })),
