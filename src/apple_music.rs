@@ -419,16 +419,35 @@ mod test {
     fn test_fetch_playlist() {
         let playlist = fetch_playlist("2ff0e502db0c44a598a7cb2261a5e6b2", "jp").unwrap();
         assert_eq!(playlist.id, "2ff0e502db0c44a598a7cb2261a5e6b2");
+        assert_eq!(playlist.title, "LILI LIMIT が選ぶ マイプレイリスト");
+        assert_eq!(playlist.curator, "Apple Music");
+        assert_ne!(playlist.artwork_url, "");
+        assert_ne!(playlist.music_url, "");
     }
     #[test]
     fn test_fetch_album() {
         let album = fetch_album("1160715126", "jp").unwrap();
         assert_eq!(album.id, "1160715126");
+        assert_eq!(album.title, "a.k.a");
+        assert_eq!(album.album_artist, "LILI LIMIT");
+        assert_ne!(album.artwork_url, "");
+        assert_ne!(album.music_url, "");
+        println!("{:?}", album);
+        for track in album.tracks.unwrap().iter() {
+            assert_ne!(track.title, "");
+            assert_ne!(track.audio_url, "");
+        }
     }
     #[test]
     fn test_fetch_song() {
         let song = fetch_song("1160715431", "jp").unwrap();
         assert_eq!(song.id, "1160715431");
+        assert_eq!(song.country, "jp");
+        assert_eq!(song.title, "A Short Film");
+        assert_eq!(song.artist, "LILI LIMIT");
+        assert_ne!(song.artwork_url, "");
+        assert_ne!(song.audio_url, "");
+        assert_ne!(song.music_url, "");
     }
     #[test]
     fn test_parse_url_as_album() {
