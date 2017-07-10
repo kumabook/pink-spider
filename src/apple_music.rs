@@ -191,7 +191,7 @@ pub fn fetch_album(id: &str, country: &str) -> ScrapeResult<Album> {
     let music_url    = try!(extract_music_url(&document.clone()));
     let mut tracks   = Vec::new();
     for node in document.select(".track").unwrap() {
-        tracks.push(extract_track(node.as_node()));
+        tracks.push(extract_track(node.as_node(), "album"));
     }
     Ok(Album {
         id:           id.to_string(),
@@ -227,7 +227,7 @@ pub fn fetch_playlist(id: &str, country: &str) -> ScrapeResult<Playlist> {
     let mut tracks  = Vec::new();
     let css_match = document.select(".track").unwrap();
     for node in css_match {
-        let track = extract_track(node.as_node());
+        let track = extract_track(node.as_node(), "playlist");
         tracks.push(track);
     }
     Ok(Playlist {
@@ -344,35 +344,30 @@ fn extract_count(node: &NodeRef) -> ScrapeResult<String> {
         })
 }
 
-fn extract_track(node: &NodeRef) -> Track {
-    let img_selector    = ".artworkImage > img";
-    let title_selector  = ".title";
-    let artist_selector = ".artist";
-    let audio_selector  = ".playlist-audio";
-
+fn extract_track(node: &NodeRef, music_type: &str) -> Track {
     let mut title:       String = "".to_string();
     let mut artwork_url: String = "".to_string();
     let mut artist:      String = "".to_string();
     let mut audio_url:   String = "".to_string();
-    if let Some(n) = select(node, title_selector).and_then(|mut c| c.next()) {
+    if let Some(n) = select(node, ".title").and_then(|mut c| c.next()) {
         if let Some(text) = text(n.as_node()) {
             title = text.trim().to_string();
         }
     }
 
-    if let Some(n) = select(node, artist_selector).and_then(|mut c| c.next()) {
+    if let Some(n) = select(node, ".artist").and_then(|mut c| c.next()) {
         if let Some(text) = text(n.as_node()) {
             artist = text.trim().to_string();
         }
     }
 
-    if let Some(n) = select(node, img_selector).and_then(|mut c| c.next()) {
+    if let Some(n) = select(node, ".artworkImage > img").and_then(|mut c| c.next()) {
         if let Some(url) = attr(n.as_node(), "src") {
             artwork_url = url.trim().to_string();
         }
     }
-
-    if let Some(n) = select(node, audio_selector).and_then(|mut c| c.next()) {
+    let audio_selector  = format!(".{}-audio", music_type);
+    if let Some(n) = select(node, &audio_selector).and_then(|mut c| c.next()) {
         if let Some(url) = attr(n.as_node(), "data-url") {
             audio_url = url.trim().to_string();
         }
