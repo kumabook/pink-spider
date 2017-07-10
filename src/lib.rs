@@ -3,7 +3,7 @@ extern crate hyper_native_tls;
 extern crate iron;
 extern crate html5ever;
 extern crate tendril;
-extern crate scraper as scraping;
+extern crate kuchiki;
 extern crate regex;
 extern crate string_cache;
 extern crate url;

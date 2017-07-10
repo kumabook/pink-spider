@@ -1,5 +1,7 @@
-use scraping::{Html, Selector};
-use scraping::element_ref::ElementRef;
+use kuchiki;
+use kuchiki::{NodeRef};
+use kuchiki::traits::*;
+use kuchiki::iter::{Select, Elements, Descendants};
 use hyper::header::Connection;
 use hyper::header::ConnectionOption;
 use std::io::Read;
@@ -151,13 +153,13 @@ pub fn fetch_song(id: &str, country: &str) -> ScrapeResult<Song> {
     }
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    let fragment = Html::parse_fragment(&body);
+    let document = kuchiki::parse_html().one(body);
 
-    let artwork_url = try!(extract_artwork_url(fragment.clone()));
-    let title       = try!(extract_song_title(fragment.clone()));
-    let artist      = try!(extract_song_artist(fragment.clone()));
-    let audio_url   = try!(extract_audio_url(fragment.clone()));
-    let music_url   = try!(extract_music_url(fragment.clone()));
+    let artwork_url = try!(extract_artwork_url(&document.clone()));
+    let title       = try!(extract_song_title(&document.clone()));
+    let artist      = try!(extract_song_artist(&document.clone()));
+    let audio_url   = try!(extract_audio_url(&document.clone()));
+    let music_url   = try!(extract_music_url(&document.clone()));
     Ok(Song {
         id:          id.to_string(),
         country:     country.to_string(),
@@ -180,17 +182,16 @@ pub fn fetch_album(id: &str, country: &str) -> ScrapeResult<Album> {
     }
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    let fragment = Html::parse_fragment(&body);
+    let document = kuchiki::parse_html().one(body);
 
-    let artwork_url  = try!(extract_artwork_url(fragment.clone()));
-    let title        = try!(extract_title(fragment.clone()));
-    let album_artist = try!(extract_album_artist(fragment.clone()));
-    let count        = try!(extract_count(fragment.clone()));
-    let music_url    = try!(extract_music_url(fragment.clone()));
+    let artwork_url  = try!(extract_artwork_url(&document.clone()));
+    let title        = try!(extract_title(&document.clone()));
+    let album_artist = try!(extract_album_artist(&document.clone()));
+    let count        = try!(extract_count(&document.clone()));
+    let music_url    = try!(extract_music_url(&document.clone()));
     let mut tracks   = Vec::new();
-    let tracks_selector = Selector::parse(".track").unwrap();
-    for node in fragment.select(&tracks_selector) {
-        tracks.push(extract_track(node));
+    for node in document.select(".track").unwrap() {
+        tracks.push(extract_track(node.as_node()));
     }
     Ok(Album {
         id:           id.to_string(),
@@ -215,18 +216,18 @@ pub fn fetch_playlist(id: &str, country: &str) -> ScrapeResult<Playlist> {
     }
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    let fragment = Html::parse_fragment(&body);
+    let document = kuchiki::parse_html().one(body);
 
-    let artwork_url = try!(extract_artwork_url(fragment.clone()));
-    let title       = try!(extract_title(fragment.clone()));
-    let description = try!(extract_description(fragment.clone()));
-    let curator     = try!(extract_curator(fragment.clone()));
-    let count       = try!(extract_count(fragment.clone()));
-    let music_url   = try!(extract_music_url(fragment.clone()));
+    let artwork_url = try!(extract_artwork_url(&document.clone()));
+    let title       = try!(extract_title(&document.clone()));
+    let description = try!(extract_description(&document.clone()));
+    let curator     = try!(extract_curator(&document.clone()));
+    let count       = try!(extract_count(&document.clone()));
+    let music_url   = try!(extract_music_url(&document.clone()));
     let mut tracks  = Vec::new();
-    let tracks_selector = Selector::parse(".track").unwrap();
-    for node in fragment.select(&tracks_selector) {
-        let track = extract_track(node);
+    let css_match = document.select(".track").unwrap();
+    for node in css_match {
+        let track = extract_track(node.as_node());
         tracks.push(track);
     }
     Ok(Playlist {
@@ -241,138 +242,138 @@ pub fn fetch_playlist(id: &str, country: &str) -> ScrapeResult<Playlist> {
     })
 }
 
-fn extract_music_url(html: Html) -> ScrapeResult<String> {
-    let selector = Selector::parse("script").unwrap();
-    let mut urls = html.select(&selector)
-        .map(|tag|
-             tag.text().next().and_then(|script| match Regex::new(MUSIC_URL) {
-                 Ok(re) => match re.captures(script) {
-                     Some(cap) => Some(cap[1].to_string()),
-                     None => None
-                 },
-                 Err(_) => None
-             }))
-        .filter(|ref url| url.is_some())
-        .map(|url| url.unwrap());
-    if let Some(url) = urls.next() {
-        Ok(url)
+fn extract_music_url(node: &NodeRef) -> ScrapeResult<String> {
+    if let Some(urls) = select(node, "script") {
+        let mut urls = urls.map(|tag|
+                 text(tag.as_node()).and_then(|script| match Regex::new(MUSIC_URL) {
+                     Ok(re) => match re.captures(&script) {
+                         Some(cap) => Some(cap[1].to_string()),
+                         None => None
+                     },
+                     Err(_) => None
+                 }))
+            .filter(|ref url| url.is_some())
+            .map(|url| url.unwrap());
+        if let Some(url) = urls.next() {
+            Ok(url)
+        } else {
+            Err(ScrapeError { reason: "music url is not found".to_string() })
+        }
     } else {
         Err(ScrapeError { reason: "music url is not found".to_string() })
     }
 }
 
-fn extract_artwork_url(html: Html) -> ScrapeResult<String> {
-    let selector = Selector::parse("#heroArtImage > img").unwrap();
-    html.select(&selector)
-        .next()
-        .and_then(|img| img.value().attr("src"))
+fn extract_artwork_url(node: &NodeRef) -> ScrapeResult<String> {
+    select(node, "#heroArtImage > img")
+        .and_then(|mut c| c.next())
+        .and_then(|img| {
+            let src = attr(img.as_node(), "data-deferred-img");
+            src
+        })
         .map(|url| url.trim().to_string())
         .ok_or(ScrapeError { reason: "artwork url is not found".to_string() })
 }
 
-fn extract_audio_url(html: Html) -> ScrapeResult<String> {
-    let selector = Selector::parse("#heroArtImage > .song-audio").unwrap();
-    html.select(&selector)
-        .next()
-        .and_then(|img| img.value().attr("data-url"))
+fn extract_audio_url(node: &NodeRef) -> ScrapeResult<String> {
+    select(node, "#heroArtImage > .song-audio")
+        .and_then(|mut c| c.next())
+        .and_then(|elem| attr(elem.as_node(), "data-url"))
         .map(|url| url.trim().to_string())
         .ok_or(ScrapeError { reason: "audio url is not found".to_string() })
 }
 
-fn extract_description(html: Html) -> ScrapeResult<String> {
-    let selector = Selector::parse("#description").unwrap();
-    html.select(&selector)
-        .next()
-        .and_then(|div| div.text().next())
+fn extract_description(node: &NodeRef) -> ScrapeResult<String> {
+    select(node, "#description")
+        .and_then(|mut c| c.next())
+        .and_then(|elem| text(elem.as_node()))
         .map(|text| text.trim().to_string())
         .or(Some("".to_string()))
         .ok_or(ScrapeError { reason: "description is not found".to_string() })
 }
 
-fn extract_title(html: Html) -> ScrapeResult<String> {
-    let selector = Selector::parse(".heroMeta > .title > a").unwrap();
-    html.select(&selector)
-        .next()
-        .and_then(|a| a.text().next())
+fn extract_title(node: &NodeRef) -> ScrapeResult<String> {
+    select(node, ".heroMeta > .title > a")
+        .and_then(|mut css_match| css_match.next())
+        .and_then(|elem| text(elem.as_node()))
         .map(|text| text.trim().to_string())
         .ok_or(ScrapeError { reason: "title is not found".to_string() })
 }
 
-fn extract_song_title(html: Html) -> ScrapeResult<String> {
-    let selector = Selector::parse(".heroMeta > .details > .title-explicit > .title > a").unwrap();
-    html.select(&selector)
-        .next()
-        .and_then(|a| a.text().next())
+fn extract_song_title(node: &NodeRef) -> ScrapeResult<String> {
+    select(node, ".heroMeta > .details > .title-explicit > .title > a > p")
+        .and_then(|mut css_match| css_match.next())
+        .and_then(|elem| text(elem.as_node()))
         .map(|text| text.trim().to_string())
         .ok_or(ScrapeError { reason: "title is not found".to_string() })
 }
 
-fn extract_curator(html: Html) -> ScrapeResult<String> {
-    let selector = Selector::parse(".heroMeta > .curator > a").unwrap();
-    html.select(&selector)
-        .next()
-        .and_then(|a| a.text().next())
+fn extract_curator(node: &NodeRef) -> ScrapeResult<String> {
+    select(node, ".heroMeta > .curator > a")
+        .and_then(|mut css_match| css_match.next())
+        .and_then(|elem| text(elem.as_node()))
         .map(|text| text.trim().to_string())
         .ok_or(ScrapeError { reason: "curator is not found".to_string() })
 }
 
-fn extract_album_artist(html: Html) -> ScrapeResult<String> {
-    let selector = Selector::parse(".heroMeta > .album-artist > a").unwrap();
-    html.select(&selector)
-        .next()
-        .and_then(|a| a.text().next())
+fn extract_album_artist(node: &NodeRef) -> ScrapeResult<String> {
+    select(node, ".heroMeta > .album-artist > a")
+        .and_then(|mut css_match| css_match.next())
+        .and_then(|elem| text(elem.as_node()))
         .map(|text| text.trim().to_string())
         .ok_or(ScrapeError { reason: "album artist is not found".to_string() })
 }
 
-fn extract_song_artist(html: Html) -> ScrapeResult<String> {
-    let selector = Selector::parse(".heroMeta > .details > .song-artist > a").unwrap();
-    html.select(&selector)
-        .next()
-        .and_then(|a| a.text().next())
+fn extract_song_artist(node: &NodeRef) -> ScrapeResult<String> {
+    select(node, ".heroMeta > .details > .song-artist > a > p")
+        .and_then(|mut css_match| css_match.next())
+        .and_then(|elem| text(elem.as_node()))
         .map(|text| text.trim().to_string())
-        .ok_or(ScrapeError { reason: "song artist is not found".to_string() })
+        .ok_or(ScrapeError {
+            reason: "song artist is not found".to_string()
+        })
 }
 
-fn extract_count(html: Html) -> ScrapeResult<String> {
-    let selector = Selector::parse(".heroMeta > .count").unwrap();
-    html.select(&selector)
-        .next()
-        .and_then(|a| a.text().next())
+fn extract_count(node: &NodeRef) -> ScrapeResult<String> {
+    select(node, ".heroMeta > .count")
+        .and_then(|mut css_match| css_match.next())
+        .and_then(|elem| text(elem.as_node()))
         .map(|text| text.trim().to_string())
-        .ok_or(ScrapeError { reason: "count is not found".to_string() })
+        .ok_or(ScrapeError {
+            reason: "count is not found".to_string()
+        })
 }
 
-fn extract_track(node: ElementRef) -> Track {
-    let img_selector    = Selector::parse(".artworkImage > img").unwrap();
-    let title_selector  = Selector::parse(".title").unwrap();
-    let artist_selector = Selector::parse(".artist").unwrap();
-    let audio_selector  = Selector::parse(".playlist-audio").unwrap();
+fn extract_track(node: &NodeRef) -> Track {
+    let img_selector    = ".artworkImage > img";
+    let title_selector  = ".title";
+    let artist_selector = ".artist";
+    let audio_selector  = ".playlist-audio";
 
     let mut title:       String = "".to_string();
     let mut artwork_url: String = "".to_string();
     let mut artist:      String = "".to_string();
     let mut audio_url:   String = "".to_string();
-    if let Some(n) = node.select(&title_selector).next() {
-        if let Some(text) = n.text().next() {
+    if let Some(n) = select(node, title_selector).and_then(|mut c| c.next()) {
+        if let Some(text) = text(n.as_node()) {
             title = text.trim().to_string();
         }
     }
 
-    if let Some(n) = node.select(&artist_selector).next() {
-        if let Some(text) = n.text().next() {
+    if let Some(n) = select(node, artist_selector).and_then(|mut c| c.next()) {
+        if let Some(text) = text(n.as_node()) {
             artist = text.trim().to_string();
         }
     }
 
-    if let Some(n) = node.select(&img_selector).next() {
-        if let Some(url) = n.value().attr("src") {
+    if let Some(n) = select(node, img_selector).and_then(|mut c| c.next()) {
+        if let Some(url) = attr(n.as_node(), "src") {
             artwork_url = url.trim().to_string();
         }
     }
 
-    if let Some(n) = node.select(&audio_selector).next() {
-        if let Some(url) = n.value().attr("data-url") {
+    if let Some(n) = select(node, audio_selector).and_then(|mut c| c.next()) {
+        if let Some(url) = attr(n.as_node(), "data-url") {
             audio_url = url.trim().to_string();
         }
     }
@@ -385,13 +386,39 @@ fn extract_track(node: ElementRef) -> Track {
     }
 }
 
+fn select(node: &NodeRef, selector: &str) -> Option<Select<Elements<Descendants>>> {
+    node.select(selector).ok()
+}
+
+fn text(node: &NodeRef) -> Option<String> {
+    node.first_child().and_then(|node| {
+        if let Some(text) = node.as_text() {
+            let txt = text.borrow();
+            Some(txt.trim().to_string())
+        } else {
+            None
+        }
+    })
+}
+
+fn attr(node: &NodeRef, attr: &str) -> Option<String> {
+    node.as_element()
+        .and_then(|elem| {
+            if let Some(val) = elem.attributes.borrow().get(attr) {
+                Some(val.to_string())
+            } else {
+                None
+            }
+        })
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
     #[test]
     fn test_fetch_playlist() {
-        let playlist = fetch_playlist("pl.2ff0e502db0c44a598a7cb2261a5e6b2", "jp").unwrap();
-        assert_eq!(playlist.id, "pl.2ff0e502db0c44a598a7cb2261a5e6b2");
+        let playlist = fetch_playlist("2ff0e502db0c44a598a7cb2261a5e6b2", "jp").unwrap();
+        assert_eq!(playlist.id, "2ff0e502db0c44a598a7cb2261a5e6b2");
     }
     #[test]
     fn test_fetch_album() {
