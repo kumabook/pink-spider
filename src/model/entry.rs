@@ -306,9 +306,9 @@ impl Entry {
     }
 
     pub fn update_with_feed_entry(&mut self, entry: &feed_rs::Entry) {
-        self.title       = entry.title.clone();
-        self.summary     = entry.summary.clone();
-        self.content     = entry.content.clone();
+        self.title       = entry.title.clone().map(|s| s.trim().to_string());
+        self.summary     = entry.summary.clone().map(|s| s.trim().to_string());
+        self.content     = entry.content.clone().map(|s| s.trim().to_string());
         self.author      = entry.author.clone();
         self.crawled     = Utc::now().naive_utc();
         self.published   = entry.published;
