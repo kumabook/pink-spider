@@ -287,7 +287,7 @@ impl Entry {
     }
 
     pub fn is_valid(&self) -> bool {
-        self.published.timestamp() >= 1000
+        self.published.timestamp() >= 1000 && self.feed_id != None
     }
 
     pub fn find_or_create_by_url_if_invalid(url: String) -> Result<Entry, Error> {
