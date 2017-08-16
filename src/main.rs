@@ -165,7 +165,7 @@ pub fn find_or_playlistify_entry(url: &str, force: bool) -> Result<Entry, Error>
         },
         Err(_) => {
             let mut entry = try!(Entry::create_by_url(url.to_string()));
-            try!(entry.playlistify());
+            let _ = entry.playlistify();
             println!("Create new entry to database cache: {}", url);
             Ok(entry)
         },

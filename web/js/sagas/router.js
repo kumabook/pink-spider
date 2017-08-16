@@ -3,7 +3,7 @@ import {
   createHashHistory,
 } from 'redux-saga-router';
 import { fork, put }                   from 'redux-saga/effects';
-import { creators as feedActions }    from '../actions/feed';
+import { creators as feedActions }     from '../actions/feed';
 import { creators as entryActions }    from '../actions/entry';
 import { creators as trackActions }    from '../actions/track';
 import { creators as albumActions }    from '../actions/album';
