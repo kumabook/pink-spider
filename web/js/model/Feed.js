@@ -26,14 +26,18 @@ export const tableSchema = {
   'ui:actions': [
     { name: 'entries', icon: ActionList },
   ],
-  id:          { 'ui:widget': 'hidden' },
-  url:         { 'ui:widget': 'hidden' },
-  title:       {},
-  description: { 'ui:widget': 'hidden' },
-  crawled:     { 'ui:widget': 'hidden' },
-  visual_url:  { 'ui:widget': 'img' },
-  icon_url:    { 'ui:widget': 'hidden' },
-  cover_url:   { 'ui:widget': 'hidden' },
+  id:           { 'ui:widget': 'hidden' },
+  url:          { 'ui:widget': 'hidden' },
+  title:        {},
+  description:  { 'ui:widget': 'hidden' },
+  language:     { 'ui:widget': 'hidden' },
+  velocity:     { 'ui:widget': 'hidden' },
+  state:        { 'ui:widget': 'hidden' },
+  last_updated: {},
+  crawled:      {},
+  visual_url:   { 'ui:widget': 'img' },
+  icon_url:     { 'ui:widget': 'hidden' },
+  cover_url:    { 'ui:widget': 'hidden' },
 };
 
 export const formSchema = {
