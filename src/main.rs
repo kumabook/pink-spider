@@ -172,6 +172,14 @@ pub fn find_or_playlistify_entry(url: &str, force: bool) -> Result<Entry, Error>
     }
 }
 
+pub fn update_entry(req: &mut Request) -> IronResult<Response> {
+    let mut entry = try!(Entry::find_by_id(&query_as_string(req, "id")));
+    try!(entry.playlistify());
+    try!(entry.save());
+    let body = try!(serde_json::to_string(&entry).map_err(to_err));
+    Ok(Response::with((status::Ok, application_json(), body)))
+}
+
 pub fn update<'a, T: Enclosure<'a>>(req: &mut Request) -> IronResult<Response> {
     let mut enclosure = try!(T::find_by_id(&query_as_string(req, "id")));
     try!(enclosure.fetch_props());
@@ -288,6 +296,8 @@ pub fn main() {
 
         index_entries:            get  "/v1/entries"                     => index_entries,
         index_entries_by_feed:    get  "/v1/feeds/:id/entries"           => index_entries_by_feed,
+        show_entry:               get  "/v1/entries/:id"                 => show_by_id::<Entry>,
+        update_entry:             post "/v1/entries/:id"                 => update_entry,
         index_artists:            get  "/v1/artists"                     => index::<Artist>,
         mget_artists:             post "/v1/artists/.mget"               => mget::<Artist>,
 
