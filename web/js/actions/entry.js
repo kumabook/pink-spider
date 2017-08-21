@@ -12,3 +12,6 @@ export const update  = actions.update;
 export const destroy = actions.destroy;
 
 export const creators = actions.creators;
+
+export const preview = 'PREVIEW_ENTRY';
+actions.creators.preview = payload => ({ type: preview, payload });
