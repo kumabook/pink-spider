@@ -2,7 +2,7 @@ import axios              from 'axios';
 import { defaultPerPage } from '../config';
 
 export default {
-  show:  id => axios.get(`/v1/entries/${id}`).then(response => response.data),
+  show:  id => axios.get(`/v1/entries/${id}`).then(r => r.data),
   index: (page = 0, perPage = defaultPerPage, feedId) => {
     let path = '/v1/entries';
     if (feedId) {
@@ -15,5 +15,5 @@ export default {
       },
     }).then(response => response.data);
   },
-  update: entry => axios.post(`/v1/entries/${entry.id}`),
+  update: entry => axios.post(`/v1/entries/${entry.id}`).then(r => r.data),
 };
