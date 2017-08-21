@@ -23,6 +23,7 @@ class EntryList extends React.Component {
       page:         PropTypes.number.isRequired,
       perPage:      PropTypes.number.isRequired,
       index:        PropTypes.func.isRequired,
+      show:         PropTypes.func.isRequired,
       update:       PropTypes.func.isRequired,
       itemsOfEntry: PropTypes.func.isRequired,
     };
@@ -31,6 +32,9 @@ class EntryList extends React.Component {
     switch (name) {
       case 'reload':
         this.props.update(item);
+        break;
+      case 'detail':
+        this.props.show(item);
         break;
       case 'tracks':
         this.props.itemsOfEntry('tracks', item.id);
@@ -96,6 +100,7 @@ function mapDispatchToProps(dispatch) {
         search:   params.toString(),
       }));
     },
+    show:   ({ id }) => dispatch(push({ pathname: `/entries/${id}` })),
     update: item => dispatch(update.start(item)),
   };
 }

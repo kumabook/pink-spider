@@ -17,6 +17,7 @@ import createSagaMiddleware from 'redux-saga';
 import App                  from './containers/App';
 import FeedList             from './containers/FeedList';
 import EntryList            from './containers/EntryList';
+import EntryDetail          from './containers/EntryDetail';
 import TrackList            from './containers/TrackList';
 import TrackDetail          from './containers/TrackDetail';
 import PlaylistList         from './containers/PlaylistList';
@@ -48,7 +49,7 @@ ReactDOM.render(
             <Route path="/albums" component={AlbumList} />
             <Route path="/entries/:entry_id/tracks" component={TrackList} />
             <Route path="/entries/:entry_id/playlists" component={PlaylistList} />
-            <Route path="/entries/:entry_id/albums" component={AlbumList} />
+            <Route path="/entries/:entry_id" component={EntryDetail} />
             <Route path="/entries" component={EntryList} />
             <Route path="/artists" component={ArtistList} />
             <Route path="/feeds/:feed_id/entries" component={EntryList} />
