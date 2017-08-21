@@ -34,11 +34,11 @@ export function* watchFetchEntries() {
   yield takeEvery(index.start, fetchEntries);
 }
 
-export function* fetchEntry() {
+export function* fetchEntry({ payload }) {
   try {
     yield put(showProgress());
-    const items = yield call(api.show);
-    yield put(creators.show.succeeded(items));
+    const item = yield call(api.show, payload);
+    yield put(creators.show.succeeded(item));
   } catch (e) {
     yield put(creators.show.failed(e));
     yield put(showMessage(e.message));
