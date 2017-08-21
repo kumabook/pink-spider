@@ -1,3 +1,4 @@
+import ContentLink    from 'material-ui/svg-icons/content/link';
 import AVLibraryMusic from 'material-ui/svg-icons/av/library-music';
 import AVMusicVideo   from 'material-ui/svg-icons/av/music-video';
 import AVQueueMusic   from 'material-ui/svg-icons/av/queue-music';
@@ -13,13 +14,16 @@ export const schema = {
     description: { type: 'string' },
     visual_url:  { type: 'string', format: 'data-url' },
     locale:      { type: 'string' },
+    created_at:  { type: 'string', format: 'date-time' },
+    updated_at:  { type: 'string', format: 'date-time' },
   },
   required: [],
 };
 
 export const tableSchema = {
-  'ui:order':   ['visual_url', 'title'],
+  'ui:order':   ['visual_url', 'title', 'created_at'],
   'ui:actions': [
+    { name: 'detail', icon: ContentLink },
     { name: 'tracks', icon: AVMusicVideo },
     { name: 'albums', icon: AVLibraryMusic },
     { name: 'playlists', icon: AVQueueMusic },
