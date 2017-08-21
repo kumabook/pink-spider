@@ -1,6 +1,9 @@
 import { combineReducers } from 'redux';
 import {
   index,
+  show,
+  update,
+  preview,
 } from '../actions/entry';
 
 const total = (state = 0, action) => {
@@ -21,7 +24,29 @@ const items = (state = [], action) => {
   }
 };
 
+const item = (state = {}, action) => {
+  switch (action.type) {
+    case show.succeeded:
+      return action.payload;
+    case update.succeeded:
+      return action.payload;
+    default:
+      return state;
+  }
+};
+
+const previewType = (state = 'hidden', action) => {
+  switch (action.type) {
+    case preview:
+      return action.payload;
+    default:
+      return state;
+  }
+};
+
 export default combineReducers({
   total,
   items,
+  item,
+  previewType,
 });
