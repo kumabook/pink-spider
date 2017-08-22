@@ -14,25 +14,34 @@ import RaisedButton       from 'material-ui/RaisedButton';
 import FlatButton         from 'material-ui/FlatButton';
 import Dialog             from 'material-ui/Dialog';
 import { connect }        from 'react-redux';
-import tryGet             from '../utils/tryGet';
-import datePrettify       from '../utils/datePrettify';
-import { getUrl }         from '../model/Playlist';
 import { creators }       from '../actions/entry';
-import {
-  NO_IMAGE,
-  DEAD_IMAGE,
-  getImageOfProvider,
-} from '../utils/thumbnail';
 
 class EntryDetail extends React.Component {
   static get propTypes() {
     return {
       item:           PropTypes.object.isRequired,
+      previewType:    PropTypes.string.isRequired,
       update:         PropTypes.func.isRequired,
       previewContent: PropTypes.func.isRequired,
       previewText:    PropTypes.func.isRequired,
       finishPreview:  PropTypes.func.isRequired,
     };
+  }
+  /* eslint react/no-danger: 0 */
+  previewDialogBody() {
+    switch (this.props.previewType) {
+      case 'content': {
+        const markup = { __html: this.props.item[this.props.previewType] };
+        return <div dangerouslySetInnerHTML={markup} />;
+      }
+      case 'text':
+        return <div>{this.props.item[this.props.previewType]}</div>;
+      default:
+        return null;
+    }
+  }
+  previewDialogIsHidden() {
+    return !!this.props.item[this.props.previewType];
   }
   render() {
     const overlay = (
@@ -115,20 +124,6 @@ class EntryDetail extends React.Component {
       </div>
     );
   }
-  previewDialogBody() {
-    switch (this.props.previewType) {
-      case 'content':
-        const markup = { __html: this.props.item[this.props.previewType] };
-        return <div dangerouslySetInnerHTML={markup} />;
-      case 'text':
-        return <div>{this.props.item[this.props.previewType]}</div>;
-      default:
-        return null;
-    }
-  }
-  previewDialogIsHidden() {
-    return !!this.props.item[this.props.previewType];
-  }
 }
 
 function mapStateToProps(state) {
@@ -141,8 +136,8 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
   return {
     update:         item => dispatch(creators.update.start(item)),
-    previewContent: item => dispatch(creators.preview('content')),
-    previewText:    item => dispatch(creators.preview('text')),
+    previewContent: () => dispatch(creators.preview('content')),
+    previewText:    () => dispatch(creators.preview('text')),
     finishPreview:  () => dispatch(creators.preview('hidden')),
   };
 }
