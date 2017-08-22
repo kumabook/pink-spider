@@ -185,7 +185,10 @@ fn walk(mut dom:   &mut RcDom,
     for node in useless_nodes.iter() {
         dom.remove_from_parent(node);
     }
-    return useless
+    if is_empty(handle) {
+        useless = true
+    }
+    useless
 }
 
 fn clean_attr(attrs: &mut Vec<Attribute>, attr_name: &str) {
@@ -214,7 +217,44 @@ fn calc_content_score(handle: Handle) -> f32 {
             _ => ()
         }
     }
-    score
+    return score
+}
+
+fn is_empty(handle: Handle) -> bool {
+    for child in handle.children.borrow().iter() {
+        let c = child.clone();
+        match c.data {
+            Text { ref contents } => {
+                if contents.borrow().trim().len() > 0 {
+                    return false
+                }
+            },
+            Element { ref name, .. } => {
+                let tag_name = name.local.as_ref();
+                match tag_name.to_lowercase().as_ref() {
+                    "li" | "dt" | "dd" | "p" | "div" => {
+                        if !is_empty(child.clone()) {
+                            return false
+                        }
+                    },
+                    _ => return false,
+                }
+            },
+            _ => ()
+        }
+    }
+    match handle.data {
+        Element { ref name, .. } => {
+            let tag_name = name.local.as_ref();
+            match tag_name.to_lowercase().as_ref() {
+                "li" | "dt" | "dd" | "p" | "div" | "canvas" => {
+                    true
+                },
+                _ => false,
+            }
+        },
+        _ => false,
+    }
 }
 
 fn is_link_list(handle: Handle) -> bool {
