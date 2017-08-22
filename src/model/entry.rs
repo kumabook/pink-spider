@@ -335,7 +335,9 @@ impl Entry {
     }
 
     pub fn playlistify(&mut self) -> Result<(), Error> {
-        let product = try!(scraper::extract(&self.url));
+        let product = try!(scraper::scrape(&self.url));
+        self.content = Some(product.content);
+        self.text = Some(product.text);
         match product.og_obj {
             Some(og_obj) => {
                 if !self.has_title() {
