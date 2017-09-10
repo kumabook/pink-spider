@@ -314,12 +314,16 @@ impl Entry {
         self.published   = entry.published;
         self.updated     = entry.updated;
         self.fingerprint = entry.fingerprint.clone();
-        self.origin_id   = entry.id.clone();
         self.alternate   = json!(entry.alternate);
         self.keywords    = json!(entry.keywords);
         self.enclosure   = json!(entry.enclosure);
 
         self.updated_at  = Utc::now().naive_utc();
+        if !entry.id.is_empty() {
+            self.origin_id = entry.id.clone()
+        } else {
+            self.origin_id = self.url.clone()
+        }
     }
 
     pub fn has_title(&self) -> bool {
