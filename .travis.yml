@@ -25,7 +25,7 @@ before_script:
   - gem install bundler
   - bundle install
   - nvm install 7.4.0
-  - npm install -g yarn
+  - npm install -g yarn@1.0.1
   - yarn install
   - rake db:create
   - rake db:migrate
