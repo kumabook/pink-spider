@@ -6,8 +6,10 @@ describe('entries reducer', () => {
     assert.deepEqual(
       reducer(undefined, {}),
       {
-        total: 0,
-        items: [],
+        item:        {},
+        total:       0,
+        items:       [],
+        previewType: 'hidden',
       }
     );
   });

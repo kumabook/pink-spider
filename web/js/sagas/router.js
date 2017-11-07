@@ -37,6 +37,9 @@ const routes = {
       perPage: getPerPage(),
     }));
   },
+  '/entries/:entryId': function* fetchEntry({ entryId }) {
+    yield put(entryActions.show.start(entryId));
+  },
   '(?:/entries/:entryId)?/tracks': function* fetchTracks({ entryId }) {
     yield put(trackActions.index.start({
       page:    getPage(),

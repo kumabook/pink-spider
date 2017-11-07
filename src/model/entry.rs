@@ -12,7 +12,7 @@ use model::PaginatedCollection;
 use serde_json::Value;
 use feed_rs;
 
-static PROPS: [&'static str; 20]  = ["id",
+static PROPS: [&'static str; 21]  = ["id",
                                      "url",
                                      "title",
                                      "description",
@@ -21,6 +21,7 @@ static PROPS: [&'static str; 20]  = ["id",
 
                                      "summary",
                                      "content",
+                                     "text",
                                      "author",
                                      "crawled",
                                      "published",
@@ -46,6 +47,7 @@ pub struct Entry {
     pub locale:      Option<String>,
     pub summary:     Option<String>,
     pub content:     Option<String>,
+    pub text:        Option<String>,
     pub author:      Option<String>,
     pub crawled:     NaiveDateTime,
     pub published:   NaiveDateTime,
@@ -85,18 +87,19 @@ impl<'a> Model<'a> for Entry {
                 locale:      row.get(5),
                 summary:     row.get(6),
                 content:     row.get(7),
-                author:      row.get(8),
-                crawled:     row.get(9),
-                published:   row.get(10),
-                updated:     row.get(11),
-                fingerprint: row.get(12),
-                origin_id:   row.get(13),
-                alternate:   row.get(14),
-                keywords:    row.get(15),
-                enclosure:   row.get(16),
-                feed_id:     row.get(17),
-                created_at:  row.get(18),
-                updated_at:  row.get(19),
+                text:        row.get(8),
+                author:      row.get(9),
+                crawled:     row.get(10),
+                published:   row.get(11),
+                updated:     row.get(12),
+                fingerprint: row.get(13),
+                origin_id:   row.get(14),
+                alternate:   row.get(15),
+                keywords:    row.get(16),
+                enclosure:   row.get(17),
+                feed_id:     row.get(18),
+                created_at:  row.get(19),
+                updated_at:  row.get(20),
                 tracks:      Track::find_by_entry_id(row.get(0)),
                 playlists:   Playlist::find_by_entry_id(row.get(0)),
                 albums:      Album::find_by_entry_id(row.get(0)),
@@ -125,18 +128,19 @@ impl<'a> Model<'a> for Entry {
                                    locale      = $6,
                                    summary     = $7,
                                    content     = $8,
-                                   author      = $9,
-                                   crawled     = $10,
-                                   published   = $11,
-                                   updated     = $12,
-                                   fingerprint = $13,
-                                   origin_id   = $14,
-                                   alternate   = $15,
-                                   keywords    = $16,
-                                   enclosure   = $17,
-                                   feed_id     = $18,
-                                   created_at  = $19,
-                                   updated_at  = $20
+                                   text        = $9,
+                                   author      = $10,
+                                   crawled     = $11,
+                                   published   = $12,
+                                   updated     = $13,
+                                   fingerprint = $14,
+                                   origin_id   = $15,
+                                   alternate   = $16,
+                                   keywords    = $17,
+                                   enclosure   = $18,
+                                   feed_id     = $19,
+                                   created_at  = $20,
+                                   updated_at  = $21
                                  WHERE id = $1"));
         let result = stmt.query(&[&self.id,
                                   &self.url,
@@ -146,6 +150,7 @@ impl<'a> Model<'a> for Entry {
                                   &self.locale,
                                   &self.summary,
                                   &self.content,
+                                  &self.text,
                                   &self.author,
                                   &self.crawled,
                                   &self.published,
@@ -179,6 +184,7 @@ impl Entry {
 
                 summary:     None,
                 content:     None,
+                text:        None,
                 author:      None,
                 crawled:     NaiveDateTime::from_timestamp(0, 0),
                 published:   NaiveDateTime::from_timestamp(0, 0), // exclude from api response
@@ -263,6 +269,7 @@ impl Entry {
 
                 summary:     None,
                 content:     None,
+                text:        None,
                 author:      None,
                 crawled:     Utc::now().naive_utc(),
                 published:   Utc::now().naive_utc(),
@@ -332,7 +339,9 @@ impl Entry {
     }
 
     pub fn playlistify(&mut self) -> Result<(), Error> {
-        let product = try!(scraper::extract(&self.url));
+        let product = try!(scraper::scrape(&self.url));
+        self.content = Some(product.content);
+        self.text = Some(product.text);
         match product.og_obj {
             Some(og_obj) => {
                 if !self.has_title() {

@@ -1,3 +1,4 @@
+use std::io::Read;
 use html5ever::rcdom::NodeData::{
     Document,
     Doctype,
@@ -7,8 +8,9 @@ use html5ever::rcdom::NodeData::{
     ProcessingInstruction
 };
 use html5ever::rcdom::{RcDom, Handle};
-use html5ever::{parse_document, Attribute};
+use html5ever::{parse_document, serialize, Attribute};
 use html5ever::tendril::stream::TendrilSink;
+use html5ever::tree_builder::TreeSink;
 use std::default::Default;
 use regex::Regex;
 use hyper::header::Connection;
@@ -40,15 +42,21 @@ lazy_static! {
 const EXPAND_YOUTUBE_PLAYLIST:    bool = true;
 const EXPAND_SOUNDCLOUD_PLAYLIST: bool = true;
 
+const THRESHOLD_SCORE: f32 = 100.0;
+const PUNCTUATION_WEIGHT: f32 = 10.0;
+pub static PUNCTUATIONS: &'static str = r"([、。，．！？]|\.[^A-Za-z0-9]|,[^0-9]|!|\?)";
+
 #[derive(Debug)]
 pub struct ScraperProduct {
+    pub content:   String,
+    pub text:      String,
     pub playlists: Vec<Playlist>,
     pub albums:    Vec<Album>,
     pub tracks:    Vec<Track>,
     pub og_obj:    Option<opengraph::Object>,
 }
 
-pub fn extract(url: &str) -> Result<ScraperProduct, Error> {
+pub fn scrape(url: &str) -> Result<ScraperProduct, Error> {
     let client      = http::client();
     let mut builder = client.get(url)
         .header(Connection(vec![ConnectionOption::Close]));
@@ -57,43 +65,71 @@ pub fn extract(url: &str) -> Result<ScraperProduct, Error> {
     }
     let mut res = try!(builder.send());
     if res.status.is_success() {
-        let dom = parse_document(RcDom::default(), Default::default())
-            .from_utf8()
-            .read_from(&mut res)
-            .unwrap();
-        let mut playlists = Vec::new();
-        let mut tracks    = Vec::new();
-        let mut albums    = Vec::new();
-        let mut og_props  = Vec::new();
-        walk(dom.document, &mut playlists, &mut albums, &mut tracks, &mut og_props);
-        let og_obj = if og_props.len() > 0 {
-            Some(opengraph::Object::new(&og_props))
-        } else {
-            None
-        };
-        Ok(ScraperProduct {
-            playlists: playlists,
-            albums:    albums,
-            tracks:    tracks,
-            og_obj:    og_obj
-        })
+        extract(&mut res)
     } else {
         println!("Failed to get entry html {}: {}", res.status, url);
         Err(Error::NotFound)
     }
 }
 
+pub fn extract<R>(input: &mut R) -> Result<ScraperProduct, Error> where R: Read {
+    let mut dom = parse_document(RcDom::default(), Default::default())
+        .from_utf8()
+        .read_from(input)
+        .unwrap();
+    let mut playlists = Vec::new();
+    let mut tracks    = Vec::new();
+    let mut albums    = Vec::new();
+    let mut og_props  = Vec::new();
+    let handle = dom.document.clone();
+    walk(&mut dom,
+         handle,
+         &mut playlists,
+         &mut albums,
+         &mut tracks,
+         &mut og_props);
+    let mut bytes = vec![];
+    serialize(&mut bytes, &dom.document, Default::default()).ok();
+    let content = String::from_utf8(bytes).unwrap_or("".to_string());
+    let og_obj = if og_props.len() > 0 {
+        Some(opengraph::Object::new(&og_props))
+    } else {
+        None
+    };
+    let mut text: String = String::new();
+    extract_text(dom.document, &mut text);
+    Ok(ScraperProduct {
+        content:   content,
+        text:      text,
+        playlists: playlists,
+        albums:    albums,
+        tracks:    tracks,
+        og_obj:    og_obj
+    })
+}
+
+pub fn escape_default(s: &str) -> String {
+    s.chars().flat_map(|c| c.escape_default()).collect()
+}
+
 // This is not proper HTML serialization, of course.
-fn walk(handle:    Handle,
+fn walk(mut dom:   &mut RcDom,
+        handle:    Handle,
         playlists: &mut Vec<Playlist>,
         albums:    &mut Vec<Album>,
         tracks:    &mut Vec<Track>,
-        og_props:  &mut Vec<(String, String)>) {
+        og_props:  &mut Vec<(String, String)>) -> bool {
+    let mut useless = false;
     match handle.data {
         Document       => (),
         Doctype { .. } => (),
-        Text { .. }    => (),
-        Comment { .. } => (),
+        Text { ref contents } => {
+            let s = contents.borrow();
+            if s.trim().len() == 0 {
+                useless = true
+            }
+        },
+        Comment { .. } => useless = true,
         Element { ref name, ref attrs, .. } => {
             let tag_name = name.local.as_ref();
             let mut ps = extract_opengraph_metadata_from_tag(tag_name, &attrs.borrow());
@@ -114,11 +150,177 @@ fn walk(handle:    Handle,
                     (*tracks).push(track)
                 }
             }
+            match tag_name.to_lowercase().as_ref() {
+                "script"   => useless = true,
+                "link"     => useless = true,
+                "style"    => useless = true,
+                "noscript" => useless = true,
+                "meta"     => useless = true,
+                "div" | "center" | "td" => {
+                    let score = calc_content_score(handle.clone());
+                    if THRESHOLD_SCORE > score {
+                        useless = true
+                    }
+                },
+                "ul" | "dl" | "ol" => {
+                    if is_link_list(handle.clone()) {
+                        useless = true
+                    }
+                },
+                "footer" => useless = true,
+                "header" => useless = true,
+                _        => (),
+            }
+            clean_attr(&mut *attrs.borrow_mut(), "class");
+            clean_attr(&mut *attrs.borrow_mut(), "style");
         },
         ProcessingInstruction { .. } => unreachable!()
     }
+    let mut useless_nodes = vec![];
     for child in handle.children.borrow().iter() {
-        walk(child.clone(), playlists, albums, tracks, og_props);
+        if walk(&mut dom, child.clone(), playlists, albums, tracks, og_props) {
+            useless_nodes.push(child.clone());
+        }
+    }
+    for node in useless_nodes.iter() {
+        dom.remove_from_parent(node);
+    }
+    if is_empty(handle) {
+        useless = true
+    }
+    useless
+}
+
+fn clean_attr(attrs: &mut Vec<Attribute>, attr_name: &str) {
+    if let Some(index) = attrs.iter().position(|attr| {
+        let name = attr.name.local.as_ref();
+        name == attr_name
+    }) {
+        attrs.remove(index);
+    }
+}
+
+fn calc_content_score(handle: Handle) -> f32 {
+    let mut score: f32 = 0.0;
+    for child in handle.children.borrow().iter() {
+        let c = child.clone();
+        match c.data {
+            Text { ref contents } => {
+                let re = Regex::new(PUNCTUATIONS).unwrap();
+                let s = contents.borrow();
+                let mat = re.find_iter(&s.trim());
+                score += mat.count() as f32 * PUNCTUATION_WEIGHT;
+            },
+            Element { .. } => {
+                score += calc_content_score(child.clone());
+            },
+            _ => ()
+        }
+    }
+    return score
+}
+
+fn is_empty(handle: Handle) -> bool {
+    for child in handle.children.borrow().iter() {
+        let c = child.clone();
+        match c.data {
+            Text { ref contents } => {
+                if contents.borrow().trim().len() > 0 {
+                    return false
+                }
+            },
+            Element { ref name, .. } => {
+                let tag_name = name.local.as_ref();
+                match tag_name.to_lowercase().as_ref() {
+                    "li" | "dt" | "dd" | "p" | "div" => {
+                        if !is_empty(child.clone()) {
+                            return false
+                        }
+                    },
+                    _ => return false,
+                }
+            },
+            _ => ()
+        }
+    }
+    match handle.data {
+        Element { ref name, .. } => {
+            let tag_name = name.local.as_ref();
+            match tag_name.to_lowercase().as_ref() {
+                "li" | "dt" | "dd" | "p" | "div" | "canvas" => {
+                    true
+                },
+                _ => false,
+            }
+        },
+        _ => false,
+    }
+}
+
+fn is_link_list(handle: Handle) -> bool {
+    let rate = evaluate_list(handle);
+    rate > 7.5
+}
+
+fn evaluate_list(handle: Handle) -> f32 {
+    let mut hit: i32 = 0;
+    let mut len: i32 = 0;
+    for child in handle.children.borrow().iter() {
+        let c = child.clone();
+        match c.data {
+            Element { ref name, .. } => {
+                let tag_name = name.local.as_ref();
+                match tag_name.to_lowercase().as_ref() {
+                    "li" | "dt" | "dd" => {
+                        len += 1;
+                        if has_link(child.clone()) {
+                            hit += 1
+                        }
+                    }
+                    _ => (),
+                }
+            },
+            _ => ()
+        }
+    }
+    if len == 0 {
+        0.0
+    } else {
+        9.0 * ((hit / len) as f32).powi(2) + 1.0
+    }
+}
+
+fn has_link(handle: Handle) -> bool {
+    match handle.data {
+        Element { ref name, .. } => {
+            let tag_name = name.local.as_ref();
+            match tag_name.to_lowercase().as_ref() {
+                "a" => return true,
+                _ => (),
+            }
+        }
+        _ => (),
+    }
+    for child in handle.children.borrow().iter() {
+        if has_link(child.clone()) {
+            return true
+        }
+    }
+    return false
+}
+
+fn extract_text(handle: Handle, text: &mut String) {
+    for child in handle.children.borrow().iter() {
+        let c = child.clone();
+        match c.data {
+            Text { ref contents } => {
+                text.push_str(contents.borrow().trim());
+            },
+            Element { .. } => {
+                extract_text(child.clone(), text);
+            },
+            _ => ()
+        }
     }
 }
 
@@ -382,7 +584,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
 
 #[cfg(test)]
 mod test {
-    use super::extract;
+    use super::scrape;
     use super::extract_identifier;
     use youtube;
     use soundcloud;
@@ -416,9 +618,9 @@ mod test {
         }
     }
     #[test]
-    fn test_extract() {
+    fn test_scrape() {
         let url       = "http://spincoaster.com/spincoaster-breakout-2017";
-        let product   = extract(url).unwrap();
+        let product   = scrape(url).unwrap();
         let playlists = product.playlists;
         let tracks    = product.tracks;
         assert_eq!(playlists.len(), 3);

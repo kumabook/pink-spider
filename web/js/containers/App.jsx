@@ -10,7 +10,7 @@ import { withRouter }    from 'react-router-dom';
 import { toggleDrawler } from '../actions';
 
 const progressStyle = {
-  position:        'absolute',
+  position:        'fixed',
   top:             0,
   left:            0,
   width:           '100%',
@@ -37,7 +37,7 @@ class App extends React.Component {
   render() {
     const progress = !this.props.progress ? null : (
       <div style={progressStyle}>
-        <CircularProgress style={{ marginTop: '45%', marginLeft: '49%' }} />
+        <CircularProgress style={{ marginTop: '30%', marginLeft: '49%' }} />
       </div>
     );
     return (
