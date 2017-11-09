@@ -12,6 +12,7 @@ use std::error;
 use postgres;
 use urlencoded;
 use hyper;
+use url;
 
 #[derive(Debug)]
 pub enum Error {
@@ -20,6 +21,7 @@ pub enum Error {
     NotFound,
     DbError(postgres::error::Error),
     DbConnectError(postgres::error::ConnectError),
+    UrlParseError(url::ParseError),
     Unexpected,
 }
 
@@ -33,6 +35,7 @@ impl Serialize for Error {
             Error::NotFound          => serializer.serialize_str("NotFound"),
             Error::DbError(_)        => serializer.serialize_str("DbError"),
             Error::DbConnectError(_) => serializer.serialize_str("DbConnectError"),
+            Error::UrlParseError(_)  => serializer.serialize_str("UrlParseError"),
             Error::Unexpected        => serializer.serialize_str("Unexpected"),
         }
     }
@@ -46,6 +49,7 @@ impl Error {
             Error::NotFound          => Status::NotFound,
             Error::DbError(_)        => Status::InternalServerError,
             Error::DbConnectError(_) => Status::InternalServerError,
+            Error::UrlParseError(_)  => Status::InternalServerError,
             Error::Unexpected        => Status::InternalServerError,
         }
     }
@@ -63,10 +67,17 @@ impl Display for Error {
             Error::BadRequest            => write!(f, "BadRequest"),
             Error::Unprocessable         => write!(f, "Unproccesable"),
             Error::NotFound              => write!(f, "NotFound"),
-            Error::DbError(ref e)        => write!(f, "UnexpectedError: DBError {}", e),
-            Error::DbConnectError(ref e) => write!(f, "UnexpectedError: DBConnectError {}", e),
+            Error::DbError(ref e)        => write!(f, "DBError {}", e),
+            Error::DbConnectError(ref e) => write!(f, "DBConnectError {}", e),
+            Error::UrlParseError(ref e)  => write!(f, "UrlParseError:  {}", e),
             Error::Unexpected            => write!(f, "UnexpectedError"),
         }
+    }
+}
+
+impl From<url::ParseError> for Error {
+    fn from(err: url::ParseError) -> Error {
+        Error::UrlParseError(err)
     }
 }
 
@@ -104,9 +115,10 @@ impl From<Error> for IronError {
             Error::BadRequest        => IronError::new(err, Status::BadRequest),
             Error::Unprocessable     => IronError::new(err, Status::BadRequest),
             Error::NotFound          => IronError::new(err, Status::NotFound),
-            Error::DbError(_)        => IronError::new(err, Status::BadRequest),
-            Error::DbConnectError(_) => IronError::new(err, Status::BadRequest),
-            Error::Unexpected        => IronError::new(err, Status::BadRequest),
+            Error::DbError(_)        => IronError::new(err, Status::InternalServerError),
+            Error::DbConnectError(_) => IronError::new(err, Status::InternalServerError),
+            Error::UrlParseError(_)  => IronError::new(err, Status::InternalServerError),
+            Error::Unexpected        => IronError::new(err, Status::InternalServerError),
         }
     }
 }
