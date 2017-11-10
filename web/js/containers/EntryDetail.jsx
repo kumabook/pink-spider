@@ -27,6 +27,17 @@ class EntryDetail extends React.Component {
       finishPreview:  PropTypes.func.isRequired,
     };
   }
+  previewDialogTitle() {
+    switch (this.props.previewType) {
+      case 'content': {
+        return this.props.item.title;
+      }
+      case 'text':
+        return this.props.item.title;
+      default:
+        return null;
+    }
+  }
   /* eslint react/no-danger: 0 */
   previewDialogBody() {
     switch (this.props.previewType) {
@@ -112,7 +123,7 @@ class EntryDetail extends React.Component {
           </CardText>
         </Card>
         <Dialog
-          title="Preview"
+          title={this.previewDialogTitle()}
           actions={actions}
           modal={false}
           open={this.previewDialogIsHidden()}
