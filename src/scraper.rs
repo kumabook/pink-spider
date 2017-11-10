@@ -1,22 +1,20 @@
 use std::io::Read;
-use html5ever::rcdom::NodeData::{
-    Document,
-    Doctype,
-    Text,
-    Comment,
-    Element,
-    ProcessingInstruction
-};
+use std::collections::BTreeMap;
+use std::path::Path;
+use std::cell::Cell;
+use std::rc::Rc;
+use html5ever::rcdom::Node;
+use html5ever::rcdom::NodeData::Element;
 use html5ever::rcdom::{RcDom, Handle};
 use html5ever::{parse_document, serialize, Attribute};
 use html5ever::tendril::stream::TendrilSink;
-use html5ever::tree_builder::TreeSink;
 use std::default::Default;
 use regex::Regex;
 use hyper::header::Connection;
 use hyper::header::ConnectionOption;
 use hyper::header::UserAgent;
 use http;
+use url::Url;
 
 use Provider;
 use Track;
@@ -29,6 +27,9 @@ use soundcloud;
 use spotify;
 use error::Error;
 use model::Enclosure;
+use dom;
+use readability;
+use readability::Candidate;
 
 use url::percent_encoding::{percent_decode};
 use get_env;
@@ -41,10 +42,6 @@ lazy_static! {
 
 const EXPAND_YOUTUBE_PLAYLIST:    bool = true;
 const EXPAND_SOUNDCLOUD_PLAYLIST: bool = true;
-
-const THRESHOLD_SCORE: f32 = 100.0;
-const PUNCTUATION_WEIGHT: f32 = 10.0;
-pub static PUNCTUATIONS: &'static str = r"([、。，．！？]|\.[^A-Za-z0-9]|,[^0-9]|!|\?)";
 
 #[derive(Debug)]
 pub struct ScraperProduct {
@@ -65,39 +62,64 @@ pub fn scrape(url: &str) -> Result<ScraperProduct, Error> {
     }
     let mut res = try!(builder.send());
     if res.status.is_success() {
-        extract(&mut res)
+        let url = Url::parse(url)?;
+        extract(&mut res, &url)
     } else {
         println!("Failed to get entry html {}: {}", res.status, url);
         Err(Error::NotFound)
     }
 }
 
-pub fn extract<R>(input: &mut R) -> Result<ScraperProduct, Error> where R: Read {
+pub fn extract<R>(input: &mut R, url: &Url) -> Result<ScraperProduct, Error> where R: Read {
     let mut dom = parse_document(RcDom::default(), Default::default())
         .from_utf8()
         .read_from(input)
         .unwrap();
-    let mut playlists = Vec::new();
-    let mut tracks    = Vec::new();
-    let mut albums    = Vec::new();
-    let mut og_props  = Vec::new();
+    let mut candidates = BTreeMap::new();
+    let mut nodes      = BTreeMap::new();
+    let mut playlists  = Vec::new();
+    let mut tracks     = Vec::new();
+    let mut albums     = Vec::new();
+    let mut og_props   = Vec::new();
     let handle = dom.document.clone();
     walk(&mut dom,
-         handle,
+         Path::new("/"),
+         handle.clone(),
+         &mut candidates,
+         &mut nodes,
          &mut playlists,
          &mut albums,
          &mut tracks,
          &mut og_props);
+    let mut id: &str = "/";
+    let mut top_candidate: &Candidate = &Candidate {
+        node:  handle.clone(),
+        score: Cell::new(0.0),
+    };
+    for (i, c) in candidates.iter() {
+        let score = c.score.get() * (1.0 - readability::get_link_density(c.node.clone()));
+        c.score.set(score);
+        if score <= top_candidate.score.get() {
+            continue;
+        }
+        id            = i;
+        top_candidate = c;
+    }
     let mut bytes = vec![];
-    serialize(&mut bytes, &dom.document, Default::default()).ok();
+
+    let node = top_candidate.node.clone();
+    readability::clean(&mut dom, Path::new(id), node.clone(), url, &candidates);
+
+    serialize(&mut bytes, &node, Default::default()).ok();
     let content = String::from_utf8(bytes).unwrap_or("".to_string());
+
+    let mut text: String = String::new();
+    dom::extract_text(node.clone(), &mut text, true);
     let og_obj = if og_props.len() > 0 {
         Some(opengraph::Object::new(&og_props))
     } else {
         None
     };
-    let mut text: String = String::new();
-    extract_text(dom.document, &mut text);
     Ok(ScraperProduct {
         content:   content,
         text:      text,
@@ -112,26 +134,19 @@ pub fn escape_default(s: &str) -> String {
     s.chars().flat_map(|c| c.escape_default()).collect()
 }
 
-// This is not proper HTML serialization, of course.
-fn walk(mut dom:   &mut RcDom,
-        handle:    Handle,
-        playlists: &mut Vec<Playlist>,
-        albums:    &mut Vec<Album>,
-        tracks:    &mut Vec<Track>,
-        og_props:  &mut Vec<(String, String)>) -> bool {
-    let mut useless = false;
+fn walk(mut dom:    &mut RcDom,
+        id:         &Path,
+        handle:     Handle,
+        candidates: &mut BTreeMap<String, Candidate>,
+        nodes:      &mut BTreeMap<String, Rc<Node>>,
+        playlists:  &mut Vec<Playlist>,
+        albums:     &mut Vec<Album>,
+        tracks:     &mut Vec<Track>,
+        og_props:   &mut Vec<(String, String)>) {
+
+    let tag_name: &str = &dom::get_tag_name(handle.clone()).unwrap_or("".to_string());
     match handle.data {
-        Document       => (),
-        Doctype { .. } => (),
-        Text { ref contents } => {
-            let s = contents.borrow();
-            if s.trim().len() == 0 {
-                useless = true
-            }
-        },
-        Comment { .. } => useless = true,
-        Element { ref name, ref attrs, .. } => {
-            let tag_name = name.local.as_ref();
+        Element { name: _, ref attrs, .. } => {
             let mut ps = extract_opengraph_metadata_from_tag(tag_name, &attrs.borrow());
             og_props.append(&mut ps);
             let (ps, als, ts) = extract_enclosures_from_tag(tag_name, &attrs.borrow());
@@ -150,198 +165,72 @@ fn walk(mut dom:   &mut RcDom,
                     (*tracks).push(track)
                 }
             }
-            match tag_name.to_lowercase().as_ref() {
-                "script"   => useless = true,
-                "link"     => useless = true,
-                "style"    => useless = true,
-                "noscript" => useless = true,
-                "meta"     => useless = true,
-                "div" | "center" | "td" => {
-                    let score = calc_content_score(handle.clone());
-                    if THRESHOLD_SCORE > score {
-                        useless = true
-                    }
-                },
-                "ul" | "dl" | "ol" => {
-                    if is_link_list(handle.clone()) {
-                        useless = true
-                    }
-                },
-                "footer" => useless = true,
-                "header" => useless = true,
-                _        => (),
-            }
-            clean_attr(&mut *attrs.borrow_mut(), "class");
-            clean_attr(&mut *attrs.borrow_mut(), "style");
-        },
-        ProcessingInstruction { .. } => unreachable!()
-    }
-    let mut useless_nodes = vec![];
-    for child in handle.children.borrow().iter() {
-        if walk(&mut dom, child.clone(), playlists, albums, tracks, og_props) {
-            useless_nodes.push(child.clone());
-        }
-    }
-    for node in useless_nodes.iter() {
-        dom.remove_from_parent(node);
-    }
-    if is_empty(handle) {
-        useless = true
-    }
-    useless
-}
-
-fn clean_attr(attrs: &mut Vec<Attribute>, attr_name: &str) {
-    if let Some(index) = attrs.iter().position(|attr| {
-        let name = attr.name.local.as_ref();
-        name == attr_name
-    }) {
-        attrs.remove(index);
-    }
-}
-
-fn calc_content_score(handle: Handle) -> f32 {
-    let mut score: f32 = 0.0;
-    for child in handle.children.borrow().iter() {
-        let c = child.clone();
-        match c.data {
-            Text { ref contents } => {
-                let re = Regex::new(PUNCTUATIONS).unwrap();
-                let s = contents.borrow();
-                let mat = re.find_iter(&s.trim());
-                score += mat.count() as f32 * PUNCTUATION_WEIGHT;
-            },
-            Element { .. } => {
-                score += calc_content_score(child.clone());
-            },
-            _ => ()
-        }
-    }
-    return score
-}
-
-fn is_empty(handle: Handle) -> bool {
-    for child in handle.children.borrow().iter() {
-        let c = child.clone();
-        match c.data {
-            Text { ref contents } => {
-                if contents.borrow().trim().len() > 0 {
-                    return false
-                }
-            },
-            Element { ref name, .. } => {
-                let tag_name = name.local.as_ref();
-                match tag_name.to_lowercase().as_ref() {
-                    "li" | "dt" | "dd" | "p" | "div" => {
-                        if !is_empty(child.clone()) {
-                            return false
-                        }
-                    },
-                    _ => return false,
-                }
-            },
-            _ => ()
-        }
-    }
-    match handle.data {
-        Element { ref name, .. } => {
-            let tag_name = name.local.as_ref();
-            match tag_name.to_lowercase().as_ref() {
-                "li" | "dt" | "dd" | "p" | "div" | "canvas" => {
-                    true
-                },
-                _ => false,
-            }
-        },
-        _ => false,
-    }
-}
-
-fn is_link_list(handle: Handle) -> bool {
-    let rate = evaluate_list(handle);
-    rate > 7.5
-}
-
-fn evaluate_list(handle: Handle) -> f32 {
-    let mut hit: i32 = 0;
-    let mut len: i32 = 0;
-    for child in handle.children.borrow().iter() {
-        let c = child.clone();
-        match c.data {
-            Element { ref name, .. } => {
-                let tag_name = name.local.as_ref();
-                match tag_name.to_lowercase().as_ref() {
-                    "li" | "dt" | "dd" => {
-                        len += 1;
-                        if has_link(child.clone()) {
-                            hit += 1
-                        }
-                    }
-                    _ => (),
-                }
-            },
-            _ => ()
-        }
-    }
-    if len == 0 {
-        0.0
-    } else {
-        9.0 * ((hit / len) as f32).powi(2) + 1.0
-    }
-}
-
-fn has_link(handle: Handle) -> bool {
-    match handle.data {
-        Element { ref name, .. } => {
-            let tag_name = name.local.as_ref();
-            match tag_name.to_lowercase().as_ref() {
-                "a" => return true,
-                _ => (),
-            }
         }
         _ => (),
     }
-    for child in handle.children.borrow().iter() {
-        if has_link(child.clone()) {
-            return true
+
+    if let Some(id) = id.to_str().map(|id| id.to_string()) {
+        nodes.insert(id, handle.clone());
+    }
+
+    if readability::is_candidate(handle.clone()) {
+        let score = readability::calc_content_score(handle.clone());
+        if let Some(c) = id.parent()
+            .and_then(|id| find_or_create_candidate(id, candidates, nodes))
+        {
+            c.score.set(c.score.get() + score)
+        }
+        if let Some(c) = id.parent()
+            .and_then(|id| id.parent())
+            .and_then(|id| find_or_create_candidate(id, candidates, nodes))
+        {
+            c.score.set(c.score.get() + score / 2.0)
         }
     }
-    return false
-}
 
-fn extract_text(handle: Handle, text: &mut String) {
-    for child in handle.children.borrow().iter() {
-        let c = child.clone();
-        match c.data {
-            Text { ref contents } => {
-                text.push_str(contents.borrow().trim());
-            },
-            Element { .. } => {
-                extract_text(child.clone(), text);
-            },
-            _ => ()
-        }
+    for (i, child) in handle.children.borrow().iter().enumerate() {
+        walk(&mut dom,
+             id.join(i.to_string()).as_path(),
+             child.clone(),
+             candidates,
+             nodes,
+             playlists,
+             albums,
+             tracks,
+             og_props)
     }
 }
 
-fn attr(attr_name: &str, attrs: &Vec<Attribute>) -> Option<String> {
-    for attr in attrs.iter() {
-        if attr.name.local.as_ref() == attr_name {
-            return Some(attr.value.to_string())
+fn find_or_create_candidate<'a>(id: &Path,
+                                candidates: &'a mut BTreeMap<String, Candidate>,
+                                nodes: &BTreeMap<String, Rc<Node>>) -> Option<&'a Candidate> {
+    if let Some(id) = id.parent()
+        .and_then(|pid| pid.to_str())
+        .map(|id| id.to_string())
+    {
+        if let Some(node) = nodes.get(&id) {
+            if candidates.get(&id).is_none() {
+                candidates.insert(id.clone(), Candidate {
+                    node:  node.clone(),
+                    score: Cell::new(readability::init_content_score(node.clone())),
+                });
+            }
+            return candidates.get(&id)
         }
     }
     None
 }
 
+
 pub fn extract_enclosures_from_tag(tag_name: &str,
                                    attrs: &Vec<Attribute>) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
     if tag_name == "iframe" {
-        match attr("src", attrs).or(attr("data-src", attrs)) {
+        match dom::attr("src", attrs).or(dom::attr("data-src", attrs)) {
             Some(ref src) => extract_enclosures_from_url(src.to_string()),
             None => (vec![], vec![], vec![])
         }
     } else if tag_name == "a" || tag_name == "link" {
-        match attr("href", attrs) {
+        match dom::attr("href", attrs) {
             Some(ref href) => extract_enclosures_from_url(href.to_string()),
             None => (vec![], vec![], vec![])
         }
@@ -368,14 +257,14 @@ pub fn extract_opengraph_metadata_from_tag(tag_name: &str,
 }
 
 fn extract_opengraph_prop<'a>(attr_name: &str, attrs: &Vec<Attribute>) -> Option<(String, String)> {
-    attr(attr_name, attrs)
+    dom::attr(attr_name, attrs)
         .and_then(|property|
                   if property.starts_with("og:") {
                       let end = property.chars().count();
                       let key = unsafe {
                           property.slice_unchecked(3, end)
                       }.to_string();
-                      attr("content", attrs).map(|content| (key, content))
+                      dom::attr("content", attrs).map(|content| (key, content))
                   } else {
                       None
                   })

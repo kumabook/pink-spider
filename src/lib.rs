@@ -45,3 +45,5 @@ pub mod spotify;
 pub mod lemoned;
 pub mod get_env;
 pub mod http;
+pub mod readability;
+pub mod dom;
