@@ -510,7 +510,7 @@ mod test {
         let product   = scrape(url).unwrap();
         let playlists = product.playlists;
         let tracks    = product.tracks;
-        assert_eq!(playlists.len(), 3);
+        assert_eq!(playlists.len(), 2);
         let youtube_tracks: Vec<&Track> = tracks.iter().filter(|&x| x.provider == Provider::YouTube).collect();
         let spotify_tracks: Vec<&Track> = tracks.iter().filter(|&x| x.provider == Provider::Spotify).collect();
         assert!(youtube_tracks.len() > 0);
