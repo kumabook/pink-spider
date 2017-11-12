@@ -1,6 +1,7 @@
 extern crate hyper;
 extern crate hyper_native_tls;
 extern crate iron;
+#[macro_use]
 extern crate html5ever;
 extern crate tendril;
 extern crate kuchiki;
