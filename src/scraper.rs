@@ -82,6 +82,7 @@ pub fn extract<R>(input: &mut R, url: &Url) -> Result<ScraperProduct, Error> whe
     let mut albums     = Vec::new();
     let mut og_props   = Vec::new();
     let handle = dom.document.clone();
+    readability::preprocess(&mut dom, handle.clone());
     walk(&mut dom,
          Path::new("/"),
          handle.clone(),
