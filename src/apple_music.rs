@@ -293,7 +293,7 @@ fn extract_description(node: &NodeRef) -> ScrapeResult<String> {
 }
 
 fn extract_title(node: &NodeRef) -> ScrapeResult<String> {
-    select(node, ".heroMeta > .title > a")
+    select(node, ".hero-meta > .title > a")
         .and_then(|mut css_match| css_match.next())
         .and_then(|elem| text(elem.as_node()))
         .map(|text| text.trim().to_string())
@@ -301,7 +301,7 @@ fn extract_title(node: &NodeRef) -> ScrapeResult<String> {
 }
 
 fn extract_song_title(node: &NodeRef) -> ScrapeResult<String> {
-    select(node, ".heroMeta > .details > .title-explicit > .title > a > p")
+    select(node, ".hero-meta > .details > .title-explicit > .title > a > p")
         .and_then(|mut css_match| css_match.next())
         .and_then(|elem| text(elem.as_node()))
         .map(|text| text.trim().to_string())
@@ -309,7 +309,7 @@ fn extract_song_title(node: &NodeRef) -> ScrapeResult<String> {
 }
 
 fn extract_curator(node: &NodeRef) -> ScrapeResult<String> {
-    select(node, ".heroMeta > .curator > a")
+    select(node, ".hero-meta > .curator > a")
         .and_then(|mut css_match| css_match.next())
         .and_then(|elem| text(elem.as_node()))
         .map(|text| text.trim().to_string())
@@ -317,7 +317,7 @@ fn extract_curator(node: &NodeRef) -> ScrapeResult<String> {
 }
 
 fn extract_album_artist(node: &NodeRef) -> ScrapeResult<String> {
-    select(node, ".heroMeta > .album-artist > a")
+    select(node, ".hero-meta > .album-artist > a")
         .and_then(|mut css_match| css_match.next())
         .and_then(|elem| text(elem.as_node()))
         .map(|text| text.trim().to_string())
@@ -325,7 +325,7 @@ fn extract_album_artist(node: &NodeRef) -> ScrapeResult<String> {
 }
 
 fn extract_song_artist(node: &NodeRef) -> ScrapeResult<String> {
-    select(node, ".heroMeta > .details > .song-artist > a > p")
+    select(node, ".hero-meta > .details > .song-artist > a > p")
         .and_then(|mut css_match| css_match.next())
         .and_then(|elem| text(elem.as_node()))
         .map(|text| text.trim().to_string())
@@ -335,7 +335,7 @@ fn extract_song_artist(node: &NodeRef) -> ScrapeResult<String> {
 }
 
 fn extract_count(node: &NodeRef) -> ScrapeResult<String> {
-    select(node, ".heroMeta > .count")
+    select(node, ".hero-meta > .count")
         .and_then(|mut css_match| css_match.next())
         .and_then(|elem| text(elem.as_node()))
         .map(|text| text.trim().to_string())
