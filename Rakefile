@@ -3,10 +3,19 @@ require 'active_record'
 require 'yaml'
 require 'erb'
 require 'logger'
-
+include ActiveRecord::Tasks
 
 namespace :db do
   env = ENV['ENV'] || 'development'
+
+  def db_config(env)
+    if ENV['DATABASE_URL'].nil?
+      return YAML.load(ERB.new(File.read('config/database.yml')).result)
+    end
+    clazz = ActiveRecord::ConnectionAdapters::ConnectionSpecification::ConnectionUrlResolver
+    config =  clazz.new(ENV['DATABASE_URL']).to_hash
+    { env => config }
+  end
 
   task :default => :migrate
 
@@ -27,19 +36,16 @@ namespace :db do
 
   desc "Create database"
   task :create do
-    config = YAML.load(ERB.new(File.read('config/database.yml')).result)
-    %x( createdb -E UTF8 -T template0 #{config[env]['database']})
-
-    # prepare hstore
-    if %x( createdb --version ).strip.gsub(/(.*)(\d\.\d\.\d)$/, "\\2") < "9.1.0"
-      puts "Please prepare hstore data type. See http://www.postgresql.org/docs/current/static/hstore.html"
-    end
+    ActiveRecord::Base.configurations = db_config(env)
+    DatabaseTasks.db_dir = 'db'
+    DatabaseTasks.create_current(env);
   end
 
   desc "Drop database"
-  task :drop do
-    config = YAML.load(ERB.new(File.read('config/database.yml')).result)
-    %x( dropdb #{config[env]['database']} )
+  task :drop => :environment do
+    ActiveRecord::Base.configurations = db_config(env)
+    DatabaseTasks.db_dir = 'db'
+    DatabaseTasks.create_current(env);
   end
 
   desc "normalize track"
