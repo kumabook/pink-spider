@@ -51,6 +51,17 @@ with request of scraping track from web page.
     npm start # on another shell
     ```
 
+## Development on Docker
+
+- Install `docker` and `docker-compose` and `docker-machine`
+  - `brew install docker docker-compose docker-machine`
+- Create container and prepare db
+  - `docker-compose up`
+  - `docker-compose run --rm web rake db:create`
+  - `docker-compose run --rm web rake db:migrate`
+- Restore database from backup
+  - `cat latest.dump | docker exec -i `docker-compose ps -q db` pg_restore --verbose --clean -U postgres -d pink_spider_production`
+
 ## Testing
 
 ```shell
