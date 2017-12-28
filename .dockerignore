@@ -1,0 +1,7 @@
+backups
+.git
+.
+*.txt
+env.toml
+*.dump
+target
