@@ -4,8 +4,8 @@
   "description": "[![Build Status](https://travis-ci.org/kumabook/pink-spider.svg?branch=master)](https://travis-ci.org/kumabook/pink-spider)",
   "main": "index.js",
   "engines": {
-    "node": "7.4.0",
-    "yarn": "1.0.1"
+    "node": ">=6.0",
+    "yarn": ">=1.0"
   },
   "scripts": {
     "start": "webpack --progress --colors --watch",
