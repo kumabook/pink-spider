@@ -1,7 +1,7 @@
 import React                    from 'react';
 import assert                   from 'assert';
 import { mount }                from 'enzyme';
-import { MemoryRouter, Switch } from 'react-router-dom'
+import { MemoryRouter, Switch } from 'react-router-dom';
 import MuiThemeProvider         from 'material-ui/styles/MuiThemeProvider';
 import AppBar                   from 'material-ui/AppBar';
 import Drawer                   from 'material-ui/Drawer';
