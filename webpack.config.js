@@ -1,11 +1,22 @@
 const path = require("path");
+const webpack = require("webpack");
+
 module.exports = {
   devtool: 'source-map',
-  entry: "./web/js/index.jsx",
+  entry: {
+    vendor: [
+      "axios", "material-ui", "moment",
+      "react", "react-dom", "react-paginate", "react-redux",
+      "react-router", "react-router-dom", "react-router-redux",
+      "react-tap-event-plugin",
+      "redux", "redux-saga", "redux-saga-router"
+    ],
+    app: "./web/js/index.jsx"
+  },
   output: {
     path: path.resolve(__dirname, "public"),
-    filename: "bundle.js",
-    publicPath: "bundle.js",
+    filename: "[name].bundle.js",
+    publicPath: "./web/",
   },
   module: {
     rules: [
@@ -30,6 +41,12 @@ module.exports = {
       },
     ]
   },
+  plugins: [
+    new webpack.optimize.CommonsChunkPlugin({
+      name: "vendor",
+      minChunks: Infinity,
+    })
+  ],
   resolve: {
     extensions: ['.js', '.jsx'],
   }
