@@ -298,8 +298,13 @@ pub fn main() {
         index_entries_by_feed:    get  "/v1/feeds/:id/entries"           => index_entries_by_feed,
         show_entry:               get  "/v1/entries/:id"                 => show_by_id::<Entry>,
         update_entry:             post "/v1/entries/:id"                 => update_entry,
-        index_artists:            get  "/v1/artists"                     => index::<Artist>,
+
+        show_artist_by_id:        get  "/v1/artists/:id"                 => show_by_id::<Artist>,
+        show_artist:              get  "/v1/artists/:provider/:id"       => show::<Artist>,
         mget_artists:             post "/v1/artists/.mget"               => mget::<Artist>,
+        create_artist:            post "/v1/artists"                     => create::<Artist>,
+        update_artist:            post "/v1/artists/:id"                 => update::<Artist>,
+        index_artists:            get  "/v1/artists"                     => index::<Artist>,
 
         show_track_by_id:         get  "/v1/tracks/:id"                  => show_by_id::<Track>,
         show_track:               get  "/v1/tracks/:provider/:id"        => show::<Track>,

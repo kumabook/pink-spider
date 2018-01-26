@@ -8,6 +8,7 @@ use spotify;
 use error::Error;
 use super::{conn, Model};
 use model::provider::Provider;
+use model::enclosure::Enclosure;
 
 static PROPS: [&'static str; 9]  = ["id",
                                     "provider",
@@ -107,7 +108,7 @@ impl<'a> Model<'a> for Artist {
     }
 }
 
-impl Artist {
+impl<'a> Enclosure<'a> for Artist {
     fn new(provider: Provider, identifier: String) -> Artist {
         Artist {
             id:            Uuid::new_v4(),
@@ -121,6 +122,27 @@ impl Artist {
             updated_at:    Utc::now().naive_utc(),
         }
     }
+
+    fn set_url(&mut self, url: String) -> &mut Artist {
+        self.url = url;
+        self
+    }
+
+    fn set_owner_id(&mut self, _owner_id: Option<String>) -> &mut Artist {
+        self
+    }
+
+    fn fetch_props(&mut self) -> Result<(), Error> {
+        Err(Error::NotFound)
+    }
+
+    fn find_by_entry_id(_entry_id: Uuid) -> Vec<Artist> {
+        vec![]
+    }
+}
+
+
+impl Artist {
     fn find_by(provider: &Provider, identifier: &str) -> Result<Artist, Error> {
         let conn = conn().unwrap();
         let stmt = conn.prepare(
@@ -195,12 +217,12 @@ impl Artist {
 #[cfg(test)]
 mod test {
     use model::Model;
+    use model::enclosure::Enclosure;
     use super::Artist;
     use Provider;
     #[test]
     fn test_new() {
-        let artist = Artist::new(Provider::Spotify,
-                               "4tZwfgrHOc3mvqYlEYSvVi".to_string());
+        let artist = Artist::new(Provider::Spotify, "4tZwfgrHOc3mvqYlEYSvVi".to_string());
         assert_eq!(artist.provider, Provider::Spotify);
         assert_eq!(&artist.identifier, "4tZwfgrHOc3mvqYlEYSvVi");
     }
