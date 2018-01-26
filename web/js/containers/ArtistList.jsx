@@ -24,11 +24,13 @@ class ArtistList extends React.Component {
       perPage: PropTypes.number.isRequired,
       index:   PropTypes.func.isRequired,
       update:  PropTypes.func.isRequired,
+      show:    PropTypes.func.isRequired,
     };
   }
   handleAction(name, item) {
     switch (name) {
       case 'detail':
+        this.props.show(item);
         break;
       case 'reload':
         this.props.update(item);
@@ -81,6 +83,7 @@ function mapDispatchToProps(dispatch) {
         search:   params.toString(),
       }));
     },
+    show:   ({ id }) => dispatch(push({ pathname: `/artists/${id}` })),
     update: item => dispatch(update.start(item)),
   };
 }

@@ -1,9 +1,11 @@
+import ContentLink from 'material-ui/svg-icons/content/link';
 import ActionUpdate from 'material-ui/svg-icons/action/update';
 import {
   formatOpenURL,
   parse,
 } from 'spotify-uri';
 import { getCountryParam } from './Playlist';
+import Owner               from '../components/Owner';
 
 export const schema = {
   title: 'Artist',
@@ -24,10 +26,11 @@ export const schema = {
 export const tableSchema = {
   'ui:order':   ['thumbnail_url', 'name'],
   'ui:actions': [
+    { name: 'detail', icon: ContentLink },
     { name: 'reload', icon: ActionUpdate },
   ],
   id:            { 'ui:widget': 'hidden' },
-  provider:      { 'ui:widget': 'hidden' },
+  provider:      { 'ui:widget': Owner },
   identifier:    { 'ui:widget': 'hidden' },
   url:           { 'ui:widget': 'hidden' },
   name:          {},
@@ -53,7 +56,7 @@ export const getUrl = (artist) => {
     case 'AppleMusic': {
       const country = getCountryParam(artist.url);
       const n = artist.name;
-      return `https://geo.itunes.apple.com/${country}/artist/${n}/id${id}?mt=1&app=music`;
+      return `https://geo.itunes.apple.com/${country}/artist/${n}/${id}?mt=1&app=music`;
     }
     case 'Spotify':
       return formatOpenURL(parse(artist.url));

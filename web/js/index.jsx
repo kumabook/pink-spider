@@ -25,6 +25,7 @@ import PlaylistDetail       from './containers/PlaylistDetail';
 import AlbumList            from './containers/AlbumList';
 import AlbumDetail          from './containers/AlbumDetail';
 import ArtistList           from './containers/ArtistList';
+import ArtistDetail         from './containers/ArtistDetail';
 import reducers             from './reducers';
 import rootSaga             from './sagas';
 
@@ -51,6 +52,7 @@ ReactDOM.render(
             <Route path="/entries/:entry_id/playlists" component={PlaylistList} />
             <Route path="/entries/:entry_id" component={EntryDetail} />
             <Route path="/entries" component={EntryList} />
+            <Route path="/artists/:artist_id" component={ArtistDetail} />
             <Route path="/artists" component={ArtistList} />
             <Route path="/feeds/:feed_id/entries" component={EntryList} />
             <Route path="/feeds" component={FeedList} />

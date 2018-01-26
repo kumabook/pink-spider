@@ -35,7 +35,7 @@ export function* watchFetchArtists() {
   yield takeEvery(index.start, fetchArtists);
 }
 
-export function* fetchArtist(payload) {
+export function* fetchArtist({ payload }) {
   try {
     const items = yield call(api.show, payload);
     yield put(creators.show.succeeded(items));

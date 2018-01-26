@@ -1,6 +1,7 @@
 import { combineReducers } from 'redux';
 import {
   index,
+  show,
 } from '../actions/artist';
 
 const total = (state = 0, action) => {
@@ -21,7 +22,18 @@ const items = (state = [], action) => {
   }
 };
 
+const item = (state = {}, action) => {
+  switch (action.type) {
+    case show.succeeded:
+      return action.payload;
+    default:
+      return state;
+  }
+};
+
+
 export default combineReducers({
   total,
   items,
+  item,
 });
