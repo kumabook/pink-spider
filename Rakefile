@@ -45,7 +45,7 @@ namespace :db do
   task :drop => :environment do
     ActiveRecord::Base.configurations = db_config(env)
     DatabaseTasks.db_dir = 'db'
-    DatabaseTasks.create_current(env);
+    DatabaseTasks.drop_current(env);
   end
 
   desc "normalize track"
