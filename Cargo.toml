@@ -18,6 +18,10 @@ path = "src/crawler.rs"
 name = "update_tracks"
 path = "src/update_tracks.rs"
 
+[[bin]]
+name = "update_albums"
+path = "src/update_albums.rs"
+
 [features]
 default = ["postgres"]
 
