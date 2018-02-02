@@ -227,7 +227,7 @@ impl Album {
     }
     fn add_artist(&mut self, artist: Artist) -> Result<(), Error> {
         let conn = try!(conn());
-        let stmt = try!(conn.prepare("INSERT INTO track_artists (track_id, artist_id) VALUES ($1, $2)"));
+        let stmt = try!(conn.prepare("INSERT INTO album_artists (album_id, artist_id) VALUES ($1, $2)"));
         try!(stmt.query(&[&self.id, &artist.id]));
         match self.artists {
             Some(ref mut artists) => artists.push(artist),
