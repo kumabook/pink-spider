@@ -150,7 +150,7 @@ pub fn preprocess(mut dom: &mut RcDom,  handle: Handle) -> bool {
         Element { ref name, ref attrs, .. } => {
             let tag_name = name.local.as_ref();
             match tag_name.to_lowercase().as_ref() {
-                "script" | "link" | "style"  => {
+                "script" | "style"  => {
                     return true
                 },
                 _     => (),
