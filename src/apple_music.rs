@@ -1,19 +1,18 @@
-use kuchiki;
-use kuchiki::{NodeRef};
-use kuchiki::traits::*;
-use kuchiki::iter::{Select, Elements, Descendants};
-use hyper::header::Connection;
-use hyper::header::ConnectionOption;
+use hyper::header::{
+    Headers,
+    Authorization,
+    Bearer,
+    Connection,
+};
 use std::io::Read;
-use std::error;
-use std::fmt;
 use regex::Regex;
+use serde_json;
+use get_env;
 use url::Url;
 use queryst::parse;
 use http;
 
-static BASE_URL:  &'static str = "http://tools.applemusic.com/embed/v1/";
-static MUSIC_URL: &'static str = r#"musicUrl = "([\x00-\x21\x23-\x7F]+)""#; // except \x22(")
+static BASE_URL:  &'static str = "https://api.music.apple.com/v1";
 
 static ALBUM_LINK:    &'static str = r"itunes.apple.com/([a-zA-Z0-9_-]+)/album/([a-zA-Z0-9_-]+)/id([a-zA-Z0-9_-]+)";
 static PLAYLIST_LINK: &'static str = r"itunes.apple.com/([a-zA-Z0-9_-]+)/playlist/([^/]+)/idpl.([a-zA-Z0-9_-]+)";
@@ -22,66 +21,256 @@ pub static SONG_URL:      &'static str = r"tools.applemusic.com/embed/v1/song/([
 pub static ALBUM_URL:     &'static str = r"tools.applemusic.com/embed/v1/album/([a-zA-Z0-9_-]+)";
 pub static PLAYLIST_URL:  &'static str = r"tools.applemusic.com/embed/v1/playlist/pl.([a-zA-Z0-9_-]+)";
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Song {
-    pub id:          String,
-    pub country:     String,
-    pub title:       String,
-    pub artwork_url: String,
-    pub artist:      String,
-    pub audio_url:   String,
-    pub music_url:   String,
+lazy_static! {
+    static ref DEVELOPER_TOKEN: String = {
+        get_env::var("APPLE_MUSIC_DEVELOPER_TOKEN").unwrap_or("".to_string())
+    };
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Album {
-    pub id:           String,
-    pub country:      String,
-    pub title:        String,
-    pub artwork_url:  String,
-    pub album_artist: String,
-    pub music_url:    String,
-    pub genre:        String,
-    pub tracks:       Option<Vec<Track>>,
+pub struct NoRelations {}
+
+pub type Genre = Resource<GenreAttributes, NoRelations>;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct GenreAttributes {
+    pub name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Playlist {
-    pub id:          String,
-    pub country:     String,
-    pub title:       String,
-    pub curator:     String,
-    pub description: String,
-    pub artwork_url: String,
-    pub music_url:   String,
-    pub count:       String,
+#[serde(rename_all = "camelCase")]
+pub struct Artwork {
+    pub width:      i32,
+    pub height:     i32,
+    pub url:        String,
+    pub bg_color:    Option<String>,
+    pub text_color1: Option<String>,
+    pub text_color2: Option<String>,
+    pub text_color3: Option<String>,
+    pub text_color4: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Track {
-    pub title:       String,
-    pub artwork_url: String,
-    pub artist:      String,
-    pub audio_url:   String,
+pub struct Response<R> {
+    pub data: Vec<R>,
+}
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct SearchResponse<> {
+    pub results: SearchResults,
 }
 
-#[derive(Debug)]
-pub struct ScrapeError {
-    reason: String,
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct SearchResults<> {
+    pub albums: Option<Relationship<Album>>,
+    pub songs: Option<Relationship<Song>>,
+    pub music_videos: Option<Relationship<MusicVideo>>,
+    pub playlists: Option<Relationship<Playlist>>,
+    pub artists: Option<Relationship<Artist>>,
 }
 
-impl fmt::Display for ScrapeError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.reason)
-    }
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Relationship<R> {
+    pub data: Vec<R>,
+    pub href: String,
+    pub next: Option<String>,
 }
 
-type ScrapeResult<T> = Result<T, ScrapeError>;
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Resource<A, R> {
+    pub id:            String,
+    #[serde(rename = "type")]
+    pub resource_type: String,
+    pub href:          String,
+    pub attributes:    A,
+    pub relationships: Option<R>,
+}
 
-impl error::Error for ScrapeError {
-    fn description(&self) -> &str {
-        &self.reason
-    }
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct PartialResource {
+    pub id:            String,
+    #[serde(rename = "type")]
+    pub resource_type: String,
+    pub href:          String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct PlayParameters {
+    pub id:   String,
+    pub kind: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct EditorialNotes {
+    pub standard: Option<String>,
+    pub short:    Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Preview {
+    pub url:     String,
+    pub artwork: Option<Artwork>,
+}
+
+pub type Album = Resource<AlbumAttributes, AlbumRelations>;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AlbumAttributes {
+    pub artist_name:     String,
+    pub artwork:         Artwork,
+    pub content_rating:  Option<String>,
+    pub copyright:       String,
+    pub editorial_notes: Option<EditorialNotes>,
+    pub genre_names:     Vec<String>,
+    pub is_complete:     bool,
+    pub is_single:       bool,
+    pub name:            String,
+    pub record_label:    String,
+    pub release_date:    String,
+    pub play_params:     Option<PlayParameters>,
+    pub track_count:     i32,
+    pub url:             String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AlbumRelations {
+    pub artists: Relationship<Artist>,
+    pub genres:  Option<Resource<Genre, NoRelations>>,
+    pub tracks:  Relationship<Track>,
+}
+
+pub type Artist = Resource<ArtistAttributes, ArtistRelations>;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ArtistAttributes {
+    pub genre_names:     Vec<String>,
+    pub editorial_notes: Option<EditorialNotes>,
+    pub name:            String,
+    pub url:             String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ArtistRelations {
+    pub albums:      Relationship<Album>,
+    pub genres:      Option<Resource<Genre, NoRelations>>,
+    pub playlists:   Option<Relationship<Playlist>>,
+    pub music_videos: Option<Relationship<MusicVideo>>,
+}
+
+pub type Curator = Resource<CuratorAttributes, CuratorRelations>;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CuratorAttributes {
+    pub artwork:         Artwork,
+    pub editorial_notes: EditorialNotes,
+    pub name:            String,
+    pub url:             String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CuratorRelations {
+    pub playlists: Option<Relationship<Playlist>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum Track {
+    Song(Song),
+    MusicVideo(MusicVideo),
+}
+
+pub type Song = Resource<SongAttributes, SongRelations>;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SongAttributes {
+    pub artist_name:        String,
+    pub artwork:            Artwork,
+    pub composer_name:      Option<String>,
+    pub content_rating:     Option<String>,
+    pub disc_number:        i32,
+    pub duration_in_millis: Option<i32>,
+    pub editorial_notes:    Option<EditorialNotes>,
+    pub genre_names:        Vec<String>,
+    pub isrc:               String,
+    pub movement_count:     Option<i32>,
+    pub movement_name:      Option<String>,
+    pub movement_number:    Option<i32>,
+    pub name:               String,
+    pub play_params:        Option<PlayParameters>,
+    pub previews:           Vec<Preview>,
+    pub release_date:       String,
+    pub track_number:       i32,
+    pub url:                String,
+    pub work_name:          Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct SongRelations {
+    pub albums:  Relationship<PartialResource>,
+    pub artists: Relationship<Artist>,
+    pub genres:  Option<Resource<Genre, NoRelations>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "kebab-case")]
+pub enum PlaylistType {
+    UserShared,
+    Editorial,
+    External,
+    PersonalMix
+}
+
+pub type Playlist = Resource<PlaylistAttributes, PlaylistRelations>;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PlaylistAttributes {
+    pub artwork:            Option<Artwork>,
+    pub curator_name:       Option<String>,
+    pub description:        Option<EditorialNotes>,
+    pub last_modified_date: String,
+    pub name:               String,
+    pub playlist_type:      PlaylistType,
+    pub play_params:        Option<PlayParameters>,
+    pub url:                String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct PlaylistRelations {
+    pub curator: Relationship<Curator>,
+    pub tracks:  Relationship<Track>,
+}
+
+
+pub type MusicVideo = Resource<MusicVideoAttributes, MusicVideoRelations>;
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct MusicVideoAttributes {
+    pub artist_name:        String,
+    pub artwork:            Artwork,
+    pub content_rating:     Option<String>,
+    pub duration_in_millis: Option<i32>,
+    pub editorial_notes:    Option<EditorialNotes>,
+    pub genre_names:        Vec<String>,
+    pub isrc:               String,
+    pub name:               String,
+    pub play_params:        Option<PlayParameters>,
+    pub previews:           Vec<Preview>,
+    pub release_date:       String,
+    pub track_number:       Option<i32>,
+    pub url:                String,
+    pub video_sub_type:     Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct MusicVideoRelations {
+    pub albums:  Resource<Album, NoRelations>,
+    pub artists: Resource<Artist, NoRelations>,
+    pub genre:   Resource<Genre, NoRelations>,
 }
 
 fn url_param(url_str: &str, key: &str) -> Option<String> {
@@ -142,269 +331,82 @@ pub fn parse_url(value: &str, regex_str: &str) -> Option<(String, String, String
     }
 }
 
-pub fn fetch_song(id: &str, country: &str) -> ScrapeResult<Song> {
-    let url = format!("{}/song/{}?country={}", BASE_URL, id, country);
+fn fetch(path: &str) -> serde_json::Result<String> {
+    let token  = DEVELOPER_TOKEN.to_string();
+    let url    = format!("{}{}", BASE_URL, path);
+    let mut headers = Headers::new();
+    headers.set(Authorization(Bearer { token: token }));
+    headers.set(Connection::close());
     let mut res = http::client().get(&url)
-        .header(Connection(vec![ConnectionOption::Close]))
-        .send()
-        .unwrap();
-    if !res.status.is_success() {
-        return Err(ScrapeError { reason: "network error".to_string() })
-    }
+                                .headers(headers)
+                                .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    let document = kuchiki::parse_html().one(body);
+    println!("{}", body);
+    Ok(body)
+}
 
-    let artwork_url = try!(extract_artwork_url(&document.clone()));
-    let title       = try!(extract_song_title(&document.clone()));
-    let artist      = try!(extract_song_artist(&document.clone()));
-    let audio_url   = try!(extract_audio_url(&document.clone()));
-    let music_url   = try!(extract_music_url(&document.clone()));
-    Ok(Song {
-        id:          id.to_string(),
-        country:     country.to_string(),
-        title:       title,
-        artist:      artist,
-        artwork_url: artwork_url,
-        audio_url:   audio_url,
-        music_url:   music_url,
+pub fn fetch_song(country: &str, id: &str) -> serde_json::Result<Song> {
+    let params = "include=artists";
+    let path = format!("/catalog/{}/songs/{}?{}", country, id, params);
+    let result: serde_json::Result<Response<Song>> = fetch(&path).and_then(|s| serde_json::from_str(&s));
+    result.map(|r| r.data.first().unwrap().clone())
+}
+
+pub fn fetch_songs(country: &str, ids: Vec<String>) -> serde_json::Result<Vec<Song>> {
+    let params = "include=artists";
+    let path = format!("/catalog/{}/songs?ids={}&{}", country, ids.join(","), params);
+    let result: serde_json::Result<Response<Song>> = fetch(&path).and_then(|s| serde_json::from_str(&s));
+    result.map(|r| r.data)
+}
+
+pub fn fetch_album(country: &str, id: &str) -> serde_json::Result<Album> {
+    let params = "include=artists";
+    let path = format!("/catalog/{}/albums/{}?{}", country, id, params);
+    let result: serde_json::Result<Response<Album>> = fetch(&path).and_then(|s| serde_json::from_str(&s));
+    result.map(|r| r.data.first().unwrap().clone())
+}
+
+pub fn fetch_albums(country: &str, ids: Vec<&str>) -> serde_json::Result<Vec<Album>> {
+    let params = "include=artists";
+    let path = format!("/catalog/{}/albums?ids={}&{}", country, ids.join(","), params);
+    let result: serde_json::Result<Response<Album>> = fetch(&path).and_then(|s| serde_json::from_str(&s));
+    result.map(|r| r.data)
+}
+
+pub fn fetch_playlist(country: &str, id: &str) -> serde_json::Result<Playlist> {
+    let params = "include=tracks";
+    let path = format!("/catalog/{}/playlists/{}?{}", country, id, params);
+    let result: serde_json::Result<Response<Playlist>> = fetch(&path).and_then(|s| serde_json::from_str(&s));
+    result.map(|r| r.data.first().unwrap().clone())
+}
+
+pub fn fetch_artist(country: &str, id: &str) -> serde_json::Result<Artist> {
+    let params = "include=albums";
+    let path = format!("/catalog/{}/artists/{}?{}", country, id, params);
+    let result: serde_json::Result<Response<Artist>> = fetch(&path).and_then(|s| serde_json::from_str(&s));
+    result.map(|r| r.data.first().unwrap().clone())
+}
+
+pub fn search_artists(country: &str, term: &str) -> serde_json::Result<Vec<Artist>> {
+    search(country, term, None, None, Some(vec!["artists"])).map(|res| {
+        res.results.artists.map(|a| a.data).unwrap_or(vec![])
     })
 }
 
-pub fn fetch_album(id: &str, country: &str) -> ScrapeResult<Album> {
-    let url = format!("{}/album/{}?country={}", BASE_URL, id, country);
-    let mut res = http::client().get(&url)
-        .header(Connection(vec![ConnectionOption::Close]))
-        .send()
-        .unwrap();
-    if !res.status.is_success() {
-        return Err(ScrapeError { reason: "network error".to_string() })
+pub fn search(country: &str, term: &str, limit: Option<i32>, offset: Option<i32>, types: Option<Vec<&str>>) -> serde_json::Result<SearchResponse> {
+    let mut params = format!("term={}", term.replace(" ", "+"));
+    if let Some(limit) = limit {
+        params += &format!("&limit={}", limit);
     }
-    let mut body = String::new();
-    res.read_to_string(&mut body).unwrap();
-    let document = kuchiki::parse_html().one(body);
-
-    let artwork_url  = try!(extract_artwork_url(&document.clone()));
-    let title        = try!(extract_title(&document.clone()));
-    let album_artist = try!(extract_album_artist(&document.clone()));
-    let count        = try!(extract_count(&document.clone()));
-    let music_url    = try!(extract_music_url(&document.clone()));
-    let mut tracks   = Vec::new();
-    for node in document.select(".track").unwrap() {
-        tracks.push(extract_track(node.as_node(), "album"));
+    if let Some(offset) = offset {
+        params += &format!("&offset={}", offset);
     }
-    Ok(Album {
-        id:           id.to_string(),
-        country:      country.to_string(),
-        title:        title,
-        album_artist: album_artist,
-        artwork_url:  artwork_url,
-        music_url:    music_url,
-        genre:        count,
-        tracks:       Some(tracks),
-    })
-}
-
-pub fn fetch_playlist(id: &str, country: &str) -> ScrapeResult<Playlist> {
-    let url = format!("{}/playlist/pl.{}?country={}", BASE_URL, id, country);
-    let mut res = http::client().get(&url)
-        .header(Connection(vec![ConnectionOption::Close]))
-        .send()
-        .unwrap();
-    if !res.status.is_success() {
-        return Err(ScrapeError { reason: "network error".to_string() })
+    if let Some(types) = types {
+        params += &format!("&types={}", types.join(","));
     }
-    let mut body = String::new();
-    res.read_to_string(&mut body).unwrap();
-    let document = kuchiki::parse_html().one(body);
-
-    let artwork_url = try!(extract_artwork_url(&document.clone()));
-    let title       = try!(extract_title(&document.clone()));
-    let description = try!(extract_description(&document.clone()));
-    let curator     = try!(extract_curator(&document.clone()));
-    let count       = try!(extract_count(&document.clone()));
-    let music_url   = try!(extract_music_url(&document.clone()));
-    let mut tracks  = Vec::new();
-    let css_match = document.select(".track").unwrap();
-    for node in css_match {
-        let track = extract_track(node.as_node(), "playlist");
-        tracks.push(track);
-    }
-    Ok(Playlist {
-        id:          id.to_string(),
-        country:     country.to_string(),
-        title:       title,
-        curator:     curator,
-        description: description,
-        artwork_url: artwork_url,
-        music_url:   music_url,
-        count:       count,
-    })
-}
-
-fn extract_music_url(node: &NodeRef) -> ScrapeResult<String> {
-    if let Some(urls) = select(node, "script") {
-        let mut urls = urls.map(|tag|
-                 text(tag.as_node()).and_then(|script| match Regex::new(MUSIC_URL) {
-                     Ok(re) => match re.captures(&script) {
-                         Some(cap) => Some(cap[1].to_string()),
-                         None => None
-                     },
-                     Err(_) => None
-                 }))
-            .filter(|ref url| url.is_some())
-            .map(|url| url.unwrap());
-        if let Some(url) = urls.next() {
-            Ok(url)
-        } else {
-            Err(ScrapeError { reason: "music url is not found".to_string() })
-        }
-    } else {
-        Err(ScrapeError { reason: "music url is not found".to_string() })
-    }
-}
-
-fn extract_artwork_url(node: &NodeRef) -> ScrapeResult<String> {
-    select(node, "#heroArtImage > img")
-        .and_then(|mut c| c.next())
-        .and_then(|img| {
-            let src = attr(img.as_node(), "data-deferred-img");
-            src
-        })
-        .map(|url| url.trim().to_string())
-        .ok_or(ScrapeError { reason: "artwork url is not found".to_string() })
-}
-
-fn extract_audio_url(node: &NodeRef) -> ScrapeResult<String> {
-    select(node, "#heroArtImage > .song-audio")
-        .and_then(|mut c| c.next())
-        .and_then(|elem| attr(elem.as_node(), "data-url"))
-        .map(|url| url.trim().to_string())
-        .ok_or(ScrapeError { reason: "audio url is not found".to_string() })
-}
-
-fn extract_description(node: &NodeRef) -> ScrapeResult<String> {
-    select(node, "#description")
-        .and_then(|mut c| c.next())
-        .and_then(|elem| text(elem.as_node()))
-        .map(|text| text.trim().to_string())
-        .or(Some("".to_string()))
-        .ok_or(ScrapeError { reason: "description is not found".to_string() })
-}
-
-fn extract_title(node: &NodeRef) -> ScrapeResult<String> {
-    select(node, ".hero-meta > .title > a")
-        .and_then(|mut css_match| css_match.next())
-        .and_then(|elem| text(elem.as_node()))
-        .map(|text| text.trim().to_string())
-        .ok_or(ScrapeError { reason: "title is not found".to_string() })
-}
-
-fn extract_song_title(node: &NodeRef) -> ScrapeResult<String> {
-    select(node, ".hero-meta > .details > .title-explicit > .title > a > p")
-        .and_then(|mut css_match| css_match.next())
-        .and_then(|elem| text(elem.as_node()))
-        .map(|text| text.trim().to_string())
-        .ok_or(ScrapeError { reason: "title is not found".to_string() })
-}
-
-fn extract_curator(node: &NodeRef) -> ScrapeResult<String> {
-    select(node, ".hero-meta > .curator > a")
-        .and_then(|mut css_match| css_match.next())
-        .and_then(|elem| text(elem.as_node()))
-        .map(|text| text.trim().to_string())
-        .ok_or(ScrapeError { reason: "curator is not found".to_string() })
-}
-
-fn extract_album_artist(node: &NodeRef) -> ScrapeResult<String> {
-    select(node, ".hero-meta > .album-artist > a")
-        .and_then(|mut css_match| css_match.next())
-        .and_then(|elem| text(elem.as_node()))
-        .map(|text| text.trim().to_string())
-        .ok_or(ScrapeError { reason: "album artist is not found".to_string() })
-}
-
-fn extract_song_artist(node: &NodeRef) -> ScrapeResult<String> {
-    select(node, ".hero-meta > .details > .song-artist > a > p")
-        .and_then(|mut css_match| css_match.next())
-        .and_then(|elem| text(elem.as_node()))
-        .map(|text| text.trim().to_string())
-        .ok_or(ScrapeError {
-            reason: "song artist is not found".to_string()
-        })
-}
-
-fn extract_count(node: &NodeRef) -> ScrapeResult<String> {
-    select(node, ".hero-meta > .count")
-        .and_then(|mut css_match| css_match.next())
-        .and_then(|elem| text(elem.as_node()))
-        .map(|text| text.trim().to_string())
-        .ok_or(ScrapeError {
-            reason: "count is not found".to_string()
-        })
-}
-
-fn extract_track(node: &NodeRef, music_type: &str) -> Track {
-    let mut title:       String = "".to_string();
-    let mut artwork_url: String = "".to_string();
-    let mut artist:      String = "".to_string();
-    let mut audio_url:   String = "".to_string();
-    if let Some(n) = select(node, ".title").and_then(|mut c| c.next()) {
-        if let Some(text) = text(n.as_node()) {
-            title = text.trim().to_string();
-        }
-    }
-
-    if let Some(n) = select(node, ".artist").and_then(|mut c| c.next()) {
-        if let Some(text) = text(n.as_node()) {
-            artist = text.trim().to_string();
-        }
-    }
-
-    if let Some(n) = select(node, ".artworkImage > img").and_then(|mut c| c.next()) {
-        if let Some(url) = attr(n.as_node(), "src") {
-            artwork_url = url.trim().to_string();
-        }
-    }
-    let audio_selector  = format!(".{}-audio", music_type);
-    if let Some(n) = select(node, &audio_selector).and_then(|mut c| c.next()) {
-        if let Some(url) = attr(n.as_node(), "data-url") {
-            audio_url = url.trim().to_string();
-        }
-    }
-
-    Track {
-        title:       title,
-        artwork_url: artwork_url,
-        artist:      artist,
-        audio_url:   audio_url,
-    }
-}
-
-fn select(node: &NodeRef, selector: &str) -> Option<Select<Elements<Descendants>>> {
-    node.select(selector).ok()
-}
-
-fn text(node: &NodeRef) -> Option<String> {
-    node.first_child().and_then(|node| {
-        if let Some(text) = node.as_text() {
-            let txt = text.borrow();
-            Some(txt.trim().to_string())
-        } else {
-            None
-        }
-    })
-}
-
-fn attr(node: &NodeRef, attr: &str) -> Option<String> {
-    node.as_element()
-        .and_then(|elem| {
-            if let Some(val) = elem.attributes.borrow().get(attr) {
-                Some(val.to_string())
-            } else {
-                None
-            }
-        })
+    let path = format!("/catalog/{}/search?{}", &country, &params);
+    fetch(&path).and_then(|s| serde_json::from_str(&s))
 }
 
 #[cfg(test)]
@@ -412,62 +414,30 @@ mod test {
     use super::*;
     #[test]
     fn test_fetch_playlist() {
-        let playlist = fetch_playlist("2ff0e502db0c44a598a7cb2261a5e6b2", "jp").unwrap();
-        assert_eq!(playlist.id, "2ff0e502db0c44a598a7cb2261a5e6b2");
-        assert_eq!(playlist.title, "LILI LIMIT が選ぶ マイプレイリスト");
-        assert_eq!(playlist.curator, "Apple Music");
-        assert_ne!(playlist.artwork_url, "");
-        assert_ne!(playlist.music_url, "");
+        let playlist = fetch_playlist("jp", "pl.2ff0e502db0c44a598a7cb2261a5e6b2").unwrap();
+        assert_eq!(playlist.id, "pl.2ff0e502db0c44a598a7cb2261a5e6b2");
+        assert_eq!(playlist.attributes.name, "LILI LIMIT が選ぶ マイプレイリスト");
+        assert_eq!(playlist.attributes.curator_name, Some("Apple Music".to_string()));
+        assert!(playlist.attributes.artwork.is_some());
+        assert_ne!(playlist.attributes.url, "");
     }
     #[test]
     fn test_fetch_album() {
-        let album = fetch_album("1160715126", "jp").unwrap();
+        let album = fetch_album("jp", "1160715126").unwrap();
         assert_eq!(album.id, "1160715126");
-        assert_eq!(album.title, "a.k.a");
-        assert_eq!(album.album_artist, "LILI LIMIT");
-        assert_ne!(album.artwork_url, "");
-        assert_ne!(album.music_url, "");
-        println!("{:?}", album);
-        for track in album.tracks.unwrap().iter() {
-            assert_ne!(track.title, "");
-            assert_ne!(track.audio_url, "");
-        }
+        assert_eq!(album.attributes.name, "a.k.a");
+        assert_eq!(album.attributes.artist_name, "LILI LIMIT");
+        assert_ne!(album.attributes.artwork.url, "");
+        assert_ne!(album.attributes.url, "");
     }
     #[test]
     fn test_fetch_song() {
-        let song = fetch_song("1160715431", "jp").unwrap();
+        let song = fetch_song("jp", "1160715431").unwrap();
         assert_eq!(song.id, "1160715431");
-        assert_eq!(song.country, "jp");
-        assert_eq!(song.title, "A Short Film");
-        assert_eq!(song.artist, "LILI LIMIT");
-        assert_ne!(song.artwork_url, "");
-        assert_ne!(song.audio_url, "");
-        assert_ne!(song.music_url, "");
-    }
-    #[test]
-    fn test_parse_url_as_album() {
-        let album_song_link = "https://geo.itunes.apple.com/us/album/last-nite/id266376953?i=266377010&mt=1&app=music";
-        match parse_url_as_album(album_song_link) {
-            Some((country, name, id, song_id)) => {
-                assert_eq!(&country         , "us");
-                assert_eq!(&name            , "last-nite");
-                assert_eq!(&id              , "266376953");
-                assert_eq!(&song_id.unwrap(), "266377010");
-            },
-            None => assert!(false),
-        }
-    }
-    #[test]
-    fn test_parse_url_as_playlist() {
-        let playlist_link = "https://itunes.apple.com/us/playlist/the-strokes-essentials/idpl.3a7a911b00c048ebba63b651935a241a?mt=1&app=music";
-        match parse_url_as_playlist(playlist_link) {
-            Some((country, name, id, song_id)) => {
-                assert_eq!(&country         , "us");
-                assert_eq!(&name            , "the-strokes-essentials");
-                assert_eq!(&id              , "3a7a911b00c048ebba63b651935a241a");
-                assert!(song_id.is_none());
-            },
-            None => assert!(false),
-        }
+        assert_eq!(song.attributes.name, "A Short Film");
+        assert_eq!(song.attributes.artist_name, "LILI LIMIT");
+        assert_ne!(song.attributes.artwork.url, "");
+        assert_ne!(song.attributes.previews[0].url, "");
+        assert_ne!(song.attributes.url, "");
     }
 }
