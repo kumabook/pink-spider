@@ -210,6 +210,14 @@ impl<'a> Enclosure<'a> for Album {
 }
 
 impl Album {
+    pub fn find_all() -> Vec<Album> {
+        let conn = conn().unwrap();
+        let stmt = conn.prepare(
+            &format!("SELECT {} FROM albums ORDER BY albums.published_at DESC",
+                     Album::props_str(""))).unwrap();
+        let rows = stmt.query(&[]).unwrap();
+        Album::rows_to_items(rows)
+    }
     fn add_track(&mut self, track: &Track) -> Result<(), Error> {
         let conn = try!(conn());
         let stmt = try!(conn.prepare("INSERT INTO album_tracks (track_id, album_id)
