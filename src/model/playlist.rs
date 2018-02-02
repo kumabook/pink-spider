@@ -346,15 +346,18 @@ impl Playlist {
     }
 
     pub fn update_with_am_playlist(&mut self, playlist: &apple_music::Playlist) -> &mut Playlist {
+        let curator = playlist.clone().relationships.map(|r| {
+            r.curator.data.clone()
+        }).unwrap_or(vec![]);
         self.provider      = Provider::AppleMusic;
-        self.identifier    = playlist.id.to_string();
-        self.owner_id      = Some(playlist.curator.to_string());
-        self.owner_name    = Some(playlist.curator.to_string());
-        self.url           = playlist.music_url.to_string();
-        self.title         = playlist.title.to_string();
-        self.description   = Some(playlist.description.to_string());
-        self.thumbnail_url = Some(playlist.artwork_url.to_string());
-        self.artwork_url   = Some(playlist.artwork_url.to_string());
+        self.identifier    = playlist.id.clone();
+        self.owner_id      = curator.first().map(|c| c.id.clone());
+        self.owner_name    = playlist.attributes.curator_name.clone();
+        self.url           = playlist.attributes.url.clone();
+        self.title         = playlist.attributes.name.clone();
+        self.description   = playlist.attributes.description.clone().and_then(|d| d.short.clone());
+        self.thumbnail_url = playlist.attributes.artwork.clone().map(|a| a.url);
+        self.artwork_url   = playlist.attributes.artwork.clone().map(|a| a.url);
         self.state         = State::Alive;
         self
     }
