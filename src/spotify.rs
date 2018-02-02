@@ -60,6 +60,11 @@ pub struct Track {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+struct Tracks {
+    tracks: Vec<Track>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Playlist {
     pub collaborative: bool,
     pub description:   Option<String>,
@@ -199,6 +204,14 @@ pub fn parse_embed_url_as_playlist(url: &str) -> Option<(String, String)> {
 pub fn fetch_track(id: &str) -> serde_json::Result<Track> {
     let path = format!("/tracks/{}", id);
     fetch(&path).and_then(|s| serde_json::from_str(&s))
+}
+
+pub fn fetch_tracks(ids: Vec<String>) -> serde_json::Result<Vec<Track>> {
+    let path = format!("/tracks?ids={}", ids.join(","));
+    let result: serde_json::Result<Tracks> = fetch(&path).and_then(|s| {
+        serde_json::from_str(&s)
+    });
+    result.map(|tracks| tracks.tracks)
 }
 
 /// This function fetches a album info with spotify api.
