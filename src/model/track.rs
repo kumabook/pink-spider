@@ -307,22 +307,30 @@ impl Track {
         Track::rows_to_items(rows)
     }
     pub fn update_with_am_song(&mut self, song: &apple_music::Song) -> &mut Track {
+        let song_artists = song.clone().relationships.map(|r| {
+            r.artists.data.clone()
+        });
         self.provider      = Provider::AppleMusic;
         self.identifier    = song.id.to_string();
-        self.owner_id      = Some(song.artist.to_string());
-        self.owner_name    = Some(song.artist.to_string());
-        self.url           = song.music_url.to_string();
-        self.title         = song.title.to_string();
+        self.url           = song.attributes.url.to_string();
+        self.title         = song.attributes.name.to_string();
         self.description   = None;
-        self.thumbnail_url = Some(song.artwork_url.to_string());
-        self.artwork_url   = Some(song.artwork_url.to_string());
-        self.audio_url     = Some(song.audio_url.to_string());
+        self.thumbnail_url = Some(song.attributes.artwork.url.to_string());
+        self.artwork_url   = Some(song.attributes.artwork.url.to_string());
+        self.audio_url     = song.attributes.previews.first().map(|p| {
+            p.url.clone()
+        });
         self.state         = State::Alive;
-        if let Ok(mut artist) = Artist::find_or_create(self.provider,
-                                                       song.artist.to_string()) {
-            artist.name  = song.artist.to_string();
-            let _ = artist.save();
-            let _ = self.add_artist(artist);
+        if let Some(song_artist) = song_artists.clone().and_then(|a| a.first().map(|a| a.clone())) {
+            let artist_name    = song_artist.attributes.name.clone();
+            self.owner_id      = Some(song_artist.id.to_string());
+            self.owner_name    = Some(artist_name.to_string());
+            if let Ok(mut artist) = Artist::find_or_create(self.provider,
+                                                           song_artist.id.to_string()) {
+                artist.name  = song_artist.attributes.name.to_string();
+                let _ = artist.save();
+                let _ = self.add_artist(artist);
+            }
         }
         self
     }
