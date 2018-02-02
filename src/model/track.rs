@@ -286,7 +286,16 @@ impl Track {
         }
         Ok(())
     }
-
+    pub fn find_by_artist(artist_id: Uuid) -> Vec<Track> {
+        let conn = conn().unwrap();
+        let stmt = conn.prepare(
+            &format!("SELECT {} FROM tracks
+                      LEFT OUTER JOIN track_artists ON track_artists.track_id = tracks.id
+                      WHERE track_artists.artist_id = $1 ORDER BY tracks.created_at DESC",
+                     Track::props_str("tracks."))).unwrap();
+        let rows = stmt.query(&[&artist_id]).unwrap();
+        Track::rows_to_items(rows)
+    }
     pub fn update_with_am_song(&mut self, song: &apple_music::Song) -> &mut Track {
         self.provider      = Provider::AppleMusic;
         self.identifier    = song.id.to_string();
