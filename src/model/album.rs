@@ -264,6 +264,7 @@ impl Album {
             if let Ok(new_track) = Track::find_or_create(t.provider,
                                                          t.identifier.to_string()) {
                 t.id      = new_track.id;
+                let _     = t.save();
                 let _     = self.add_track(&t);
             };
             t
