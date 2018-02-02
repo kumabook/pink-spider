@@ -342,7 +342,6 @@ fn fetch(path: &str) -> serde_json::Result<String> {
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    println!("{}", body);
     Ok(body)
 }
 
