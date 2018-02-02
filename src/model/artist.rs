@@ -5,6 +5,7 @@ use chrono::{NaiveDateTime, Utc};
 
 use soundcloud;
 use spotify;
+use apple_music;
 use error::Error;
 use super::{conn, Model};
 use model::provider::Provider;
@@ -133,14 +134,27 @@ impl<'a> Enclosure<'a> for Artist {
     }
 
     fn fetch_props(&mut self) -> Result<(), Error> {
-        Err(Error::NotFound)
+        match self.provider {
+            Provider::AppleMusic => {
+                let country = apple_music::country(&self.url);
+                match apple_music::fetch_artist(&country, &self.identifier) {
+                    Ok(artist) => self.update_with_am_artist(&artist),
+                    Err(_)     => self,
+                }
+            },
+            Provider::Spotify => match spotify::fetch_artist(&self.identifier) {
+                Ok(artist) => self.update_with_sp_artist(&artist),
+                Err(_)     => self,
+            },
+            _ => self,
+        };
+        Ok(())
     }
 
     fn find_by_entry_id(_entry_id: Uuid) -> Vec<Artist> {
         vec![]
     }
 }
-
 
 impl Artist {
     fn find_by(provider: &Provider, identifier: &str) -> Result<Artist, Error> {
@@ -200,6 +214,19 @@ impl Artist {
                 self.thumbnail_url = Some(images[1].url.clone());
             }
         }
+        self
+    }
+
+    pub fn update_with_am_artist(&mut self, artist: &apple_music::Artist) -> &mut Artist {
+        self.provider      = Provider::AppleMusic;
+        self.identifier    = artist.id.to_string();
+        self.url           = artist.attributes.url.to_string();
+        self.name          = artist.attributes.name.to_string();
+        if let Some(album) = artist.clone().relationships
+            .and_then(|r| r.albums.data.first().map(|a| a.clone())) {
+                self.thumbnail_url = Some(album.attributes.artwork.url.to_string());
+                self.artwork_url   = Some(album.attributes.artwork.url.to_string());
+            }
         self
     }
 
