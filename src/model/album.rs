@@ -302,9 +302,11 @@ impl Album {
             let _ = a.save();
             let _ = self.add_artist(a);
         }
-        let tracks = album.tracks.clone()
+        let track_ids = album.tracks.clone()
             .map(|t| t.items).unwrap_or(vec![]).iter()
-            .map(|ref t| Track::from_sp_track(t))
+            .map(|ref t| t.id.clone()).collect();
+        let sp_tracks = spotify::fetch_tracks(track_ids).unwrap_or(vec![]);
+        let tracks = sp_tracks.iter().map(|ref t| Track::from_sp_track(t))
             .map(|ref mut t| t.update_with_sp_album(&album).clone())
             .collect::<Vec<_>>();
         self.add_tracks(tracks);
