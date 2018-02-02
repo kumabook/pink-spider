@@ -6,6 +6,7 @@ pub use self::enclosure::Enclosure;
 pub use self::provider::Provider;
 pub use self::entry::Entry;
 pub use self::feed::Feed;
+pub use self::state::State;
 
 mod track;
 mod playlist;
