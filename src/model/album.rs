@@ -312,22 +312,56 @@ impl Album {
     }
 
     pub fn update_with_am_album(&mut self, album: &apple_music::Album) -> &mut Album {
-        self.provider      = Provider::AppleMusic;
-        self.identifier    = album.id.to_string();
-        self.owner_id      = Some(album.album_artist.to_string());
-        self.owner_name    = Some(album.album_artist.to_string());
-        self.url           = album.music_url.to_string();
-        self.title         = album.title.to_string();
-        self.description   = None;
-        self.thumbnail_url = Some(album.artwork_url.to_string());
-        self.artwork_url   = Some(album.artwork_url.to_string());
-        self.state         = State::Alive;
-        if let Ok(mut artist) = Artist::find_or_create(self.provider,
-                                                       album.album_artist.to_string()) {
-            artist.name  = album.album_artist.to_string();
-            let _ = artist.save();
-            let _ = self.add_artist(artist);
+        let album_artists = album.clone().relationships.map(|r| {
+            r.artists.data.clone()
+        });
+        if let Some(album_artist) = album_artists.clone().and_then(|a| a.first().map(|a| a.clone())) {
+            let artist_name    = album_artist.attributes.name.clone();
+            self.provider      = Provider::AppleMusic;
+            self.identifier    = album.id.to_string();
+            self.owner_id      = Some(album_artist.id.to_string());
+            self.owner_name    = Some(artist_name.to_string());
+            self.url           = album.attributes.url.clone();
+            self.title         = album.attributes.name.clone();
+            self.description   = album.attributes.editorial_notes.clone().and_then(|n| n.short.clone());
+            self.thumbnail_url = Some(album.attributes.artwork.url.clone());
+            self.artwork_url   = Some(album.attributes.artwork.url.clone());
+            self.state         = State::Alive;
+            if let Ok(mut artist) = Artist::find_or_create(self.provider,
+                                                           album_artist.id.to_string()) {
+                artist.name  = artist_name.to_string();
+                let _ = artist.save();
+                let _ = self.add_artist(artist);
+            }
         }
+        if let Some(album_artists) = album_artists.clone() {
+            let artists = album_artists
+                .iter()
+                .map(|artist| {
+                    Artist::find_or_create(self.provider, artist.id.to_string())
+                        .map(|mut a| a.update_with_am_artist(&artist).clone())
+                })
+                .filter(|r| r.is_ok())
+                .map(|r| r.unwrap())
+                .collect::<Vec<Artist>>();
+            for mut a in artists {
+                let _ = a.save();
+                let _ = self.add_artist(a);
+            }
+        }
+        let album_tracks = album.clone().relationships.map(|r| {
+            r.tracks.data.clone()
+        }).unwrap_or(vec![]);
+        let songs = album_tracks.iter().map(|track| match *track {
+            apple_music::Track::Song(ref song) => Some(song),
+            apple_music::Track::MusicVideo(_) => None,
+        }).filter(|song| song.is_some())
+            .map(|song| song.unwrap())
+            .collect::<Vec<_>>();
+        let song_ids = songs.iter().map(|song| song.id.clone()).collect::<Vec<String>>();
+        let country = apple_music::country(&self.url);
+        let songs = apple_music::fetch_songs(&country, song_ids).unwrap_or(vec![]);
+        self.add_tracks(songs.iter().map(|song| Track::from_am_song(song)).collect());
         self
     }
 
