@@ -244,6 +244,11 @@ pub fn fetch_playlist(user_id: &str, id: &str) -> serde_json::Result<Playlist> {
     fetch(&path).and_then(|s| serde_json::from_str(&s))
 }
 
+pub fn fetch_artist(id: &str) -> serde_json::Result<Artist> {
+    let path = format!("/artists/{}", id);
+    fetch(&path).and_then(|s| serde_json::from_str(&s))
+}
+
 fn fetch(path: &str) -> serde_json::Result<String> {
     let token  = try!(update_token_if_needed());
     let url    = format!("{}{}", BASE_URL, path);
