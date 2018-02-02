@@ -177,6 +177,17 @@ impl Artist {
             Err(_)   => Artist::new(provider, identifier).create()
         }
     }
+
+    pub fn find_by_provider(provider: &Provider) -> Vec<Artist> {
+        let conn = conn().unwrap();
+        let stmt = conn.prepare(
+            &format!("SELECT {} FROM artists WHERE artists.provider = $1
+                        ORDER BY artists.created_at DESC",
+                     Artist::props_str(""))).unwrap();
+        let rows = stmt.query(&[&(*provider).to_string()]).unwrap();
+        Artist::rows_to_items(rows)
+    }
+
     pub fn from_yt_channel(channel_id: &str, channel_title: &str) -> Artist {
         let mut artist = Artist::new(Provider::YouTube, channel_id.to_string());
         artist.name = channel_title.to_string();
