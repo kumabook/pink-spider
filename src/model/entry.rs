@@ -75,37 +75,33 @@ impl<'a> Model<'a> for Entry {
             .map(|&p| format!("{}{}", prefix, p))
             .collect::<Vec<String>>().join(",")
     }
-    fn rows_to_items(rows: postgres::rows::Rows) -> Vec<Entry> {
-        let mut entries = Vec::new();
-        for row in rows.iter() {
-            entries.push(Entry {
-                id:          row.get(0),
-                url:         row.get(1),
-                title:       row.get(2),
-                description: row.get(3),
-                visual_url:  row.get(4),
-                locale:      row.get(5),
-                summary:     row.get(6),
-                content:     row.get(7),
-                text:        row.get(8),
-                author:      row.get(9),
-                crawled:     row.get(10),
-                published:   row.get(11),
-                updated:     row.get(12),
-                fingerprint: row.get(13),
-                origin_id:   row.get(14),
-                alternate:   row.get(15),
-                keywords:    row.get(16),
-                enclosure:   row.get(17),
-                feed_id:     row.get(18),
-                created_at:  row.get(19),
-                updated_at:  row.get(20),
-                tracks:      Track::find_by_entry_id(row.get(0)),
-                playlists:   Playlist::find_by_entry_id(row.get(0)),
-                albums:      Album::find_by_entry_id(row.get(0)),
-            })
+    fn row_to_item(row: postgres::rows::Row) -> Entry {
+        Entry {
+            id:          row.get(0),
+            url:         row.get(1),
+            title:       row.get(2),
+            description: row.get(3),
+            visual_url:  row.get(4),
+            locale:      row.get(5),
+            summary:     row.get(6),
+            content:     row.get(7),
+            text:        row.get(8),
+            author:      row.get(9),
+            crawled:     row.get(10),
+            published:   row.get(11),
+            updated:     row.get(12),
+            fingerprint: row.get(13),
+            origin_id:   row.get(14),
+            alternate:   row.get(15),
+            keywords:    row.get(16),
+            enclosure:   row.get(17),
+            feed_id:     row.get(18),
+            created_at:  row.get(19),
+            updated_at:  row.get(20),
+            tracks:      Track::find_by_entry_id(row.get(0)),
+            playlists:   Playlist::find_by_entry_id(row.get(0)),
+            albums:      Album::find_by_entry_id(row.get(0)),
         }
-        entries
     }
     fn create(&self) -> Result<Entry, Error> {
         let conn = try!(conn());

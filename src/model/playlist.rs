@@ -69,31 +69,25 @@ impl<'a> Model<'a> for Playlist {
             .map(|&p| format!("{}{}", prefix, p))
             .collect::<Vec<String>>().join(",")
     }
-    fn rows_to_items(rows: postgres::rows::Rows) -> Vec<Playlist> {
-        let mut playlists = Vec::new();
-        for row in rows.iter() {
-            let playlist = Playlist {
-                id:            row.get(0),
-                provider:      Provider::new(row.get(1)),
-                identifier:    row.get(2),
-                owner_id:      row.get(3),
-                owner_name:    row.get(4),
-                url:           row.get(5),
-                title:         row.get(6),
-                description:   row.get(7),
-                thumbnail_url: row.get(8),
-                artwork_url:   row.get(9),
-                published_at:  row.get(10),
-                created_at:    row.get(11),
-                updated_at:    row.get(12),
-                state:         State::new(row.get(13)),
-                tracks:        vec![], // TODO
-            };
-            playlists.push(playlist)
+    fn row_to_item(row: postgres::rows::Row) -> Playlist {
+        Playlist {
+            id:            row.get(0),
+            provider:      Provider::new(row.get(1)),
+            identifier:    row.get(2),
+            owner_id:      row.get(3),
+            owner_name:    row.get(4),
+            url:           row.get(5),
+            title:         row.get(6),
+            description:   row.get(7),
+            thumbnail_url: row.get(8),
+            artwork_url:   row.get(9),
+            published_at:  row.get(10),
+            created_at:    row.get(11),
+            updated_at:    row.get(12),
+            state:         State::new(row.get(13)),
+            tracks:        vec![], // TODO
         }
-        playlists
     }
-
     fn create(&self) -> Result<Playlist, Error> {
         let conn = try!(conn());
         let stmt = try!(conn.prepare("INSERT INTO playlists (provider, identifier, url, title)

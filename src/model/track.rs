@@ -1,6 +1,7 @@
 use postgres;
 use uuid::Uuid;
 use std::fmt;
+use std::collections::BTreeMap;
 use chrono::{NaiveDateTime, Utc, DateTime};
 
 use apple_music;
@@ -76,33 +77,27 @@ impl<'a> Model<'a> for Track {
             .map(|&p| format!("{}{}", prefix, p))
             .collect::<Vec<String>>().join(",")
     }
-    fn rows_to_items(rows: postgres::rows::Rows) -> Vec<Track> {
-        let mut tracks = Vec::new();
-        for row in rows.iter() {
-            let track = Track {
-                id:            row.get(0),
-                provider:      Provider::new(row.get(1)),
-                identifier:    row.get(2),
-                owner_id:      row.get(3),
-                owner_name:    row.get(4),
-                url:           row.get(5),
-                title:         row.get(6),
-                description:   row.get(7),
-                thumbnail_url: row.get(8),
-                artwork_url:   row.get(9),
-                audio_url:     row.get(10),
-                duration:      row.get(11),
-                published_at:  row.get(12),
-                created_at:    row.get(13),
-                updated_at:    row.get(14),
-                state:         State::new(row.get(15)),
-                artists:       None,
-            };
-            tracks.push(track)
+    fn row_to_item(row: postgres::rows::Row) -> Track {
+        Track {
+            id:            row.get(0),
+            provider:      Provider::new(row.get(1)),
+            identifier:    row.get(2),
+            owner_id:      row.get(3),
+            owner_name:    row.get(4),
+            url:           row.get(5),
+            title:         row.get(6),
+            description:   row.get(7),
+            thumbnail_url: row.get(8),
+            artwork_url:   row.get(9),
+            audio_url:     row.get(10),
+            duration:      row.get(11),
+            published_at:  row.get(12),
+            created_at:    row.get(13),
+            updated_at:    row.get(14),
+            state:         State::new(row.get(15)),
+            artists:       None,
         }
-        tracks
     }
-
     fn create(&self) -> Result<Track, Error> {
         let conn = try!(conn());
         let stmt = try!(conn.prepare("INSERT INTO tracks (provider, identifier, url, title)
@@ -305,6 +300,25 @@ impl Track {
                      Track::props_str("tracks."))).unwrap();
         let rows = stmt.query(&[&album_id]).unwrap();
         Track::rows_to_items(rows)
+    }
+    pub fn find_by_albums(album_ids: Vec<Uuid>) -> Result<BTreeMap<Uuid, Vec<Track>>, Error> {
+        let conn = conn().unwrap();
+        let sql = format!("SELECT {}, album_tracks.album_id FROM tracks
+                      LEFT OUTER JOIN album_tracks ON album_tracks.track_id = tracks.id
+                      WHERE album_tracks.album_id = ANY($1) ORDER BY tracks.created_at DESC", Track::props_str("tracks."));
+        let stmt = conn.prepare(&sql).unwrap();
+        let rows = stmt.query(&[&album_ids]).unwrap();
+        let mut items: BTreeMap<Uuid, Vec<Track>> = BTreeMap::new();
+        for id in album_ids.iter() {
+            items.insert(*id, vec![]);
+        }
+        for row in rows.iter() {
+            let id: Uuid = row.get(PROPS.len());
+            if let Some(tracks) = items.get_mut(&id) {
+                tracks.push(Self::row_to_item(row))
+            }
+        }
+        Ok(items)
     }
     pub fn update_with_am_song(&mut self, song: &apple_music::Song) -> &mut Track {
         let song_artists = song.clone().relationships.map(|r| {

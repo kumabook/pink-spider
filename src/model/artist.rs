@@ -48,23 +48,18 @@ impl<'a> Model<'a> for Artist {
             .map(|&p| format!("{}{}", prefix, p))
             .collect::<Vec<String>>().join(",")
     }
-    fn rows_to_items(rows: postgres::rows::Rows) -> Vec<Artist> {
-        let mut artists = Vec::new();
-        for row in rows.iter() {
-            let artist = Artist {
-                id:            row.get(0),
-                provider:      Provider::new(row.get(1)),
-                identifier:    row.get(2),
-                url:           row.get(3),
-                name:          row.get(4),
-                thumbnail_url: row.get(5),
-                artwork_url:   row.get(6),
-                created_at:    row.get(7),
-                updated_at:    row.get(8),
-            };
-            artists.push(artist)
+    fn row_to_item(row: postgres::rows::Row) -> Artist {
+        Artist {
+            id:            row.get(0),
+            provider:      Provider::new(row.get(1)),
+            identifier:    row.get(2),
+            url:           row.get(3),
+            name:          row.get(4),
+            thumbnail_url: row.get(5),
+            artwork_url:   row.get(6),
+            created_at:    row.get(7),
+            updated_at:    row.get(8),
         }
-        artists
     }
 
     fn create(&self) -> Result<Artist, Error> {
