@@ -68,33 +68,26 @@ impl<'a> Model<'a> for Album {
             .map(|&p| format!("{}{}", prefix, p))
             .collect::<Vec<String>>().join(",")
     }
-
-    fn rows_to_items(rows: postgres::rows::Rows) -> Vec<Album> {
-        let mut albums = Vec::new();
-        for row in rows.iter() {
-            let album = Album {
-                id:            row.get(0),
-                provider:      Provider::new(row.get(1)),
-                identifier:    row.get(2),
-                owner_id:      row.get(3),
-                owner_name:    row.get(4),
-                url:           row.get(5),
-                title:         row.get(6),
-                description:   row.get(7),
-                thumbnail_url: row.get(8),
-                artwork_url:   row.get(9),
-                published_at:  row.get(10),
-                created_at:    row.get(11),
-                updated_at:    row.get(12),
-                state:         State::new(row.get(13)),
-                tracks:        vec![],
-                artists:       None,
-            };
-            albums.push(album)
+    fn row_to_item(row: postgres::rows::Row) -> Album {
+        Album {
+            id:            row.get(0),
+            provider:      Provider::new(row.get(1)),
+            identifier:    row.get(2),
+            owner_id:      row.get(3),
+            owner_name:    row.get(4),
+            url:           row.get(5),
+            title:         row.get(6),
+            description:   row.get(7),
+            thumbnail_url: row.get(8),
+            artwork_url:   row.get(9),
+            published_at:  row.get(10),
+            created_at:    row.get(11),
+            updated_at:    row.get(12),
+            state:         State::new(row.get(13)),
+            tracks:        vec![],
+            artists:       None,
         }
-        albums
     }
-
     fn create(&self) -> Result<Album, Error> {
         let conn = try!(conn());
         let stmt = try!(conn.prepare("INSERT INTO albums (provider, identifier, url, title)
@@ -144,6 +137,19 @@ impl<'a> Model<'a> for Album {
             Ok(_)  => Ok(()),
             Err(_) => Err(Error::Unexpected),
         }
+    }
+    fn with_relations(&mut self) -> Result<(), Error> {
+        self.tracks = Track::find_by_album(self.id);
+        Ok(())
+    }
+    fn set_relations(albums: &mut Vec<Album>) -> Result<(), Error> {
+        let items = Track::find_by_albums(albums.iter().map(|i| i.id).collect())?;
+        for album in albums {
+            if let Some(ref mut tracks) = items.get(&album.id) {
+                album.tracks = tracks.clone()
+            }
+        }
+        Ok(())
     }
 }
 

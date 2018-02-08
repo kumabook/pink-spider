@@ -54,30 +54,26 @@ impl<'a> Model<'a> for Feed {
             .map(|&p| format!("{}{}", prefix, p))
             .collect::<Vec<String>>().join(",")
     }
-    fn rows_to_items(rows: postgres::rows::Rows) -> Vec<Feed> {
-        let mut feeds = Vec::new();
-        for row in rows.iter() {
-            feeds.push(Feed {
-                id:           row.get(0),
-                url:          row.get(1),
-                title:        row.get(2),
-                description:  row.get(3),
-                language:     row.get(4),
-                velocity:     row.get(5),
-                website:      row.get(6),
-                state:        State::new(row.get(7)),
-                last_updated: row.get(8),
-                crawled:      row.get(9),
+    fn row_to_item(row: postgres::rows::Row) -> Feed {
+        Feed {
+            id:           row.get(0),
+            url:          row.get(1),
+            title:        row.get(2),
+            description:  row.get(3),
+            language:     row.get(4),
+            velocity:     row.get(5),
+            website:      row.get(6),
+            state:        State::new(row.get(7)),
+            last_updated: row.get(8),
+            crawled:      row.get(9),
 
-                visual_url:   row.get(10),
-                icon_url:     row.get(11),
-                cover_url:    row.get(12),
+            visual_url:   row.get(10),
+            icon_url:     row.get(11),
+            cover_url:    row.get(12),
 
-                created_at:   row.get(13),
-                updated_at:   row.get(14),
-            })
+            created_at:   row.get(13),
+            updated_at:   row.get(14),
         }
-        feeds
     }
     fn create(&self) -> Result<Feed, Error> {
         let conn = try!(conn());

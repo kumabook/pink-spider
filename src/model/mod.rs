@@ -77,7 +77,20 @@ pub fn conn() -> Result<Connection, ConnectError> {
 pub trait Model<'a> where Self: std::marker::Sized + Serialize + Deserialize<'a> + Clone {
     fn table_name() -> String;
     fn props_str(prefix: &str) -> String;
-    fn rows_to_items(rows: postgres::rows::Rows) -> Vec<Self>;
+    fn row_to_item(rows: postgres::rows::Row) -> Self;
+    fn rows_to_items(rows: postgres::rows::Rows) -> Vec<Self> {
+        let mut items = Vec::new();
+        for row in rows.iter() {
+            items.push(Self::row_to_item(row))
+        }
+        items
+    }
+    fn with_relations(&mut self) -> Result<(), Error> {
+        Ok(())
+    }
+    fn set_relations(_items: &mut Vec<Self>) -> Result<(), Error> {
+        Ok(())
+    }
     fn find_by_id(id: &str) -> Result<Self, Error> {
         let conn = try!(conn());
         let stmt = try!(conn.prepare(
@@ -146,7 +159,9 @@ pub trait Model<'a> where Self: std::marker::Sized + Serialize + Deserialize<'a>
                                               Self::table_name(),
                                               ids.join(","))));
         let rows = try!(stmt.query(&[]));
-        Ok(Self::rows_to_items(rows))
+        let mut items = Self::rows_to_items(rows);
+        Self::set_relations(&mut items)?;
+        Ok(items)
     }
     fn create(&self) -> Result<Self, Error>;
     fn save(&mut self) -> Result<(), Error>;
