@@ -159,6 +159,14 @@ impl<'a> Enclosure<'a> for Artist {
 }
 
 impl Artist {
+    pub fn find_all() -> Vec<Artist> {
+        let conn = conn().unwrap();
+        let stmt = conn.prepare(
+            &format!("SELECT {} FROM artists ORDER BY artists.created_at DESC",
+                     Artist::props_str(""))).unwrap();
+        let rows = stmt.query(&[]).unwrap();
+        Artist::rows_to_items(rows)
+    }
     fn find_by(provider: &Provider, identifier: &str) -> Result<Artist, Error> {
         let conn = conn().unwrap();
         let stmt = conn.prepare(
