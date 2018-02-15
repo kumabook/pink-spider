@@ -66,7 +66,7 @@ struct Tracks {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Playlist {
-    pub collaborative: bool,
+    pub collaborative: Option<bool>,
     pub description:   Option<String>,
     pub external_urls: BTreeMap<String, String>,
     pub followers:     Followers,
