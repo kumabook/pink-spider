@@ -152,6 +152,17 @@ impl<'a> Model<'a> for Track {
             Err(_) => Err(Error::Unexpected)
         }
     }
+
+    fn set_relations(tracks: &mut Vec<Track>) -> Result<(), Error> {
+        let ids = tracks.iter().map(|i| i.id).collect();
+        let items = Artist::find_by_tracks(ids)?;
+        for track in tracks {
+            if let Some(ref mut artists) = items.get(&track.id) {
+                track.artists = Some(artists.clone())
+            }
+        }
+        Ok(())
+    }
 }
 
 impl<'a> Enclosure<'a> for Track {
@@ -348,6 +359,8 @@ impl Track {
             let artist_name    = song_artist.attributes.name.clone();
             self.owner_id      = Some(song_artist.id.to_string());
             self.owner_name    = Some(artist_name.to_string());
+        }
+        for song_artist in song_artists.unwrap_or_default().iter() {
             if let Ok(mut artist) = Artist::find_or_create(self.provider,
                                                            song_artist.id.to_string()) {
                 artist.name  = song_artist.attributes.name.to_string();
