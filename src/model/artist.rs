@@ -228,10 +228,10 @@ impl Artist {
     }
 
 
-    pub fn from_yt_channel(channel_id: &str, channel_title: &str) -> Artist {
-        let mut artist = Artist::new(Provider::YouTube, channel_id.to_string());
-        artist.name = channel_title.to_string();
-        artist.clone()
+    pub fn from_yt_channel(channel: &youtube::Channel) -> Artist {
+        Artist::new(Provider::YouTube, channel.id.to_string())
+            .update_with_yt_channel(channel)
+            .clone()
     }
     pub fn from_sp_artist(artist: &spotify::Artist) -> Artist {
         Artist::new(Provider::Spotify, (*artist).id.to_string())
@@ -245,10 +245,10 @@ impl Artist {
             .clone()
     }
 
-    pub fn from_am_artist(artist: &str) -> Artist {
-        let mut artist = Artist::new(Provider::AppleMusic, artist.to_string());
-        artist.name = artist.to_string();
-        artist.clone()
+    pub fn from_am_artist(artist: &apple_music::Artist) -> Artist {
+        Artist::new(Provider::AppleMusic, (*artist).id.to_string())
+            .update_with_am_artist(artist)
+            .clone()
     }
 
     pub fn update_with_sp_artist(&mut self, artist: &spotify::Artist) -> &mut Artist {

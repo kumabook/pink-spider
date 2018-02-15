@@ -281,16 +281,28 @@ impl Track {
         }
     }
 
-    fn add_artist(&mut self, artist: Artist) -> Result<(), Error> {
+    fn add_artist(&mut self, artist: &Artist) -> Result<(), Error> {
         let conn = try!(conn());
         let stmt = try!(conn.prepare("INSERT INTO track_artists (track_id, artist_id) VALUES ($1, $2)"));
         try!(stmt.query(&[&self.id, &artist.id]));
         match self.artists {
-            Some(ref mut artists) => artists.push(artist),
-            None                  => self.artists = Some(vec![artist]),
+            Some(ref mut artists) => artists.push(artist.clone()),
+            None                  => self.artists = Some(vec![artist.clone()]),
 
         }
         Ok(())
+    }
+    fn add_artists(&mut self, artists: Vec<Artist>) {
+        self.artists = Some(artists.iter().map(|a| {
+            let mut a = a.clone();
+            if let Ok(new_artist) = Artist::find_or_create(a.provider,
+                                                           a.identifier.to_string()) {
+                a.id      = new_artist.id;
+                let _     = a.save();
+                let _     = self.add_artist(&a);
+            };
+            a
+        }).collect::<Vec<_>>());
     }
     pub fn find_by_artist(artist_id: Uuid) -> Vec<Track> {
         let conn = conn().unwrap();
@@ -360,14 +372,14 @@ impl Track {
             self.owner_id      = Some(song_artist.id.to_string());
             self.owner_name    = Some(artist_name.to_string());
         }
-        for song_artist in song_artists.unwrap_or_default().iter() {
-            if let Ok(mut artist) = Artist::find_or_create(self.provider,
-                                                           song_artist.id.to_string()) {
-                artist.name  = song_artist.attributes.name.to_string();
-                let _ = artist.save();
-                let _ = self.add_artist(artist);
-            }
+
+        let country = apple_music::country(&self.url);
+        if let Some(song_artists) = song_artists.clone() {
+            let artist_ids = song_artists.iter().map(|a| a.id.clone()).collect::<Vec<String>>();
+            let artists = apple_music::fetch_artists(&country, artist_ids).unwrap_or(vec![]);
+            self.add_artists(artists.iter().map(|a| Artist::from_am_artist(a)).collect());
         }
+
         self
     }
 
@@ -388,10 +400,8 @@ impl Track {
             Ok(published_at) => self.published_at = published_at.naive_utc(),
             Err(_)           => (),
         }
-        if let Ok(mut artist) = Artist::find_or_create(self.provider, s.channelId.to_string()) {
-            artist.name  = s.channelTitle.to_string();
-            let _ = artist.save();
-            let _ = self.add_artist(artist);
+        if let Ok(channel) = youtube::fetch_channel(&s.channelId) {
+            self.add_artists(vec![Artist::from_yt_channel(&channel)]);
         }
         self
     }
@@ -413,10 +423,8 @@ impl Track {
             Ok(published_at) => self.published_at = published_at.naive_utc(),
             Err(_)           => (),
         }
-        if let Ok(mut artist) = Artist::find_or_create(self.provider, s.channelId.to_string()) {
-            artist.name  = s.channelTitle.to_string();
-            let _ = artist.save();
-            let _ = self.add_artist(artist);
+        if let Ok(channel) = youtube::fetch_channel(&s.channelId) {
+            self.add_artists(vec![Artist::from_yt_channel(&channel)]);
         }
         self
     }
@@ -438,12 +446,7 @@ impl Track {
             Ok(published_at) => self.published_at = published_at.naive_utc(),
             Err(_)           => (),
         }
-        if let Ok(mut artist) = Artist::find_or_create(self.provider,
-                                                       track.user.id.to_string()) {
-            artist.update_with_sc_user(&track.user);
-            let _ = artist.save();
-            let _ = self.add_artist(artist);
-        }
+        self.add_artists(vec![Artist::from_sc_user(&track.user)]);
         self
     }
 
@@ -463,19 +466,11 @@ impl Track {
         if let Some(album) = track.album.clone() {
             self.update_with_sp_album(&album);
         }
-        let artists = track.artists
-            .iter()
-            .map(|artist| {
-                Artist::find_or_create(self.provider, artist.id.to_string())
-                    .map(|mut a| a.update_with_sp_artist(&artist).clone())
-            })
-            .filter(|r| r.is_ok())
-            .map(|r| r.unwrap())
-            .collect::<Vec<Artist>>();
-        for mut a in artists {
-            let _ = a.save();
-            let _ = self.add_artist(a);
-        }
+
+        let artists = track.artists.iter().map(|ref a| Artist::from_sp_artist(a))
+            .collect::<Vec<_>>();
+        self.add_artists(artists);
+
         self
     }
 

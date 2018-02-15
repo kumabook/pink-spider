@@ -233,13 +233,13 @@ impl Album {
         try!(stmt.query(&[&track.id, &self.id]));
         Ok(())
     }
-    fn add_artist(&mut self, artist: Artist) -> Result<(), Error> {
+    fn add_artist(&mut self, artist: &Artist) -> Result<(), Error> {
         let conn = try!(conn());
         let stmt = try!(conn.prepare("INSERT INTO album_artists (album_id, artist_id) VALUES ($1, $2)"));
         try!(stmt.query(&[&self.id, &artist.id]));
         match self.artists {
-            Some(ref mut artists) => artists.push(artist),
-            None                  => self.artists = Some(vec![artist]),
+            Some(ref mut artists) => artists.push(artist.clone()),
+            None                  => self.artists = Some(vec![artist.clone()]),
 
         }
         Ok(())
@@ -288,6 +288,19 @@ impl Album {
         }).collect::<Vec<_>>();
     }
 
+    fn add_artists(&mut self, artists: Vec<Artist>) {
+        self.artists = Some(artists.iter().map(|a| {
+            let mut a = a.clone();
+            if let Ok(new_artist) = Artist::find_or_create(a.provider,
+                                                           a.identifier.to_string()) {
+                a.id      = new_artist.id;
+                let _     = a.save();
+                let _     = self.add_artist(&a);
+            };
+            a
+        }).collect::<Vec<_>>());
+    }
+
     pub fn update_with_sp_album(&mut self, album: &spotify::Album) -> &mut Album {
         self.provider       = Provider::Spotify;
         self.identifier     = album.id.to_string();
@@ -307,19 +320,11 @@ impl Album {
         if album.images.len() > 1 {
             self.thumbnail_url = Some(album.images[1].url.clone());
         }
-        let artists = album.artists
-            .iter()
-            .map(|artist| {
-                Artist::find_or_create(self.provider, artist.id.to_string())
-                    .map(|mut a| a.update_with_sp_artist(&artist).clone())
-            })
-            .filter(|r| r.is_ok())
-            .map(|r| r.unwrap())
-            .collect::<Vec<Artist>>();
-        for mut a in artists {
-            let _ = a.save();
-            let _ = self.add_artist(a);
-        }
+
+        let artists = album.artists.iter().map(|ref a| Artist::from_sp_artist(a))
+            .collect::<Vec<_>>();
+        self.add_artists(artists);
+
         let track_ids = album.tracks.clone()
             .map(|t| t.items).unwrap_or(vec![]).iter()
             .map(|ref t| t.id.clone()).collect();
@@ -347,27 +352,12 @@ impl Album {
             self.thumbnail_url = Some(album.attributes.artwork.get_thumbnail_url());
             self.artwork_url   = Some(album.attributes.artwork.get_artwork_url());
             self.state         = State::Alive;
-            if let Ok(mut artist) = Artist::find_or_create(self.provider,
-                                                           album_artist.id.to_string()) {
-                artist.name  = artist_name.to_string();
-                let _ = artist.save();
-                let _ = self.add_artist(artist);
-            }
         }
+        let country = apple_music::country(&self.url);
         if let Some(album_artists) = album_artists.clone() {
-            let artists = album_artists
-                .iter()
-                .map(|artist| {
-                    Artist::find_or_create(self.provider, artist.id.to_string())
-                        .map(|mut a| a.update_with_am_artist(&artist).clone())
-                })
-                .filter(|r| r.is_ok())
-                .map(|r| r.unwrap())
-                .collect::<Vec<Artist>>();
-            for mut a in artists {
-                let _ = a.save();
-                let _ = self.add_artist(a);
-            }
+            let artist_ids = album_artists.iter().map(|a| a.id.clone()).collect::<Vec<String>>();
+            let artists = apple_music::fetch_artists(&country, artist_ids).unwrap_or(vec![]);
+            self.add_artists(artists.iter().map(|a| Artist::from_am_artist(a)).collect());
         }
         let album_tracks = album.clone().relationships.map(|r| {
             r.tracks.data.clone()
@@ -379,7 +369,6 @@ impl Album {
             .map(|song| song.unwrap())
             .collect::<Vec<_>>();
         let song_ids = songs.iter().map(|song| song.id.clone()).collect::<Vec<String>>();
-        let country = apple_music::country(&self.url);
         let songs = apple_music::fetch_songs(&country, song_ids).unwrap_or(vec![]);
         self.add_tracks(songs.iter().map(|song| Track::from_am_song(song)).collect());
         self

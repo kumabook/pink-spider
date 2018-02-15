@@ -120,6 +120,11 @@ pub struct Artist {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+struct Artists {
+    artists: Vec<Artist>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Image {
     pub height: Option<i32>,
     pub url:    String,
@@ -247,6 +252,14 @@ pub fn fetch_playlist(user_id: &str, id: &str) -> serde_json::Result<Playlist> {
 pub fn fetch_artist(id: &str) -> serde_json::Result<Artist> {
     let path = format!("/artists/{}", id);
     fetch(&path).and_then(|s| serde_json::from_str(&s))
+}
+
+pub fn fetch_artists(ids: Vec<String>) -> serde_json::Result<Vec<Artist>> {
+    let path = format!("/artists?ids={}", ids.join(","));
+    let result: serde_json::Result<Artists> = fetch(&path).and_then(|s| {
+        serde_json::from_str(&s)
+    });
+    result.map(|artists| artists.artists)
 }
 
 fn fetch(path: &str) -> serde_json::Result<String> {

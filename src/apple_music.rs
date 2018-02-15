@@ -382,7 +382,7 @@ pub fn fetch_album(country: &str, id: &str) -> serde_json::Result<Album> {
     result.map(|r| r.data.first().unwrap().clone())
 }
 
-pub fn fetch_albums(country: &str, ids: Vec<&str>) -> serde_json::Result<Vec<Album>> {
+pub fn fetch_albums(country: &str, ids: Vec<String>) -> serde_json::Result<Vec<Album>> {
     let params = "include=artists";
     let path = format!("/catalog/{}/albums?ids={}&{}", country, ids.join(","), params);
     let result: serde_json::Result<Response<Album>> = fetch(&path).and_then(|s| serde_json::from_str(&s));
@@ -401,6 +401,13 @@ pub fn fetch_artist(country: &str, id: &str) -> serde_json::Result<Artist> {
     let path = format!("/catalog/{}/artists/{}?{}", country, id, params);
     let result: serde_json::Result<Response<Artist>> = fetch(&path).and_then(|s| serde_json::from_str(&s));
     result.map(|r| r.data.first().unwrap().clone())
+}
+
+pub fn fetch_artists(country: &str, ids: Vec<String>) -> serde_json::Result<Vec<Artist>> {
+    let params = "include=albums";
+    let path = format!("/catalog/{}/artists?ids={}&{}", country, ids.join(","), params);
+    let result: serde_json::Result<Response<Artist>> = fetch(&path).and_then(|s| serde_json::from_str(&s));
+    result.map(|r| r.data)
 }
 
 pub fn search_artists(country: &str, term: &str) -> serde_json::Result<Vec<Artist>> {
