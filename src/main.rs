@@ -199,9 +199,9 @@ pub fn show<'a, T: Enclosure<'a>>(req: &mut Request) -> IronResult<Response> {
 
 pub fn show_by_id<'a, T: Model<'a>>(req: &mut Request) -> IronResult<Response> {
     let ref id = req.extensions.get::<Router>().unwrap().find("id").unwrap();
-    let mut enclosure = T::find_by_id(id)?;
-    enclosure.with_relations()?;
-    let body      = try!(serde_json::to_string(&enclosure).map_err(to_err));
+    let mut enclosures = vec![T::find_by_id(id)?];
+    T::set_relations(&mut enclosures)?;
+    let body      = try!(serde_json::to_string(&enclosures[0]).map_err(to_err));
     Ok(Response::with((status::Ok, application_json(), body)))
 }
 

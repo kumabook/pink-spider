@@ -85,9 +85,6 @@ pub trait Model<'a> where Self: std::marker::Sized + Serialize + Deserialize<'a>
         }
         items
     }
-    fn with_relations(&mut self) -> Result<(), Error> {
-        Ok(())
-    }
     fn set_relations(_items: &mut Vec<Self>) -> Result<(), Error> {
         Ok(())
     }

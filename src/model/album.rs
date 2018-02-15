@@ -138,10 +138,7 @@ impl<'a> Model<'a> for Album {
             Err(_) => Err(Error::Unexpected),
         }
     }
-    fn with_relations(&mut self) -> Result<(), Error> {
-        self.tracks = Track::find_by_album(self.id);
-        Ok(())
-    }
+
     fn set_relations(albums: &mut Vec<Album>) -> Result<(), Error> {
         let items = Track::find_by_albums(albums.iter().map(|i| i.id).collect())?;
         for album in albums {
