@@ -351,8 +351,8 @@ impl Playlist {
         self.url           = playlist.attributes.url.clone();
         self.title         = playlist.attributes.name.clone();
         self.description   = playlist.attributes.description.clone().and_then(|d| d.short.clone());
-        self.thumbnail_url = playlist.attributes.artwork.clone().map(|a| a.url);
-        self.artwork_url   = playlist.attributes.artwork.clone().map(|a| a.url);
+        self.thumbnail_url = playlist.attributes.artwork.clone().map(|a| a.get_thumbnail_url());
+        self.artwork_url   = playlist.attributes.artwork.clone().map(|a| a.get_artwork_url());
         self.state         = State::Alive;
         self
     }

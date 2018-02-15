@@ -13,6 +13,9 @@ use queryst::parse;
 use http;
 
 static BASE_URL:  &'static str = "https://api.music.apple.com/v1";
+static THUMBNAIL_SIZE: &'static str = "300";
+static ARTWORK_SIZE: &'static str = "640";
+
 
 static ALBUM_LINK:    &'static str = r"itunes.apple.com/([a-zA-Z0-9_-]+)/album/([a-zA-Z0-9_-]+)/id([a-zA-Z0-9_-]+)";
 static PLAYLIST_LINK: &'static str = r"itunes.apple.com/([a-zA-Z0-9_-]+)/playlist/([^/]+)/idpl.([a-zA-Z0-9_-]+)";
@@ -48,6 +51,19 @@ pub struct Artwork {
     pub text_color2: Option<String>,
     pub text_color3: Option<String>,
     pub text_color4: Option<String>,
+}
+
+impl Artwork {
+    pub fn get_thumbnail_url(&self) -> String {
+        self.url
+            .replace("{w}", THUMBNAIL_SIZE)
+            .replace("{h}", THUMBNAIL_SIZE)
+    }
+    pub fn get_artwork_url(&self) -> String {
+        self.url
+            .replace("{w}", ARTWORK_SIZE)
+            .replace("{h}", ARTWORK_SIZE)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

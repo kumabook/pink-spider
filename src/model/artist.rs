@@ -230,8 +230,8 @@ impl Artist {
         self.name          = artist.attributes.name.to_string();
         if let Some(album) = artist.clone().relationships
             .and_then(|r| r.albums.data.first().map(|a| a.clone())) {
-                self.thumbnail_url = Some(album.attributes.artwork.url.to_string());
-                self.artwork_url   = Some(album.attributes.artwork.url.to_string());
+                self.thumbnail_url = Some(album.attributes.artwork.get_thumbnail_url());
+                self.artwork_url   = Some(album.attributes.artwork.get_artwork_url());
             }
         self
     }

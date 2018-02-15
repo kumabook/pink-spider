@@ -329,8 +329,8 @@ impl Track {
         self.url           = song.attributes.url.to_string();
         self.title         = song.attributes.name.to_string();
         self.description   = None;
-        self.thumbnail_url = Some(song.attributes.artwork.url.to_string());
-        self.artwork_url   = Some(song.attributes.artwork.url.to_string());
+        self.thumbnail_url = Some(song.attributes.artwork.get_thumbnail_url());
+        self.artwork_url   = Some(song.attributes.artwork.get_artwork_url());
         self.audio_url     = song.attributes.previews.first().map(|p| {
             p.url.clone()
         });

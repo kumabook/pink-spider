@@ -333,8 +333,8 @@ impl Album {
             self.url           = album.attributes.url.clone();
             self.title         = album.attributes.name.clone();
             self.description   = album.attributes.editorial_notes.clone().and_then(|n| n.short.clone());
-            self.thumbnail_url = Some(album.attributes.artwork.url.clone());
-            self.artwork_url   = Some(album.attributes.artwork.url.clone());
+            self.thumbnail_url = Some(album.attributes.artwork.get_thumbnail_url());
+            self.artwork_url   = Some(album.attributes.artwork.get_artwork_url());
             self.state         = State::Alive;
             if let Ok(mut artist) = Artist::find_or_create(self.provider,
                                                            album_artist.id.to_string()) {
