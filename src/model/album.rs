@@ -140,10 +140,15 @@ impl<'a> Model<'a> for Album {
     }
 
     fn set_relations(albums: &mut Vec<Album>) -> Result<(), Error> {
-        let items = Track::find_by_albums(albums.iter().map(|i| i.id).collect())?;
+        let ids: Vec<Uuid> = albums.iter().map(|i| i.id).collect();
+        let tracks_of_album = Track::find_by_albums(ids.clone())?;
+        let artists_of_album = Artist::find_by_albums(ids.clone())?;
         for album in albums {
-            if let Some(ref mut tracks) = items.get(&album.id) {
+            if let Some(ref mut tracks) = tracks_of_album.get(&album.id) {
                 album.tracks = tracks.clone()
+            }
+            if let Some(ref mut artists) = artists_of_album.get(&album.id) {
+                album.artists = Some(artists.clone())
             }
         }
         Ok(())
