@@ -148,6 +148,33 @@ pub struct VideoSnippet {
     pub liveBroadcastContent: String,
 }
 
+#[allow(non_snake_case)]
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ChannelResponse {
+    pub kind:          String,
+    pub etag:          String,
+    pub pageInfo:      BTreeMap<String, i32>,
+    pub items:         Vec<Channel>,
+}
+
+#[allow(non_snake_case)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Channel {
+    pub kind:    String,
+    pub etag:    String,
+    pub id:      String,
+    pub snippet: ChannelSnippet,
+}
+
+#[allow(non_snake_case)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ChannelSnippet {
+    pub title:                String,
+    pub description:          String,
+    pub publishedAt:          String,
+    pub thumbnails:           Option<BTreeMap<String, Thumbnail>>,
+}
+
 impl HasThumbnail for PlaylistSnippet {
     fn get_thumbnails(&self) -> BTreeMap<String, Thumbnail> {
         self.thumbnails.clone().unwrap_or(BTreeMap::new())
@@ -161,6 +188,12 @@ impl HasThumbnail for PlaylistItemSnippet {
 }
 
 impl HasThumbnail for VideoSnippet {
+    fn get_thumbnails(&self) -> BTreeMap<String, Thumbnail> {
+        self.thumbnails.clone().unwrap_or(BTreeMap::new())
+    }
+}
+
+impl HasThumbnail for ChannelSnippet {
     fn get_thumbnails(&self) -> BTreeMap<String, Thumbnail> {
         self.thumbnails.clone().unwrap_or(BTreeMap::new())
     }
@@ -207,4 +240,19 @@ pub fn fetch_video(id: &str) -> serde_json::Result<Video> {
         return Ok(vr.items[0].clone());
     }
     Err(serde_json::error::Error::custom("track not found".to_string()))
+}
+
+pub fn fetch_channel(id: &str) -> serde_json::Result<Channel> {
+    let params = format!("key={}&part=snippet&id={}", *API_KEY, id);
+    let url    = format!("{}/{}?{}", BASE_URL, "channels", params);
+    let mut res = http::client().get(&url)
+                                .header(Connection::close())
+                                .send().unwrap();
+    let mut body = String::new();
+    res.read_to_string(&mut body).unwrap();
+    let vr: ChannelResponse = try!(serde_json::from_str(&body));
+    if vr.items.len() > 0 {
+        return Ok(vr.items[0].clone());
+    }
+    Err(serde_json::error::Error::custom("channel not found".to_string()))
 }
