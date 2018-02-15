@@ -59,4 +59,18 @@ namespace :db do
       end
     end
   end
+
+  desc "clear artists"
+  task :clear_artists => :environment do
+    items = Artist.where(provider: 'AppleMusic').select do |artist|
+      artist.identifier == artist.name
+    end
+
+    artist_ids = items.map {|i| i.id }
+
+    TrackArtist.where(artist_id: artist_ids).destroy_all
+    AlbumArtist.where(artist_id: artist_ids).destroy_all
+    Artist.where(id: artist_ids).destroy_all
+    puts "clear apple music artists"
+  end
 end
