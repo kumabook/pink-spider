@@ -55,9 +55,9 @@ export const formSchema = {
 };
 
 export const getCountry = (urlString) => {
-  const regex = /\/geo\.itunes\.apple\.com\/([a-zA-Z]+)\//;
+  const regex = /itunes\.apple\.com\/([a-zA-Z]+)\//;
   const results = urlString.match(regex);
-  if (results.length >= 2) {
+  if (results && results.length >= 2) {
     return results[1];
   }
   return 'us';
