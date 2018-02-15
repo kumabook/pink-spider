@@ -333,7 +333,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
     match extract_identifier(&decoded, apple_music::SONG_URL) {
         Some(identifier) => {
             let country = apple_music::country(&url);
-            if let Ok(song) = apple_music::fetch_song(&identifier, &country) {
+            if let Ok(song) = apple_music::fetch_song(&country, &identifier) {
                 return (vec![], vec![], vec![Track::from_am_song(&song)])
             };
         },
@@ -342,7 +342,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
     match extract_identifier(&decoded, apple_music::ALBUM_URL) {
         Some(identifier) => {
             let country = apple_music::country(&url);
-            match apple_music::fetch_album(&identifier, &country) {
+            match apple_music::fetch_album(&country, &identifier) {
                 Ok(album) => return (vec![], vec![Album::from_am_album(&album)], vec![]),
                 Err(_) => (),
             }
@@ -353,7 +353,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
     match extract_identifier(&decoded, apple_music::PLAYLIST_URL) {
         Some(identifier) => {
             let country = apple_music::country(&url);
-            match apple_music::fetch_playlist(&identifier, &country) {
+            match apple_music::fetch_playlist(&country, &identifier) {
                 Ok(playlist) => return (vec![Playlist::from_am_playlist(&playlist)], vec![], vec![]),
                 Err(_) => (),
             }
@@ -363,7 +363,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
     }
     match apple_music::parse_url_as_album(&decoded) {
         Some((country, _, _, Some(song_id))) => {
-            if let Ok(song) = apple_music::fetch_song(&song_id, &country) {
+            if let Ok(song) = apple_music::fetch_song(&country, &song_id) {
                 return (vec![], vec![], vec![Track::from_am_song(&song)])
             };
             return (vec![], vec![], vec![])
@@ -373,7 +373,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
     }
     match apple_music::parse_url_as_playlist(&decoded) {
         Some((country, _, identifier, _)) => {
-            match apple_music::fetch_playlist(&identifier, &country) {
+            match apple_music::fetch_playlist(&country, &identifier) {
                 Ok(playlist) => return (vec![Playlist::from_am_playlist(&playlist)], vec![], vec![]),
                 Err(_) => (),
             }
