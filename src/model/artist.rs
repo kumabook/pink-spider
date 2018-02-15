@@ -1,8 +1,10 @@
 use postgres;
 use uuid::Uuid;
 use std::fmt;
+use std::collections::BTreeMap;
 use chrono::{NaiveDateTime, Utc};
 
+use youtube;
 use soundcloud;
 use spotify;
 use apple_music;
@@ -10,6 +12,7 @@ use error::Error;
 use super::{conn, Model};
 use model::provider::Provider;
 use model::enclosure::Enclosure;
+use youtube::HasThumbnail;
 
 static PROPS: [&'static str; 9]  = ["id",
                                     "provider",
@@ -130,6 +133,10 @@ impl<'a> Enclosure<'a> for Artist {
 
     fn fetch_props(&mut self) -> Result<(), Error> {
         match self.provider {
+            Provider::YouTube => match youtube::fetch_channel(&self.identifier) {
+                Ok(artist) => self.update_with_yt_channel(&artist),
+                Err(_)     => self,
+            },
             Provider::AppleMusic => {
                 let country = apple_music::country(&self.url);
                 match apple_music::fetch_artist(&country, &self.identifier) {
@@ -243,6 +250,17 @@ impl Artist {
         self.name          = user.username.to_string();
         self.thumbnail_url = Some(user.avatar_url.clone());
         self.artwork_url   = Some(user.avatar_url.clone());
+        self
+    }
+
+    pub fn update_with_yt_channel(&mut self, channel: &youtube::Channel) -> &mut Artist {
+        let s              = &channel.snippet;
+        self.provider      = Provider::YouTube;
+        self.identifier    = channel.id.to_string();
+        self.url           = format!("https://www.youtube.com/channel/{}", channel.id);
+        self.name          = s.title.to_string();
+        self.thumbnail_url = s.get_thumbnail_url();
+        self.artwork_url   = s.get_artwork_url();
         self
     }
 }
