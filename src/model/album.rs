@@ -249,6 +249,15 @@ impl Album {
         let rows = stmt.query(&[&artist_id]).unwrap();
         Album::rows_to_items(rows)
     }
+    pub fn find_by_provider(provider: &Provider) -> Vec<Album> {
+        let conn = conn().unwrap();
+        let stmt = conn.prepare(
+            &format!("SELECT {} FROM albums WHERE albums.provider = $1
+                        ORDER BY albums.created_at DESC",
+                     Album::props_str(""))).unwrap();
+        let rows = stmt.query(&[&(*provider).to_string()]).unwrap();
+        Album::rows_to_items(rows)
+    }
     pub fn from_sp_album(album: &spotify::Album) -> Album {
         Album::new(Provider::Spotify, (*album).id.to_string())
             .update_with_sp_album(album)
