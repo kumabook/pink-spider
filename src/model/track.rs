@@ -320,6 +320,15 @@ impl Track {
         }
         Ok(items)
     }
+    pub fn find_by_provider(provider: &Provider) -> Vec<Track> {
+        let conn = conn().unwrap();
+        let stmt = conn.prepare(
+            &format!("SELECT {} FROM tracks WHERE tracks.provider = $1
+                        ORDER BY tracks.created_at DESC",
+                     Track::props_str(""))).unwrap();
+        let rows = stmt.query(&[&(*provider).to_string()]).unwrap();
+        Track::rows_to_items(rows)
+    }
     pub fn update_with_am_song(&mut self, song: &apple_music::Song) -> &mut Track {
         let song_artists = song.clone().relationships.map(|r| {
             r.artists.data.clone()
