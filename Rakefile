@@ -73,4 +73,28 @@ namespace :db do
     Artist.where(id: artist_ids).delete_all
     puts "clear apple music artists"
   end
+
+  desc "normalize artists"
+  task :normalize_artists => :environment do
+    count = 0
+    TrackArtist.find_in_batches do |track_artists|
+      wrong_items = track_artists.select do |track_artist|
+        e = Track.find_by(id: track_artist.track_id).nil?
+      end
+      TrackArtist.where(id: wrong_items.map {|i| i.id }).delete_all
+      count += wrong_items.count
+      puts "track #{count}"
+    end
+    puts "clear invalid track_artist #{count}"
+    count = 0
+    AlbumArtist.find_in_batches do |album_artists|
+      wrong_items = album_artists.select do |album_artist|
+        Album.find_by(id: album_artist.album_id).nil?
+      end
+      AlbumArtist.where(id: wrong_items.map {|i| i.id }).delete_all
+      count += wrong_items.count
+      puts "album #{count}"
+    end
+    puts "clear invalid album_artist #{count}"
+  end
 end
