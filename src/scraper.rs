@@ -298,12 +298,52 @@ fn fetch_spotify_album(identifier: String) -> (Vec<Playlist>, Vec<Album>, Vec<Tr
 
 fn fetch_spotify_track(identifier: String) -> Vec<Track> {
     match spotify::fetch_track(&identifier) {
-        Ok(t) => {
-            let ref mut track = Track::new(Provider::Spotify, identifier);
-            track.update_with_sp_track(&t);
-            vec![track.clone()]
-        },
+        Ok(t) => vec![Track::from_sp_track(&t)],
         Err(_) => vec![Track::new(Provider::Spotify, identifier)],
+    }
+}
+
+fn fetch_youtube_video(identifier: String) -> Vec<Track> {
+    match youtube::fetch_video(&identifier) {
+        Ok(video) => vec![Track::from_yt_video(&video)],
+        Err(_)    => vec![Track::new(Provider::YouTube, identifier).disable().clone()],
+    }
+}
+
+fn fetch_soundcloud_track(identifier: String) -> Vec<Track> {
+    match soundcloud::fetch_track(&identifier) {
+        Ok(track) => vec![Track::from_sc_track(&track)],
+        Err(_)    => vec![Track::new(Provider::SoundCloud, identifier).disable().clone()],
+    }
+}
+
+fn fetch_soundcloud_playlist(identifier: String) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
+    match soundcloud::fetch_playlist(&identifier) {
+        Ok(playlist) => {
+            let tracks = if EXPAND_SOUNDCLOUD_PLAYLIST {
+                playlist.tracks
+                    .iter()
+                    .map(|ref t| Track::from_sc_track(t))
+                    .collect::<Vec<_>>()
+            } else {
+                vec![]
+            };
+            (vec![Playlist::from_sc_playlist(&playlist)], vec![], tracks)
+        },
+        Err(_)       => (vec![], vec![], vec![]),
+    }
+}
+
+fn fetch_soundcloud_user(identifier: String) -> (Vec<Playlist>, Vec<Album>, Vec<Track>) {
+    match soundcloud::fetch_user_tracks(&identifier) {
+        Ok(tracks) => {
+            let tracks = tracks
+                .iter()
+                .map(|ref t| Track::from_sc_track(t))
+                .collect::<Vec<_>>();
+            (vec![], vec![], tracks)
+        },
+        Err(_)     => (vec![], vec![], vec![]),
     }
 }
 
@@ -382,7 +422,7 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
         None => ()
     }
     match extract_identifier(&decoded, youtube::WATCH) {
-        Some(identifier) => return (vec![], vec![], vec![Track::new(Provider::YouTube, identifier)]),
+        Some(identifier) => return (vec![], vec![], fetch_youtube_video(identifier)),
         None             => ()
     }
     match extract_identifier(&decoded, youtube::LIST) {
@@ -390,42 +430,20 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
         None             => ()
     }
     match extract_identifier(&decoded, youtube::EMBED) {
-        Some(identifier) => return (vec![], vec![], vec![Track::new(Provider::YouTube, identifier)]),
+        Some(identifier) => return (vec![], vec![], fetch_youtube_video(identifier)),
         None             => ()
     }
     match extract_identifier(&decoded, soundcloud::TRACK) {
-        Some(identifier) => return (vec![], vec![], vec![Track::new(Provider::SoundCloud, identifier)]),
+        Some(identifier) => return (vec![], vec![], fetch_soundcloud_track(identifier)),
         None             => ()
     }
     match extract_identifier(&decoded, soundcloud::PLAYLIST) {
-        Some(identifier) => return match soundcloud::fetch_playlist(&identifier) {
-            Ok(playlist) => {
-                let tracks = if EXPAND_SOUNDCLOUD_PLAYLIST {
-                    playlist.tracks
-                        .iter()
-                        .map(|ref t| Track::from_sc_track(t))
-                        .collect::<Vec<_>>()
-                } else {
-                    vec![]
-                };
-                (vec![Playlist::from_sc_playlist(&playlist)], vec![], tracks)
-            },
-            Err(_)       => (vec![], vec![], vec![]),
-        },
-        None => ()
+        Some(identifier) => return fetch_soundcloud_playlist(identifier),
+        None             => ()
     }
     match extract_identifier(&decoded, soundcloud::USER) {
-        Some(identifier) => return match soundcloud::fetch_user_tracks(&identifier) {
-            Ok(tracks) => {
-                let tracks = tracks
-                    .iter()
-                    .map(|ref t| Track::from_sc_track(t))
-                    .collect::<Vec<_>>();
-                (vec![], vec![], tracks)
-            },
-            Err(_)       => (vec![], vec![], vec![]),
-        },
-        None => ()
+        Some(identifier) => return fetch_soundcloud_user(identifier),
+        None             => ()
     }
     match extract_identifier(&decoded, spotify::TRACK_URI) {
         Some(identifier) => return (vec![], vec![], fetch_spotify_track(identifier)),

@@ -257,6 +257,11 @@ impl Track {
             .update_with_yt_playlist_item(item)
             .clone()
     }
+    pub fn from_yt_video(video: &youtube::Video) -> Track {
+        Track::new(Provider::YouTube, (*video).id.to_string())
+            .update_with_yt_video(video)
+            .clone()
+    }
     pub fn from_sc_track(track: &soundcloud::Track) -> Track {
         Track::new(Provider::SoundCloud, (*track).id.to_string())
             .update_with_sc_track(track)
@@ -267,20 +272,6 @@ impl Track {
             .update_with_sp_track(track)
             .clone()
     }
-    pub fn fetch_detail(&mut self) -> &mut Track {
-        match self.provider {
-            Provider::YouTube => match youtube::fetch_video(&self.identifier) {
-                Ok(video) => self.update_with_yt_video(&video),
-                Err(_)    => self.disable(),
-            },
-            Provider::SoundCloud => match soundcloud::fetch_track(&self.identifier) {
-                Ok(sc_track) => self.update_with_sc_track(&sc_track),
-                Err(_)       => self.disable(),
-            },
-            _ => self,
-        }
-    }
-
     fn add_artist(&mut self, artist: &Artist) -> Result<(), Error> {
         let conn = try!(conn());
         let stmt = try!(conn.prepare("INSERT INTO track_artists (track_id, artist_id) VALUES ($1, $2)"));
