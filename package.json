@@ -11,7 +11,7 @@
     "start": "webpack --progress --colors --watch",
     "build": "webpack",
     "lint": "gulp lint",
-    "test": "cross-env NODE_ENV=test nyc mocha ./web/test/**/*.spec.{js,jsx}",
+    "test": "cross-env NODE_ENV=test nyc mocha --reporter dot --full-trace ./web/test/**/*.spec.{js,jsx}",
     "test:watch": "npm test -- --watch",
     "postinstall": "npm run build"
   },
