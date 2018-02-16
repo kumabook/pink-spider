@@ -458,7 +458,9 @@ impl Track {
             self.update_with_sp_album(&album);
         }
 
-        let artists = track.artists.iter().map(|ref a| Artist::from_sp_artist(a))
+        let artist_ids = track.artists.iter().map(|a| a.id.clone()).collect::<Vec<String>>();
+        let sp_artists = spotify::fetch_artists(artist_ids).unwrap_or_default();
+        let artists = sp_artists.iter().map(|ref a| Artist::from_sp_artist(a))
             .collect::<Vec<_>>();
         self.add_artists(artists);
 

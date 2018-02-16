@@ -321,7 +321,9 @@ impl Album {
             self.thumbnail_url = Some(album.images[1].url.clone());
         }
 
-        let artists = album.artists.iter().map(|ref a| Artist::from_sp_artist(a))
+        let artist_ids = album.artists.iter().map(|a| a.id.clone()).collect::<Vec<String>>();
+        let sp_artists = spotify::fetch_artists(artist_ids).unwrap_or_default();
+        let artists = sp_artists.iter().map(|ref a| Artist::from_sp_artist(a))
             .collect::<Vec<_>>();
         self.add_artists(artists);
 
