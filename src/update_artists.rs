@@ -14,7 +14,10 @@ pub fn main() {
         match apple_music::fetch_song(&country(&track.url),
                                       &track.identifier) {
             Ok(am_song) => track.update_with_am_song(&am_song),
-            Err(_)       => track.disable(),
+            Err(e)      => {
+                println!("{:?}", e);
+                track.disable()
+            },
         };
         let _ = track.save();
     }
@@ -61,9 +64,7 @@ pub fn update_apple_music(artist: &mut Artist) {
             }
             println!("  Not updated {:?}", artist.identifier);
         },
-        Err(_) => {
-            println!("{:?} {:?} {}", artist.identifier, country, 0);
-        },
+        Err(e) => println!("{:?}", e),
     }
 }
 
