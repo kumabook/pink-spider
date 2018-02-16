@@ -443,23 +443,4 @@ mod test {
         assert!(playlist.attributes.artwork.is_some());
         assert_ne!(playlist.attributes.url, "");
     }
-    #[test]
-    fn test_fetch_album() {
-        let album = fetch_album("jp", "1160715126").unwrap();
-        assert_eq!(album.id, "1160715126");
-        assert_eq!(album.attributes.name, "a.k.a");
-        assert_eq!(album.attributes.artist_name, "LILI LIMIT");
-        assert_ne!(album.attributes.artwork.url, "");
-        assert_ne!(album.attributes.url, "");
-    }
-    #[test]
-    fn test_fetch_song() {
-        let song = fetch_song("jp", "1160715431").unwrap();
-        assert_eq!(song.id, "1160715431");
-        assert_eq!(song.attributes.name, "A Short Film");
-        assert_eq!(song.attributes.artist_name, "LILI LIMIT");
-        assert_ne!(song.attributes.artwork.url, "");
-        assert_ne!(song.attributes.previews[0].url, "");
-        assert_ne!(song.attributes.url, "");
-    }
 }
