@@ -12,12 +12,18 @@ pub fn main() {
         let album = match album.provider {
             Provider::Spotify => match spotify::fetch_album(&album.identifier) {
                 Ok(sp_album) => album.update_with_sp_album(&sp_album),
-                Err(_)       => album.disable(),
+                Err(e)       => {
+                    print!("{}\n", e);
+                    album.disable()
+                },
             },
             Provider::AppleMusic => match apple_music::fetch_album(&country(&album.url),
                                                                    &album.identifier) {
                 Ok(am_album) => album.update_with_am_album(&am_album),
-                Err(_)       => album.disable(),
+                Err(e)       => {
+                    print!("{}\n", e);
+                    album.disable()
+                },
             },
             _ => &mut album,
         };
