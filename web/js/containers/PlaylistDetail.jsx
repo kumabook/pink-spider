@@ -12,7 +12,7 @@ import {
 import { List, ListItem } from 'material-ui/List';
 import RaisedButton       from 'material-ui/RaisedButton';
 import { connect }        from 'react-redux';
-import { update }         from '../actions/playlist';
+import { creators }       from '../actions/playlist';
 import tryGet             from '../utils/tryGet';
 import datePrettify       from '../utils/datePrettify';
 import { getUrl }         from '../model/Playlist';
@@ -103,7 +103,7 @@ function mapStateToProps(state) {
 
 function mapDispatchToProps(dispatch) {
   return {
-    handleUpdateButtonClick: item => dispatch(update(item)),
+    handleUpdateButtonClick: item => dispatch(creators.update.start(item)),
   };
 }
 

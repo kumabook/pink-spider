@@ -11,7 +11,7 @@ import {
 import { List, ListItem }      from 'material-ui/List';
 import RaisedButton            from 'material-ui/RaisedButton';
 import { connect }             from 'react-redux';
-import { update }              from '../actions/track';
+import { creators }            from '../actions/track';
 import { getUrl, getOwnerUrl } from '../model/Track';
 import tryGet                  from '../utils/tryGet';
 import datePrettify            from '../utils/datePrettify';
@@ -106,7 +106,7 @@ function mapStateToProps(state) {
 
 function mapDispatchToProps(dispatch) {
   return {
-    handleUpdateButtonClick: track => dispatch(update(track)),
+    handleUpdateButtonClick: track => dispatch(creators.update.start(track)),
   };
 }
 
