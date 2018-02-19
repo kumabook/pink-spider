@@ -350,9 +350,7 @@ impl Entry {
             None => (),
         }
         for t in product.tracks {
-            let new_track = try!(Track::find_or_create(t.provider, t.identifier.to_string()));
             let mut track = t.clone();
-            track.id      = new_track.id;
             try!(track.save());
             match self.tracks.iter().find(|&t| t.id == track.id) {
                 Some(_) => (),

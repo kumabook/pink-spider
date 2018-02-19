@@ -229,24 +229,28 @@ impl Artist {
 
 
     pub fn from_yt_channel(channel: &youtube::Channel) -> Artist {
-        Artist::new(Provider::YouTube, channel.id.to_string())
+        Artist::find_or_create(Provider::YouTube, channel.id.to_string())
+            .unwrap()
             .update_with_yt_channel(channel)
             .clone()
     }
     pub fn from_sp_artist(artist: &spotify::Artist) -> Artist {
-        Artist::new(Provider::Spotify, (*artist).id.to_string())
+        Artist::find_or_create(Provider::Spotify, (*artist).id.to_string())
+            .unwrap()
             .update_with_sp_artist(artist)
             .clone()
     }
 
     pub fn from_sc_user(playlist: &soundcloud::User) -> Artist {
-        Artist::new(Provider::SoundCloud, (*playlist).id.to_string())
+        Artist::find_or_create(Provider::SoundCloud, (*playlist).id.to_string())
+            .unwrap()
             .update_with_sc_user(playlist)
             .clone()
     }
 
     pub fn from_am_artist(artist: &apple_music::Artist) -> Artist {
-        Artist::new(Provider::AppleMusic, (*artist).id.to_string())
+        Artist::find_or_create(Provider::AppleMusic, (*artist).id.to_string())
+            .unwrap()
             .update_with_am_artist(artist)
             .clone()
     }

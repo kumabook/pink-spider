@@ -264,13 +264,15 @@ impl Album {
         Album::rows_to_items(rows)
     }
     pub fn from_sp_album(album: &spotify::Album) -> Album {
-        Album::new(Provider::Spotify, (*album).id.to_string())
+        Album::find_or_create(Provider::Spotify, (*album).id.to_string())
+            .unwrap()
             .update_with_sp_album(album)
             .clone()
     }
 
     pub fn from_am_album(album: &apple_music::Album) -> Album {
-        Album::new(Provider::AppleMusic, (*album).id.to_string())
+        Album::find_or_create(Provider::AppleMusic, (*album).id.to_string())
+            .unwrap()
             .update_with_am_album(album)
             .clone()
     }

@@ -236,25 +236,29 @@ impl Playlist {
     }
 
     pub fn from_yt_playlist(playlist: &youtube::Playlist, items: &Vec<youtube::PlaylistItem>) -> Playlist {
-        Playlist::new(Provider::YouTube, (*playlist).id.to_string())
+        Playlist::find_or_create(Provider::YouTube, (*playlist).id.to_string())
+            .unwrap()
             .update_with_yt_playlist(playlist, items)
             .clone()
     }
 
     pub fn from_sp_playlist(playlist: &spotify::Playlist) -> Playlist {
-        Playlist::new(Provider::Spotify, (*playlist).id.to_string())
+        Playlist::find_or_create(Provider::Spotify, (*playlist).id.to_string())
+            .unwrap()
             .update_with_sp_playlist(playlist)
             .clone()
     }
 
     pub fn from_sc_playlist(playlist: &soundcloud::Playlist) -> Playlist {
-        Playlist::new(Provider::SoundCloud, (*playlist).id.to_string())
+        Playlist::find_or_create(Provider::SoundCloud, (*playlist).id.to_string())
+            .unwrap()
             .update_with_sc_playlist(playlist)
             .clone()
     }
 
     pub fn from_am_playlist(playlist: &apple_music::Playlist) -> Playlist {
-        Playlist::new(Provider::AppleMusic, (*playlist).id.to_string())
+        Playlist::find_or_create(Provider::AppleMusic, (*playlist).id.to_string())
+            .unwrap()
             .update_with_am_playlist(playlist)
             .clone()
     }

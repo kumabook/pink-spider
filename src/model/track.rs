@@ -247,28 +247,33 @@ impl<'a> Enclosure<'a> for Track {
 impl Track {
     pub fn from_am_song(song: &apple_music::Song) -> Track {
         let identifier = (*song).id.to_string();
-        Track::new(Provider::AppleMusic, identifier.to_string())
+        Track::find_or_create(Provider::AppleMusic, identifier.to_string())
+            .unwrap()
             .update_with_am_song(song)
             .clone()
     }
     pub fn from_yt_playlist_item(item: &youtube::PlaylistItem) -> Track {
         let identifier = (*item).snippet.resourceId["videoId"].to_string();
-        Track::new(Provider::YouTube, identifier.to_string())
+        Track::find_or_create(Provider::YouTube, identifier.to_string())
+            .unwrap()
             .update_with_yt_playlist_item(item)
             .clone()
     }
     pub fn from_yt_video(video: &youtube::Video) -> Track {
-        Track::new(Provider::YouTube, (*video).id.to_string())
+        Track::find_or_create(Provider::YouTube, (*video).id.to_string())
+            .unwrap()
             .update_with_yt_video(video)
             .clone()
     }
     pub fn from_sc_track(track: &soundcloud::Track) -> Track {
-        Track::new(Provider::SoundCloud, (*track).id.to_string())
+        Track::find_or_create(Provider::SoundCloud, (*track).id.to_string())
+            .unwrap()
             .update_with_sc_track(track)
             .clone()
     }
     pub fn from_sp_track(track: &spotify::Track) -> Track {
-        Track::new(Provider::Spotify, (*track).id.to_string())
+        Track::find_or_create(Provider::Spotify, (*track).id.to_string())
+            .unwrap()
             .update_with_sp_track(track)
             .clone()
     }
