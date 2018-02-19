@@ -67,7 +67,10 @@ export const getOwnerUrl = (album) => {
 };
 
 export const getUrl = (album) => {
-  if (!album || !album.identifier) {
+  if (!album) {
+    return null;
+  }
+  if (!album.identifier) {
     return album.url;
   }
   const id = album.identifier;
@@ -76,8 +79,12 @@ export const getUrl = (album) => {
       const country = getCountryParam(album.url);
       return `http://tools.applemusic.com/embed/v1/album/${id}?country=${country}`;
     }
-    case 'Spotify':
-      return formatOpenURL(parse(album.url));
+    case 'Spotify': {
+      if (album.url) {
+        return formatOpenURL(parse(album.url));
+      }
+      return null;
+    }
     default:
       return album.url;
   }
