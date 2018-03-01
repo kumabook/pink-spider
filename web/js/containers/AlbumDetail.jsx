@@ -7,8 +7,8 @@ import {
   CardHeader,
   CardMedia,
   CardTitle,
-  CardText,
 } from 'material-ui/Card';
+import { Tabs, Tab }                 from 'material-ui/Tabs';
 import { List, ListItem }          from 'material-ui/List';
 import RaisedButton                from 'material-ui/RaisedButton';
 import { connect }                 from 'react-redux';
@@ -29,6 +29,18 @@ class AlbumDetail extends React.Component {
       item:                    PropTypes.object.isRequired,
       handleUpdateButtonClick: PropTypes.func.isRequired,
     };
+  }
+  renderOwnerLink() {
+    const ownerUrl = getOwnerUrl(this.props.item);
+    return <a href={ownerUrl}>{tryGet(this.props.item, 'owner_name', 'Unknown')}</a>;
+  }
+  renderTracks() {
+    if (!this.props.item.tracks) {
+      return null;
+    }
+    return this.props.item.tracks.map((track, index) => (
+      <ListItem primaryText={`${index + 1} ${track.title}`} secondaryText={track.id} />
+    ));
   }
   render() {
     const id          = tryGet(this.props.item, 'id', 'unknown id');
@@ -53,32 +65,34 @@ class AlbumDetail extends React.Component {
       margin: 'auto',
       width:  'calc(75vh)',
     };
-    const ownerUrl = getOwnerUrl(this.props.item);
-    const ownerLink = <a href={ownerUrl}>{tryGet(this.props.item, 'owner_name', 'Unknown')}</a>;
     return (
-      <Card>
-        <CardHeader
-          title={ownerLink}
-          subtitle={tryGet(this.props.item, 'owner_id', 'Unknown')}
-          avatar={getImageOfProvider(provider)}
-        />
-        <CardMedia style={style} overlay={overlay} >
-          <img alt="artwork" src={state === 'alive' ? artworkUrl : DEAD_IMAGE} />
-        </CardMedia>
-        <CardTitle title={title} />
-        <CardActions>
-          <RaisedButton
-            primary
-            label={`View on ${provider}`}
-            href={getUrl(this.props.item)}
-          />
-          <RaisedButton
-            primary
-            label="Update"
-            onClick={() => this.props.handleUpdateButtonClick(this.props.item)}
-          />
-        </CardActions>
-        <CardText>
+      <Tabs>
+        <Tab label="Summary">
+          <Card>
+            <CardHeader
+              title={this.renderOwnerLink()}
+              subtitle={tryGet(this.props.item, 'owner_id', 'Unknown')}
+              avatar={getImageOfProvider(provider)}
+            />
+            <CardMedia style={style} overlay={overlay} >
+              <img alt="artwork" src={state === 'alive' ? artworkUrl : DEAD_IMAGE} />
+            </CardMedia>
+            <CardTitle title={title} />
+            <CardActions>
+              <RaisedButton
+                primary
+                label={`View on ${provider}`}
+                href={getUrl(this.props.item)}
+              />
+              <RaisedButton
+                primary
+                label="Update"
+                onClick={() => this.props.handleUpdateButtonClick(this.props.item)}
+              />
+            </CardActions>
+          </Card>
+        </Tab>
+        <Tab label="Props" >
           <List>
             <ListItem primaryText="id" secondaryText={id} />
             <ListItem primaryText="title" secondaryText={title} />
@@ -91,8 +105,13 @@ class AlbumDetail extends React.Component {
             <ListItem primaryText="created" secondaryText={createdAt} />
             <ListItem primaryText="updated" secondaryText={updatedAt} />
           </List>
-        </CardText>
-      </Card>
+        </Tab>
+        <Tab label="Tracks" >
+          <List>
+            {this.renderTracks()}
+          </List>
+        </Tab>
+      </Tabs>
     );
   }
 }
