@@ -315,7 +315,7 @@ impl Track {
         let stmt = conn.prepare(
             &format!("SELECT {} FROM tracks
                       LEFT OUTER JOIN album_tracks ON album_tracks.track_id = tracks.id
-                      WHERE album_tracks.album_id = $1 ORDER BY tracks.created_at DESC",
+                      WHERE album_tracks.album_id = $1",
                      Track::props_str("tracks."))).unwrap();
         let rows = stmt.query(&[&album_id]).unwrap();
         Track::rows_to_items(rows)
@@ -324,7 +324,7 @@ impl Track {
         let conn = conn().unwrap();
         let sql = format!("SELECT {}, album_tracks.album_id FROM tracks
                       LEFT OUTER JOIN album_tracks ON album_tracks.track_id = tracks.id
-                      WHERE album_tracks.album_id = ANY($1) ORDER BY tracks.created_at DESC", Track::props_str("tracks."));
+                      WHERE album_tracks.album_id = ANY($1)", Track::props_str("tracks."));
         let stmt = conn.prepare(&sql).unwrap();
         let rows = stmt.query(&[&album_ids]).unwrap();
         let mut items: BTreeMap<Uuid, Vec<Track>> = BTreeMap::new();
