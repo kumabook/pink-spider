@@ -263,7 +263,7 @@ pub fn fetch_artists(ids: Vec<String>) -> serde_json::Result<Vec<Artist>> {
 }
 
 fn fetch(path: &str) -> serde_json::Result<String> {
-    let token  = try!(update_token_if_needed());
+    let token  = update_token_if_needed()?;
     let url    = format!("{}{}", BASE_URL, path);
     let mut headers = Headers::new();
     headers.set(

@@ -99,10 +99,10 @@ impl<'a> Model<'a> for Track {
         }
     }
     fn create(&self) -> Result<Track, Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("INSERT INTO tracks (provider, identifier, url, title)
-                                      VALUES ($1, $2, $3, $4) RETURNING id"));
-        let rows = try!(stmt.query(&[&self.provider.to_string(), &self.identifier, &self.url, &self.title]));
+        let conn = conn()?;
+        let stmt = conn.prepare("INSERT INTO tracks (provider, identifier, url, title)
+                                      VALUES ($1, $2, $3, $4) RETURNING id")?;
+        let rows = stmt.query(&[&self.provider.to_string(), &self.identifier, &self.url, &self.title])?;
         let mut track = self.clone();
         for row in rows.iter() {
             track.id = row.get(0);
@@ -112,8 +112,8 @@ impl<'a> Model<'a> for Track {
 
     fn save(&mut self) -> Result<(), Error> {
         self.updated_at = Utc::now().naive_utc();
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("UPDATE tracks SET
+        let conn = conn()?;
+        let stmt = conn.prepare("UPDATE tracks SET
                                       provider      = $2,
                                       identifier    = $3,
                                       owner_id      = $4,
@@ -129,7 +129,7 @@ impl<'a> Model<'a> for Track {
                                       created_at    = $14,
                                       updated_at    = $15,
                                       state         = $16
-                                      WHERE id = $1"));
+                                      WHERE id = $1")?;
         let result = stmt.query(&[&self.id,
                                   &self.provider.to_string(),
                                   &self.identifier,
@@ -278,9 +278,9 @@ impl Track {
             .clone()
     }
     fn add_artist(&mut self, artist: &Artist) -> Result<(), Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("INSERT INTO track_artists (track_id, artist_id) VALUES ($1, $2)"));
-        try!(stmt.query(&[&self.id, &artist.id]));
+        let conn = conn()?;
+        let stmt = conn.prepare("INSERT INTO track_artists (track_id, artist_id) VALUES ($1, $2)")?;
+        stmt.query(&[&self.id, &artist.id])?;
         match self.artists {
             Some(ref mut artists) => artists.push(artist.clone()),
             None                  => self.artists = Some(vec![artist.clone()]),

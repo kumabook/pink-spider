@@ -27,14 +27,14 @@ pub fn fetch(url: &str) -> Result<feed_rs::Feed, Error> {
     let mut builder = client.get(url);
     builder.header(Connection(vec![ConnectionOption::Close]));
     builder.header(Accept(vec![qitem(mime)]));
-    let mut res = try!(builder.send());
+    let mut res = builder.send()?;
     let charset = get_charset(&res.headers()).map(|v| v.to_lowercase());
     match charset.as_ref().map(String::as_ref) {
         Some("iso-8859-1") => {
             let mut body = vec![];
-            try!(res.read_to_end(&mut body).map_err(|_| BadRequest));
+            res.read_to_end(&mut body).map_err(|_| BadRequest)?;
             let decode_result = ISO_8859_1.decode(&body, DecoderTrap::Strict);
-            let cell = try!(decode_result.map_err(|_| BadRequest));
+            let cell = decode_result.map_err(|_| BadRequest)?;
             let mut s = cell.as_bytes();
             feed_rs::parser::parse(&mut s).ok_or(BadRequest)
         },

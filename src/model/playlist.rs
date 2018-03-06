@@ -89,10 +89,10 @@ impl<'a> Model<'a> for Playlist {
         }
     }
     fn create(&self) -> Result<Playlist, Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("INSERT INTO playlists (provider, identifier, url, title)
-                                 VALUES ($1, $2, $3, $4) RETURNING id"));
-        let rows = try!(stmt.query(&[&self.provider.to_string(), &self.identifier, &self.url, &self.title]));
+        let conn = conn()?;
+        let stmt = conn.prepare("INSERT INTO playlists (provider, identifier, url, title)
+                                 VALUES ($1, $2, $3, $4) RETURNING id")?;
+        let rows = stmt.query(&[&self.provider.to_string(), &self.identifier, &self.url, &self.title])?;
         let mut playlist = self.clone();
         for row in rows.iter() {
             playlist.id = row.get(0);
@@ -102,8 +102,8 @@ impl<'a> Model<'a> for Playlist {
 
     fn save(&mut self) -> Result<(), Error> {
         self.updated_at = Utc::now().naive_utc();
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("UPDATE playlists SET
+        let conn = conn()?;
+        let stmt = conn.prepare("UPDATE playlists SET
                                       provider      = $2,
                                       identifier    = $3,
                                       owner_id      = $4,
@@ -117,7 +117,7 @@ impl<'a> Model<'a> for Playlist {
                                       created_at    = $12,
                                       updated_at    = $13,
                                       state         = $14
-                                      WHERE id = $1"));
+                                      WHERE id = $1")?;
         let result = stmt.query(&[&self.id,
                                   &self.provider.to_string(),
                                   &self.identifier,
@@ -228,10 +228,10 @@ impl<'a> Enclosure<'a> for Playlist {
 
 impl Playlist {
     pub fn add_track(&mut self, track: &Track) -> Result<(), Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("INSERT INTO playlist_tracks (track_id, playlist_id)
-                                      VALUES ($1, $2)"));
-        try!(stmt.query(&[&track.id, &self.id]));
+        let conn = conn()?;
+        let stmt = conn.prepare("INSERT INTO playlist_tracks (track_id, playlist_id)
+                                      VALUES ($1, $2)")?;
+        stmt.query(&[&track.id, &self.id])?;
         Ok(())
     }
 
@@ -367,8 +367,8 @@ impl Playlist {
     }
 
     pub fn delete(&self) -> Result<(), Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("DELETE FROM playlists WHERE id=$1"));
+        let conn = conn()?;
+        let stmt = conn.prepare("DELETE FROM playlists WHERE id=$1")?;
         let result = stmt.query(&[&self.id]);
         match result {
             Ok(_)  => Ok(()),

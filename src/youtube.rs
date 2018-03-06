@@ -235,7 +235,7 @@ pub fn fetch_video(id: &str) -> serde_json::Result<Video> {
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    let vr: VideoResponse = try!(serde_json::from_str(&body));
+    let vr: VideoResponse = serde_json::from_str(&body)?;
     if vr.items.len() > 0 {
         return Ok(vr.items[0].clone());
     }
@@ -250,7 +250,7 @@ pub fn fetch_channel(id: &str) -> serde_json::Result<Channel> {
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
-    let vr: ChannelResponse = try!(serde_json::from_str(&body));
+    let vr: ChannelResponse = serde_json::from_str(&body)?;
     if vr.items.len() > 0 {
         return Ok(vr.items[0].clone());
     }

@@ -88,13 +88,13 @@ pub trait Model<'a> where Self: std::marker::Sized + Serialize + Deserialize<'a>
         Ok(())
     }
     fn find_by_id(id: &str) -> Result<Self, Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare(
+        let conn = conn()?;
+        let stmt = conn.prepare(
             &format!("SELECT {} FROM {} WHERE id = $1",
                      Self::props_str(""),
-                     Self::table_name())));
-        let uuid   = try!(Uuid::parse_str(id).map_err(|_| Error::Unprocessable));
-        let rows   = try!(stmt.query(&[&uuid]));
+                     Self::table_name()))?;
+        let uuid   = Uuid::parse_str(id).map_err(|_| Error::Unprocessable)?;
+        let rows   = stmt.query(&[&uuid])?;
         let items = Self::rows_to_items(rows);
         if items.len() > 0 {
             return Ok(items[0].clone());
@@ -149,12 +149,12 @@ pub trait Model<'a> where Self: std::marker::Sized + Serialize + Deserialize<'a>
         let ids: Vec<String> = ids.iter()
                                   .map(|id| format!("'{}'", id.to_string()))
                                   .collect();
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare(&format!("SELECT {} FROM {} WHERE id IN ({})",
+        let conn = conn()?;
+        let stmt = conn.prepare(&format!("SELECT {} FROM {} WHERE id IN ({})",
                                               Self::props_str(""),
                                               Self::table_name(),
-                                              ids.join(","))));
-        let rows = try!(stmt.query(&[]));
+                                              ids.join(",")))?;
+        let rows = stmt.query(&[])?;
         let mut items = Self::rows_to_items(rows);
         Self::set_relations(&mut items)?;
         Ok(items)
