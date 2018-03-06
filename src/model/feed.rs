@@ -76,9 +76,9 @@ impl<'a> Model<'a> for Feed {
         }
     }
     fn create(&self) -> Result<Feed, Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("INSERT INTO feeds (id, u) VALUES ($1)"));
-        let rows = try!(stmt.query(&[
+        let conn = conn()?;
+        let stmt = conn.prepare("INSERT INTO feeds (id, u) VALUES ($1)")?;
+        let rows = stmt.query(&[
             &self.id,
             &self.url,
             &self.title,
@@ -94,7 +94,7 @@ impl<'a> Model<'a> for Feed {
             &self.cover_url,
             &self.created_at,
             &self.updated_at,
-        ]));
+        ])?;
         let mut feed = self.clone();
         for row in rows.iter() {
             feed.id = row.get(0);
@@ -103,8 +103,8 @@ impl<'a> Model<'a> for Feed {
     }
     fn save(&mut self) -> Result<(), Error> {
         self.updated_at = Utc::now().naive_utc();
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("UPDATE feeds SET
+        let conn = conn()?;
+        let stmt = conn.prepare("UPDATE feeds SET
                                    url          = $2,
                                    title        = $3,
                                    description  = $4,
@@ -119,34 +119,33 @@ impl<'a> Model<'a> for Feed {
                                    cover_url    = $13,
                                    created_at   = $14,
                                    updated_at   = $15
-                                 WHERE id = $1"));
-        let result = stmt.query(&[&self.id,
-                                  &self.url,
-                                  &self.title,
-                                  &self.description,
-                                  &self.language,
-                                  &self.velocity,
-                                  &self.website,
-                                  &self.state.to_string(),
-                                  &self.last_updated,
-                                  &self.crawled,
-                                  &self.visual_url,
-                                  &self.icon_url,
-                                  &self.cover_url,
-                                  &self.created_at,
-                                  &self.updated_at]);
-        try!(result);
+                                 WHERE id = $1")?;
+        stmt.query(&[&self.id,
+                     &self.url,
+                     &self.title,
+                     &self.description,
+                     &self.language,
+                     &self.velocity,
+                     &self.website,
+                     &self.state.to_string(),
+                     &self.last_updated,
+                     &self.crawled,
+                     &self.visual_url,
+                     &self.icon_url,
+                     &self.cover_url,
+                     &self.created_at,
+                     &self.updated_at])?;
         Ok(())
     }
 }
 
 impl Feed {
     pub fn find_by_url(url: &str) -> Result<Feed, Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare(
+        let conn = conn()?;
+        let stmt = conn.prepare(
             &format!("SELECT {} FROM feeds
-                        WHERE url = $1", Self::props_str(""))));
-        let rows = try!(stmt.query(&[&url]));
+                        WHERE url = $1", Self::props_str("")))?;
+        let rows = stmt.query(&[&url])?;
         let feeds = Feed::rows_to_items(rows);
         if feeds.len() > 0 {
             return Ok(feeds[0].clone());
@@ -162,9 +161,9 @@ impl Feed {
     }
 
     pub fn create_by_url(url: String) -> Result<Feed, Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("INSERT INTO feeds (url) VALUES ($1) RETURNING id"));
-        let rows = try!(stmt.query(&[&url]));
+        let conn = conn()?;
+        let stmt = conn.prepare("INSERT INTO feeds (url) VALUES ($1) RETURNING id")?;
+        let rows = stmt.query(&[&url])?;
         for row in rows.iter() {
             let feed = Feed {
                 id:           row.get(0),
@@ -189,7 +188,7 @@ impl Feed {
     }
 
     pub fn fetch_props(&mut self) -> Result<(), Error> {
-        let rss_feed      = try!(rss::fetch(&self.url));
+        let rss_feed = rss::fetch(&self.url)?;
         self.update_props(rss_feed);
         Ok(())
     }
@@ -209,7 +208,7 @@ impl Feed {
     }
 
     pub fn crawl(&mut self) -> Result<Vec<Entry>, Error> {
-        let rss_feed      = try!(rss::fetch(&self.url));
+        let rss_feed      = rss::fetch(&self.url)?;
         let mut entries   = vec![];
         for entry in rss_feed.entries {
             if entry.alternate.len() == 0 {

@@ -66,10 +66,10 @@ impl<'a> Model<'a> for Artist {
     }
 
     fn create(&self) -> Result<Artist, Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("INSERT INTO artists (provider, identifier, url, name)
-                                 VALUES ($1, $2, $3, $4) RETURNING id"));
-        let rows = try!(stmt.query(&[&self.provider.to_string(), &self.identifier, &self.url, &self.name]));
+        let conn = conn()?;
+        let stmt = conn.prepare("INSERT INTO artists (provider, identifier, url, name)
+                                 VALUES ($1, $2, $3, $4) RETURNING id")?;
+        let rows = stmt.query(&[&self.provider.to_string(), &self.identifier, &self.url, &self.name])?;
         let mut artist = self.clone();
         for row in rows.iter() {
             artist.id = row.get(0);

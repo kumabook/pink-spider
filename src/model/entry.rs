@@ -104,9 +104,9 @@ impl<'a> Model<'a> for Entry {
         }
     }
     fn create(&self) -> Result<Entry, Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("INSERT INTO entries (url, published) VALUES ($1, $2) RETURNING id"));
-        let rows = try!(stmt.query(&[&self.url, &NaiveDateTime::from_timestamp(0, 0)]));
+        let conn = conn()?;
+        let stmt = conn.prepare("INSERT INTO entries (url, published) VALUES ($1, $2) RETURNING id")?;
+        let rows = stmt.query(&[&self.url, &NaiveDateTime::from_timestamp(0, 0)])?;
         let mut entry = self.clone();
         for row in rows.iter() {
             entry.id = row.get(0);
@@ -115,8 +115,8 @@ impl<'a> Model<'a> for Entry {
     }
     fn save(&mut self) -> Result<(), Error> {
         self.updated_at = Utc::now().naive_utc();
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("UPDATE entries SET
+        let conn = conn()?;
+        let stmt = conn.prepare("UPDATE entries SET
                                    url         = $2,
                                    title       = $3,
                                    description = $4,
@@ -137,38 +137,37 @@ impl<'a> Model<'a> for Entry {
                                    feed_id     = $19,
                                    created_at  = $20,
                                    updated_at  = $21
-                                 WHERE id = $1"));
-        let result = stmt.query(&[&self.id,
-                                  &self.url,
-                                  &self.title,
-                                  &self.description,
-                                  &self.visual_url,
-                                  &self.locale,
-                                  &self.summary,
-                                  &self.content,
-                                  &self.text,
-                                  &self.author,
-                                  &self.crawled,
-                                  &self.published,
-                                  &self.updated,
-                                  &self.fingerprint,
-                                  &self.origin_id,
-                                  &self.alternate,
-                                  &self.keywords,
-                                  &self.enclosure,
-                                  &self.feed_id,
-                                  &self.created_at,
-                                  &self.updated_at]);
-        try!(result);
+                                 WHERE id = $1")?;
+        stmt.query(&[&self.id,
+                     &self.url,
+                     &self.title,
+                     &self.description,
+                     &self.visual_url,
+                     &self.locale,
+                     &self.summary,
+                     &self.content,
+                     &self.text,
+                     &self.author,
+                     &self.crawled,
+                     &self.published,
+                     &self.updated,
+                     &self.fingerprint,
+                     &self.origin_id,
+                     &self.alternate,
+                     &self.keywords,
+                     &self.enclosure,
+                     &self.feed_id,
+                     &self.created_at,
+                     &self.updated_at])?;
         Ok(())
     }
 }
 
 impl Entry {
     pub fn new(url: String) -> Result<Entry, Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("INSERT INTO entries (url) VALUES ($1) RETURNING id"));
-        let rows = try!(stmt.query(&[&url]));
+        let conn = conn()?;
+        let stmt = conn.prepare("INSERT INTO entries (url) VALUES ($1) RETURNING id")?;
+        let rows = stmt.query(&[&url])?;
         for row in rows.iter() {
             let entry = Entry {
                 id:          row.get(0),
@@ -205,11 +204,11 @@ impl Entry {
     }
 
     pub fn find_by_url(url: &str) -> Result<Entry, Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare(
+        let conn = conn()?;
+        let stmt = conn.prepare(
             &format!("SELECT {} FROM entries
-                        WHERE url = $1", Self::props_str(""))));
-        let rows = try!(stmt.query(&[&url]));
+                        WHERE url = $1", Self::props_str("")))?;
+        let rows = stmt.query(&[&url])?;
         let entries = Entry::rows_to_items(rows);
         if entries.len() > 0 {
             return Ok(entries[0].clone());
@@ -251,9 +250,9 @@ impl Entry {
     }
 
     pub fn create_by_url(url: String) -> Result<Entry, Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("INSERT INTO entries (url, published) VALUES ($1, $2) RETURNING id"));
-        let rows = try!(stmt.query(&[&url, &NaiveDateTime::from_timestamp(0, 0)]));
+        let conn = conn()?;
+        let stmt = conn.prepare("INSERT INTO entries (url, published) VALUES ($1, $2) RETURNING id")?;
+        let rows = stmt.query(&[&url, &NaiveDateTime::from_timestamp(0, 0)])?;
         for row in rows.iter() {
             let entry = Entry {
                 id:          row.get(0),
@@ -335,7 +334,7 @@ impl Entry {
     }
 
     pub fn playlistify(&mut self) -> Result<(), Error> {
-        let product = try!(scraper::scrape(&self.url));
+        let product = scraper::scrape(&self.url)?;
         self.content = Some(product.content);
         self.text = Some(product.text);
         match product.og_obj {
@@ -351,30 +350,30 @@ impl Entry {
         }
         for t in product.tracks {
             let mut track = t.clone();
-            try!(track.save());
+            track.save()?;
             match self.tracks.iter().find(|&t| t.id == track.id) {
                 Some(_) => (),
-                None    => try!(self.add_track(track.clone())),
+                None    => self.add_track(track.clone())?,
             }
         }
         for p in product.playlists {
-            let new_playlist = try!(Playlist::find_or_create(p.provider, p.identifier.to_string()));
+            let new_playlist = Playlist::find_or_create(p.provider, p.identifier.to_string())?;
             let mut playlist = p.clone();
             playlist.id      = new_playlist.id;
-            try!(playlist.save());
+            playlist.save()?;
             match self.playlists.iter().find(|&p| p.id == playlist.id) {
                 Some(_) => (),
-                None    => try!(self.add_playlist(playlist.clone())),
+                None    => self.add_playlist(playlist.clone())?,
             }
         }
         for a in product.albums {
-            let new_album = try!(Album::find_or_create(a.provider, a.identifier.to_string()));
+            let new_album = Album::find_or_create(a.provider, a.identifier.to_string())?;
             let mut album = a.clone();
             album.id      = new_album.id;
-            try!(album.save());
+            album.save()?;
             match self.albums.iter().find(|&a| a.id == album.id) {
                 Some(_) => (),
-                None    => try!(self.add_album(album.clone())),
+                None    => self.add_album(album.clone())?,
             }
         }
 
@@ -382,28 +381,28 @@ impl Entry {
     }
 
     pub fn add_track(&mut self, track: Track) -> Result<(), Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("INSERT INTO track_entries (track_id, entry_id)
-                                 VALUES ($1, $2)"));
-        try!(stmt.query(&[&track.id, &self.id]));
+        let conn = conn()?;
+        let stmt = conn.prepare("INSERT INTO track_entries (track_id, entry_id)
+                                 VALUES ($1, $2)")?;
+        stmt.query(&[&track.id, &self.id])?;
         self.tracks.push(track);
         Ok(())
     }
 
     pub fn add_playlist(&mut self, playlist: Playlist) -> Result<(), Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("INSERT INTO playlist_entries (playlist_id, entry_id)
-                                 VALUES ($1, $2)"));
-        try!(stmt.query(&[&playlist.id, &self.id]));
+        let conn = conn()?;
+        let stmt = conn.prepare("INSERT INTO playlist_entries (playlist_id, entry_id)
+                                 VALUES ($1, $2)")?;
+        stmt.query(&[&playlist.id, &self.id])?;
         self.playlists.push(playlist);
         Ok(())
     }
 
     pub fn add_album(&mut self, album: Album) -> Result<(), Error> {
-        let conn = try!(conn());
-        let stmt = try!(conn.prepare("INSERT INTO album_entries (album_id, entry_id)
-                                 VALUES ($1, $2)"));
-        try!(stmt.query(&[&album.id, &self.id]));
+        let conn = conn()?;
+        let stmt = conn.prepare("INSERT INTO album_entries (album_id, entry_id)
+                                 VALUES ($1, $2)")?;
+        stmt.query(&[&album.id, &self.id])?;
         self.albums.push(album);
         Ok(())
     }

@@ -62,7 +62,7 @@ pub fn scrape(url: &str) -> Result<ScraperProduct, Error> {
     if *USER_AGENT != "" {
         builder.header(UserAgent::new(USER_AGENT.to_string()));
     }
-    let mut res = try!(builder.send());
+    let mut res = builder.send()?;
     if res.status().is_success() {
         let url = Url::parse(url)?;
         extract(&mut res, &url)
