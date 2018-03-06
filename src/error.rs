@@ -19,8 +19,8 @@ pub enum Error {
     BadRequest,
     Unprocessable,
     NotFound,
-    DbError(postgres::error::Error),
-    DbConnectError(postgres::error::ConnectError),
+    DbError(postgres::error::DbError),
+    DbConnectError(postgres::error::Error),
     UrlParseError(url::ParseError),
     Unexpected,
 }
@@ -81,14 +81,14 @@ impl From<url::ParseError> for Error {
     }
 }
 
-impl From<postgres::error::Error> for Error {
-    fn from(err: postgres::error::Error) -> Error {
+impl From<postgres::error::DbError> for Error {
+    fn from(err: postgres::error::DbError) -> Error {
         Error::DbError(err)
     }
 }
 
-impl From<postgres::error::ConnectError> for Error {
-    fn from(err: postgres::error::ConnectError) -> Error {
+impl From<postgres::error::Error> for Error {
+    fn from(err: postgres::error::Error) -> Error {
         Error::DbConnectError(err)
     }
 }

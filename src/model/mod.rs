@@ -22,7 +22,6 @@ use std;
 use uuid::Uuid;
 use postgres;
 use postgres::{Connection, TlsMode};
-use postgres::error::ConnectError;
 use std::env;
 use error::Error;
 use serde::Serialize;
@@ -64,7 +63,7 @@ impl<'a> Filter<'a> {
     }
 }
 
-pub fn conn() -> Result<Connection, ConnectError> {
+pub fn conn() -> Result<Connection, postgres::error::Error> {
     let opt_url = env::var("DATABASE_URL");
     match opt_url {
         Ok(url) =>
