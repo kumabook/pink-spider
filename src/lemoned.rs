@@ -1,6 +1,6 @@
 use std::io::Read;
 use chrono::{DateTime, Utc};
-use hyper::header::{
+use reqwest::header::{
     Headers,
     Connection,
 };

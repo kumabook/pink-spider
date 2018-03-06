@@ -11,7 +11,7 @@ use std::str::FromStr;
 use std::error;
 use postgres;
 use urlencoded;
-use hyper;
+use reqwest;
 use url;
 
 #[derive(Debug)]
@@ -99,8 +99,8 @@ impl From<urlencoded::UrlDecodingError> for Error {
     }
 }
 
-impl From<hyper::Error> for Error {
-    fn from(_: hyper::Error) -> Error {
+impl From<reqwest::Error> for Error {
+    fn from(_: reqwest::Error) -> Error {
         Error::BadRequest
     }
 }

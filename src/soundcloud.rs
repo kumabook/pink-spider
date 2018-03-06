@@ -1,5 +1,5 @@
 use std::io::Read;
-use hyper::header::Connection;
+use reqwest::header::Connection;
 use serde_json;
 use get_env;
 use http;

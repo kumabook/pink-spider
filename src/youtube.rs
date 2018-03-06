@@ -1,5 +1,5 @@
 use std::io::Read;
-use hyper::header::Connection;
+use reqwest::header::Connection;
 use std::collections::BTreeMap;
 use serde_json;
 use serde::de::Error;

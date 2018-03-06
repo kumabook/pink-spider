@@ -10,9 +10,11 @@ use html5ever::{parse_document, serialize, Attribute};
 use html5ever::tendril::stream::TendrilSink;
 use std::default::Default;
 use regex::Regex;
-use hyper::header::Connection;
-use hyper::header::ConnectionOption;
-use hyper::header::UserAgent;
+use reqwest::header::{
+    Connection,
+    ConnectionOption,
+    UserAgent,
+};
 use http;
 use url::Url;
 
@@ -55,17 +57,17 @@ pub struct ScraperProduct {
 
 pub fn scrape(url: &str) -> Result<ScraperProduct, Error> {
     let client      = http::client();
-    let mut builder = client.get(url)
-        .header(Connection(vec![ConnectionOption::Close]));
+    let mut builder = client.get(url);
+    builder.header(Connection(vec![ConnectionOption::Close]));
     if *USER_AGENT != "" {
-        builder = builder.header(UserAgent(USER_AGENT.to_string()));
+        builder.header(UserAgent::new(USER_AGENT.to_string()));
     }
     let mut res = try!(builder.send());
-    if res.status.is_success() {
+    if res.status().is_success() {
         let url = Url::parse(url)?;
         extract(&mut res, &url)
     } else {
-        println!("Failed to get entry html {}: {}", res.status, url);
+        println!("Failed to get entry html {}: {}", res.status(), url);
         Err(Error::NotFound)
     }
 }

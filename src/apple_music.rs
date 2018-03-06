@@ -1,4 +1,4 @@
-use hyper::header::{
+use reqwest::header::{
     Headers,
     Authorization,
     Bearer,

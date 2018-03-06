@@ -1,7 +1,6 @@
 extern crate pink_spider;
 extern crate feed_rs;
 extern crate hyper;
-extern crate hyper_native_tls;
 extern crate chrono;
 extern crate serde_json;
 

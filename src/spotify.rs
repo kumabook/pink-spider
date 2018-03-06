@@ -2,7 +2,7 @@ use std::io::Read;
 use std::collections::BTreeMap;
 use std::sync::Mutex;
 use chrono::{NaiveDateTime, Utc, Duration};
-use hyper::header::{
+use reqwest::header::{
     Headers,
     Authorization,
     Bearer,

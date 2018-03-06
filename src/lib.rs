@@ -1,5 +1,5 @@
 extern crate hyper;
-extern crate hyper_native_tls;
+extern crate reqwest;
 extern crate iron;
 #[macro_use]
 extern crate html5ever;
