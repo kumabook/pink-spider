@@ -9,6 +9,7 @@ import {
   CardTitle,
   CardText,
 } from 'material-ui/Card';
+import { Tabs, Tab }      from 'material-ui/Tabs';
 import { List, ListItem } from 'material-ui/List';
 import RaisedButton       from 'material-ui/RaisedButton';
 import { connect }        from 'react-redux';
@@ -29,19 +30,12 @@ class PlaylistDetail extends React.Component {
       handleUpdateButtonClick: PropTypes.func.isRequired,
     };
   }
-  render() {
-    const id          = tryGet(this.props.item, 'id', 'unknown id');
+  renderSummaryCard() {
     const state       = tryGet(this.props.item, 'state', 'unknown state');
-    const ownerId     = tryGet(this.props.item, 'owner_id', 'unknown');
-    const ownerName   = tryGet(this.props.item, 'owner_name', 'unknown');
     const title       = tryGet(this.props.item, 'title', 'No Title');
     const description = tryGet(this.props.item, 'description', 'No Description');
     const provider    = tryGet(this.props.item, 'provider', 'No Service');
-    const identifier  = tryGet(this.props.item, 'identifier', 'No ID');
     const artworkUrl  = tryGet(this.props.item, 'artwork_url', NO_IMAGE);
-    const publishedAt = datePrettify(tryGet(this.props.item, 'published_at', null));
-    const createdAt   = datePrettify(tryGet(this.props.item, 'created_at', null));
-    const updatedAt   = datePrettify(tryGet(this.props.item, 'updated_at', null));
     const url         = getUrl(this.props.item);
     const overlay = (
       <CardTitle
@@ -76,21 +70,58 @@ class PlaylistDetail extends React.Component {
             onClick={() => this.props.handleUpdateButtonClick(this.props.item)}
           />
         </CardActions>
-        <CardText>
-          <List>
-            <ListItem primaryText="id" secondaryText={id} />
-            <ListItem primaryText="title" secondaryText={title} />
-            <ListItem primaryText="state" secondaryText={state} />
-            <ListItem primaryText="provider" secondaryText={provider} />
-            <ListItem primaryText="identifier" secondaryText={identifier} />
-            <ListItem primaryText="owner id" secondaryText={ownerId} />
-            <ListItem primaryText="owner name" secondaryText={ownerName} />
-            <ListItem primaryText="published" secondaryText={publishedAt} />
-            <ListItem primaryText="created" secondaryText={createdAt} />
-            <ListItem primaryText="updated" secondaryText={updatedAt} />
-          </List>
-        </CardText>
+        <CardText />
       </Card>
+    );
+  }
+  renderPropsList() {
+    const id          = tryGet(this.props.item, 'id', 'unknown id');
+    const title       = tryGet(this.props.item, 'title', 'No Title');
+    const state       = tryGet(this.props.item, 'state', 'unknown state');
+    const provider    = tryGet(this.props.item, 'provider', 'No Service');
+    const identifier  = tryGet(this.props.item, 'identifier', 'No ID');
+    const ownerId     = tryGet(this.props.item, 'owner_id', 'unknown');
+    const ownerName   = tryGet(this.props.item, 'owner_name', 'unknown');
+    const publishedAt = datePrettify(tryGet(this.props.item, 'published_at', null));
+    const createdAt   = datePrettify(tryGet(this.props.item, 'created_at', null));
+    const updatedAt   = datePrettify(tryGet(this.props.item, 'updated_at', null));
+    return (
+      <List>
+        <ListItem primaryText="id" secondaryText={id} />
+        <ListItem primaryText="title" secondaryText={title} />
+        <ListItem primaryText="state" secondaryText={state} />
+        <ListItem primaryText="provider" secondaryText={provider} />
+        <ListItem primaryText="identifier" secondaryText={identifier} />
+        <ListItem primaryText="owner id" secondaryText={ownerId} />
+        <ListItem primaryText="owner name" secondaryText={ownerName} />
+        <ListItem primaryText="published" secondaryText={publishedAt} />
+        <ListItem primaryText="created" secondaryText={createdAt} />
+        <ListItem primaryText="updated" secondaryText={updatedAt} />
+      </List>
+    );
+  }
+  renderTrackList() {
+    if (!this.props.item.tracks) {
+      return null;
+    }
+    const items = this.props.item.tracks.map((track, index) => (
+      <ListItem primaryText={`${index + 1} ${track.title}`} secondaryText={track.id} />
+    ));
+    return <List>{items}</List>;
+  }
+  render() {
+    return (
+      <Tabs>
+        <Tab label="Summary">
+          {this.renderSummaryCard()}
+        </Tab>
+        <Tab label="Props">
+          {this.renderPropsList()}
+        </Tab>
+        <Tab label="Tracks" >
+          {this.renderTrackList()}
+        </Tab>
+      </Tabs>
     );
   }
 }
