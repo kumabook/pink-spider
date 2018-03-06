@@ -4,7 +4,6 @@ extern crate iron;
 #[macro_use]
 extern crate html5ever;
 extern crate tendril;
-extern crate kuchiki;
 extern crate regex;
 extern crate string_cache;
 extern crate url;
