@@ -32,8 +32,7 @@ default = ["postgres"]
 [dependencies]
 iron             = "*"
 router           = "*"
-hyper            = "0.10.12"
-hyper-native-tls = "^0"
+hyper            = "*"
 regex            = "*"
 string_cache     = "*"
 urlencoded       = "*"
@@ -53,6 +52,7 @@ serde_derive     = "^1"
 opengraph        = "^0"
 feed-rs          = "^0"
 encoding         = "^0.2"
+reqwest          = "*"
 [dependencies.mount]
 git = "https://github.com/iron/mount.git"
 [dependencies.postgres]
