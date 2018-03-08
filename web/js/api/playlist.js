@@ -16,5 +16,5 @@ export default {
       },
     }).then(response => response.data);
   },
-  update: playlist => axios.post(`/v1/playlists/${playlist.id}`),
+  update: playlist => axios.post(`/v1/playlists/${playlist.id}`, playlist),
 };

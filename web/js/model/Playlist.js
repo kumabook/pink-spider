@@ -51,6 +51,7 @@ export const tableSchema = {
 };
 
 export const formSchema = {
+  id: { 'ui:widget': 'hidden' },
 };
 
 export const getCountryParam = (urlString) => {
