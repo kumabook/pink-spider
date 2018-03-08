@@ -3358,9 +3358,9 @@ map-cache@^0.2.0:
   version "0.2.2"
   resolved "https://registry.yarnpkg.com/map-cache/-/map-cache-0.2.2.tgz#c32abd0bd6525d9b051645bb4f26ac5dc98a0dbf"
 
-material-jsonschema@0.0.8:
-  version "0.0.8"
-  resolved "https://registry.yarnpkg.com/material-jsonschema/-/material-jsonschema-0.0.8.tgz#82f747aba56f8f52b4acd7509a2a371d9e18c55e"
+material-jsonschema@0.0.13:
+  version "0.0.13"
+  resolved "https://registry.yarnpkg.com/material-jsonschema/-/material-jsonschema-0.0.13.tgz#422498f3755f55f790b7c16e20e7eb0bc8e50c48"
   dependencies:
     material-ui "^0.18.1"
     prop-types "^15.5.10"
