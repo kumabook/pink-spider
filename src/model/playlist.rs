@@ -88,7 +88,7 @@ impl<'a> Model<'a> for Playlist {
             created_at:    row.get(12),
             updated_at:    row.get(13),
             state:         State::new(row.get(14)),
-            tracks:        vec![], // TODO
+            tracks:        vec![],
         }
     }
     fn create(&self) -> Result<Playlist, Error> {
@@ -142,6 +142,17 @@ impl<'a> Model<'a> for Playlist {
             Ok(_)  => Ok(()),
             Err(_) => Err(Error::Unexpected),
         }
+    }
+
+    fn set_relations(playlists: &mut Vec<Playlist>) -> Result<(), Error> {
+        let ids: Vec<Uuid> = playlists.iter().map(|i| i.id).collect();
+        let tracks_of_playlist = Track::find_by_playlists(ids.clone())?;
+        for playlist in playlists {
+            if let Some(ref mut tracks) = tracks_of_playlist.get(&playlist.id) {
+                playlist.tracks = tracks.clone()
+            }
+        }
+        Ok(())
     }
 }
 
