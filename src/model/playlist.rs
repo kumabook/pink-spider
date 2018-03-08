@@ -408,6 +408,43 @@ impl Playlist {
             Err(_) => Err(Error::Unexpected)
         }
     }
+
+    pub fn fetch_tracks(&mut self) -> Result<Vec<Track>, Error> {
+        match self.provider {
+            Provider::YouTube    => Ok(vec![]),
+            Provider::SoundCloud => Ok(vec![]),
+            Provider::AppleMusic => self.fetch_apple_music_tracks(),
+            Provider::Spotify    => self.fetch_spotify_tracks(),
+            _                    => Ok(vec![]),
+        }
+    }
+
+    pub fn fetch_apple_music_tracks(&mut self) -> Result<Vec<Track>, Error> {
+        let country = apple_music::country(&self.url);
+        let playlist = apple_music::fetch_playlist(&country, &self.identifier)?;
+        let songs = playlist.get_songs();
+        let song_ids = songs.iter().map(|song| song.id.clone()).collect::<Vec<String>>();
+        let songs = apple_music::fetch_songs(&country, song_ids).unwrap_or(vec![]);
+        Ok(self.add_tracks(songs.iter().map(|song| Track::from_am_song(song)).collect()))
+    }
+
+    pub fn fetch_spotify_tracks(&mut self) -> Result<Vec<Track>, Error> {
+        let mut items = vec![];
+        let owner_id = self.clone().owner_id.ok_or(Error::Unexpected)?;
+
+        let mut page = spotify::fetch_playlist_tracks(&owner_id, &self.identifier)?;
+        items.append(&mut self.add_tracks(page.items.iter()
+                                                    .map(|pt| Track::from_sp_track(&pt.track))
+                                                    .collect()));
+
+        while page.next.is_some() {
+            page = page.fetch_next()?;
+            items.append(&mut self.add_tracks(page.items.iter()
+                                                        .map(|pt| Track::from_sp_track(&pt.track))
+                                                        .collect()));
+        }
+        Ok(items)
+    }
 }
 
 #[cfg(test)]

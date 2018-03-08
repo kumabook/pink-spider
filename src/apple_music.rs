@@ -241,6 +241,21 @@ pub enum PlaylistType {
 
 pub type Playlist = Resource<PlaylistAttributes, PlaylistRelations>;
 
+impl Playlist {
+    pub fn get_songs(&self) -> Vec<Song> {
+        let playlist_tracks = self.clone().relationships.map(|r| {
+            r.tracks.data.clone()
+        }).unwrap_or(vec![]);
+        let tracks = playlist_tracks.iter().map(|track| match *track {
+            Track::Song(ref song) => Some(song.clone()),
+            Track::MusicVideo(_)  => None,
+        }).filter(|song| song.is_some())
+            .map(|song| song.unwrap())
+            .collect::<Vec<_>>();
+        tracks
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PlaylistAttributes {
