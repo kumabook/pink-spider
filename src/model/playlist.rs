@@ -255,9 +255,11 @@ impl Playlist {
 
     pub fn add_track(&mut self, track: &Track) -> Result<(), Error> {
         let conn = conn()?;
-        let stmt = conn.prepare("INSERT INTO playlist_tracks (track_id, playlist_id)
-                                      VALUES ($1, $2)")?;
-        stmt.query(&[&track.id, &self.id])?;
+        let stmt = conn.prepare("INSERT INTO playlist_tracks
+                      (track_id, playlist_id, created_at, updated_at)
+                      VALUES ($1, $2, $3, $4)")?;
+        let now = Utc::now().naive_utc();
+        stmt.query(&[&track.id, &self.id, &now, &now])?;
         Ok(())
     }
 
