@@ -52,9 +52,10 @@ class PlaylistList extends React.Component {
         pageCount={this.props.total / 10}
         onPageChange={this.props.index}
         canCreate={false}
-        canEdit={false}
+        canEdit
         canDestroy={false}
         onAction={(name, item) => this.handleAction(name, item)}
+        onUpdate={this.props.update}
       />
     );
   }
