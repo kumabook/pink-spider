@@ -9,41 +9,49 @@ import { creators as trackActions }    from '../actions/track';
 import { creators as albumActions }    from '../actions/album';
 import { creators as playlistActions } from '../actions/playlist';
 import { creators as artistActions }   from '../actions/artist';
-import { defaultPerPage }              from '../config';
-import parseIntOr                      from '../utils/parseIntOr';
+import {
+  getPage,
+  getPerPage,
+  getQuery,
+} from '../utils/url';
 
 const history = createHashHistory();
-export const getSerachParams = () => new URLSearchParams(history.location.search);
-export const getPage = () => parseIntOr(getSerachParams().get('page'), 0);
-export const getPerPage = () => parseIntOr(getSerachParams().get('per_page'), defaultPerPage);
 
 const routes = {
   '/feeds': function* fetchFeeds() {
+    const { search } = history.location;
     yield put(feedActions.index.start({
-      page:    getPage(),
-      perPage: getPerPage(),
+      page:    getPage(search),
+      perPage: getPerPage(search),
+      query:   getQuery(search),
     }));
   },
   '(?:/feeds/:feedId)?/entries': function* fetchEntriesOfFeed({ feedId }) {
+    const { search } = history.location;
     yield put(entryActions.index.start({
-      page:    getPage(),
-      perPage: getPerPage(),
+      page:    getPage(search),
+      perPage: getPerPage(search),
+      query:   getQuery(search),
       feedId,
     }));
   },
   '/entries': function* fetchEntries() {
+    const { search } = history.location;
     yield put(entryActions.index.start({
-      page:    getPage(),
-      perPage: getPerPage(),
+      page:    getPage(search),
+      perPage: getPerPage(search),
+      query:   getQuery(search),
     }));
   },
   '/entries/:entryId': function* fetchEntry({ entryId }) {
     yield put(entryActions.show.start(entryId));
   },
   '(?:/entries/:entryId)?/tracks': function* fetchTracks({ entryId }) {
+    const { search } = history.location;
     yield put(trackActions.index.start({
-      page:    getPage(),
-      perPage: getPerPage(),
+      page:    getPage(search),
+      perPage: getPerPage(search),
+      query:   getQuery(search),
       entryId,
     }));
   },
@@ -51,9 +59,11 @@ const routes = {
     yield put(trackActions.show.start(trackId));
   },
   '(?:/entries/:entryId)?/albums': function* fetchAlbums({ entryId }) {
+    const { search } = history.location;
     yield put(albumActions.index.start({
-      page:    getPage(),
-      perPage: getPerPage(),
+      page:    getPage(search),
+      perPage: getPerPage(search),
+      query:   getQuery(search),
       entryId,
     }));
   },
@@ -61,9 +71,11 @@ const routes = {
     yield put(albumActions.show.start(albumId));
   },
   '(?:/entries/:entryId)?/playlists': function* fetchPlaylists({ entryId }) {
+    const { search } = history.location;
     yield put(playlistActions.index.start({
-      page:    getPage(),
-      perPage: getPerPage(),
+      page:    getPage(search),
+      perPage: getPerPage(search),
+      query:   getQuery(search),
       entryId,
     }));
   },
@@ -71,9 +83,11 @@ const routes = {
     yield put(playlistActions.show.start(playlistId));
   },
   '/artists': function* fetchArtists() {
+    const { search } = history.location;
     yield put(artistActions.index.start({
-      page:    getPage(),
-      perPage: getPerPage(),
+      page:    getPage(search),
+      perPage: getPerPage(search),
+      query:   getQuery(search),
     }));
   },
   '/artists/:artistId': function* fetchArtist({ artistId }) {

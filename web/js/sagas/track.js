@@ -17,10 +17,10 @@ import {
 } from '../actions/track';
 import { defaultPerPage } from '../config';
 
-export function* fetchTracks({ payload: { page = 0, perPage = defaultPerPage, entryId } }) {
+export function* fetchTracks({ payload: { page = 0, perPage = defaultPerPage, query, entryId } }) {
   try {
     yield put(showProgress());
-    const items = yield call(api.index, page, perPage, entryId);
+    const items = yield call(api.index, page, perPage, query, entryId);
     yield put(creators.index.succeeded(items));
   } catch (e) {
     yield put(creators.index.failed(e));
