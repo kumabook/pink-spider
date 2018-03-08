@@ -244,6 +244,15 @@ impl<'a> Enclosure<'a> for Playlist {
 }
 
 impl Playlist {
+    pub fn find_actives() -> Vec<Playlist> {
+        let conn = conn().unwrap();
+        let stmt = conn.prepare(
+            &format!("SELECT {} FROM playlists WHERE velocity > 0 ORDER BY updated_at ASC",
+                     Playlist::props_str(""))).unwrap();
+        let rows = stmt.query(&[]).unwrap();
+        Playlist::rows_to_items(rows)
+    }
+
     pub fn add_track(&mut self, track: &Track) -> Result<(), Error> {
         let conn = conn()?;
         let stmt = conn.prepare("INSERT INTO playlist_tracks (track_id, playlist_id)
