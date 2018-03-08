@@ -3,7 +3,6 @@ extern crate iron;
 extern crate router;
 extern crate staticfile;
 extern crate mount;
-extern crate urlencoded;
 extern crate html5ever;
 extern crate regex;
 extern crate uuid;
@@ -22,9 +21,6 @@ use iron::mime::Mime;
 use staticfile::Static;
 use mount::Mount;
 use router::{Router};
-use params::Params;
-use urlencoded::UrlEncodedQuery;
-use urlencoded::UrlEncodedBody;
 use std::str::FromStr;
 use uuid::Uuid;
 use chrono::NaiveDateTime;
@@ -45,7 +41,7 @@ fn to_err<E>(e: E) -> Error
 
 pub fn index<'a, T: Model<'a>>(req: &mut Request) -> IronResult<Response> {
     let (page, per_page) = pagination_params(req);
-    let items = if let Some(q) = param_as_string(req, "query") {
+    let items = if let Ok(q) = param_as_string(req, "query") {
         let q = format!("%{}%", q);
         let filter = Filter {
             filter_type: FilterType::Contains,
@@ -63,12 +59,11 @@ pub fn index<'a, T: Model<'a>>(req: &mut Request) -> IronResult<Response> {
 pub fn index_entries(req: &mut Request) -> IronResult<Response> {
     pub fn index_entries2(req: &mut Request) -> Result<Response, Error> {
         let (page, per_page) = pagination_params(req);
-        let ref params       = req.get_ref::<UrlEncodedQuery>()?;
-        let url              = params.get("feed_url");
-        let newer_than       = params.get("newer_than");
-        let entries = if let (Some(url), Some(newer_than)) = (url, newer_than) {
-            let feed = Feed::find_by_url(&url[0])?;
-            let newer_than = newer_than[0].parse::<i64>()
+        let url              = param_as_string(req, "feed_url");
+        let newer_than       = param_as_string(req, "newer_than");
+        let entries = if let (Ok(url), Ok(newer_than)) = (url, newer_than) {
+            let feed = Feed::find_by_url(&url)?;
+            let newer_than = newer_than.parse::<i64>()
                 .map(|t| NaiveDateTime::from_timestamp(t, 0)).ok();
             Entry::find_by_feed_id(feed.id, newer_than, page, per_page)
         } else {
@@ -125,12 +120,9 @@ pub fn index_by_entry<'a, T: Enclosure<'a>>(req: &mut Request) -> IronResult<Res
 
 pub fn legacy_playlistify(req: &mut Request) -> IronResult<Response> {
     pub fn playlistify2(req: &mut Request) -> Result<Response, Error> {
-        let ref params  = req.get_ref::<UrlEncodedQuery>()?;
-        let url         = params.get("url").ok_or(Error::BadRequest)?;
-        let defaults    = &vec!("false".to_string());
-        let force_param = params.get("force").unwrap_or(defaults);
-        let force       = force_param.len() > 0 && &force_param[0] == "true";
-        let mut entry   = find_or_playlistify_entry(&url[0], force)?;
+        let url         = param_as_string(req, "url")?;
+        let force       = param_as_string(req, "force").unwrap_or("false".to_string());
+        let mut entry   = find_or_playlistify_entry(&url, &force == "true")?;
         entry.tracks    = entry.tracks
             .iter()
             .filter(|t| t.provider == Provider::YouTube || t.provider == Provider::SoundCloud)
@@ -144,12 +136,9 @@ pub fn legacy_playlistify(req: &mut Request) -> IronResult<Response> {
 
 pub fn playlistify(req: &mut Request) -> IronResult<Response> {
     pub fn playlistify2(req: &mut Request) -> Result<Response, Error> {
-        let ref params  = req.get_ref::<UrlEncodedQuery>()?;
-        let url         = params.get("url").ok_or(Error::BadRequest)?;
-        let defaults    = &vec!("false".to_string());
-        let force_param = params.get("force").unwrap_or(defaults);
-        let force       = force_param.len() > 0 && &force_param[0] == "true";
-        let entry       = find_or_playlistify_entry(&url[0], force)?;
+        let url         = param_as_string(req, "url")?;
+        let force       = param_as_string(req, "force").unwrap_or("false".to_string());
+        let entry       = find_or_playlistify_entry(&url, &force == "true")?;
         let body        = serde_json::to_string(&entry).map_err(to_err)?;
         Ok(Response::with((status::Ok, application_json(), body)))
     }
@@ -211,10 +200,10 @@ pub fn show_by_id<'a, T: Model<'a>>(req: &mut Request) -> IronResult<Response> {
 }
 
 pub fn create<'a, T: Enclosure<'a>>(req: &mut Request) -> IronResult<Response> {
-    let identifier     = param_as_string(req, "identifier").ok_or(Error::BadRequest)?;
-    let provider       = param_as_string(req, "provider").ok_or(Error::BadRequest)?;
-    let owner_id       = param_as_string(req, "owner_id");
-    let url            = param_as_string(req, "url");
+    let identifier     = param_as_string(req, "identifier")?;
+    let provider       = param_as_string(req, "provider")?;
+    let owner_id       = param_as_string(req, "owner_id").ok();
+    let url            = param_as_string(req, "url").ok();
     let p              = Provider::new(provider.to_string());
     let mut enclosure  = T::find_or_create(p, identifier.to_string())?;
     enclosure.set_owner_id(owner_id);
@@ -245,21 +234,12 @@ pub fn create_feed_by_url(req: &mut Request) -> IronResult<Response> {
     Ok(Response::with((status::Ok, application_json(), body)))
 }
 
-fn param_as_string(req: &mut Request, key: &str) -> Option<String> {
-    let s = match req.get_ref::<UrlEncodedBody>() {
-        Ok(ref params) => match params.get(key) {
-            Some(val) => Some(val[0].clone()),
-            None      => None
-        },
-        Err(_) => None,
-    };
-    s.or(match req.get_ref::<UrlEncodedQuery>() {
-        Ok(ref params) => match params.get(key) {
-            Some(val) => Some(val[0].clone()),
-            None      => None
-        },
-        Err(_) => None
-    })
+fn param_as_string(req: &mut Request, key: &str) -> Result<String, Error> {
+    let map = req.get_ref::<params::Params>().map_err(to_err)?;
+    match map.find(&[key]) {
+        Some(&params::Value::String(ref value)) => Ok(value.to_string()),
+        _                                       => Err(Error::BadRequest),
+    }
 }
 
 fn query_as_string(req: &mut Request, key: &str) -> String {
@@ -268,18 +248,13 @@ fn query_as_string(req: &mut Request, key: &str) -> String {
 }
 
 fn pagination_params(req: &mut Request) -> (i64, i64) {
-    match req.get_ref::<UrlEncodedQuery>() {
-        Ok(ref params) => {
-            let page = params.get("page")
-                             .and_then(|v| v[0].to_string().parse::<i64>().ok())
-                             .unwrap_or(0);
-            let per_page = params.get("per_page")
-                                 .and_then(|v| v[0].to_string().parse::<i64>().ok())
-                                 .unwrap_or(DEFAULT_PER_PAGE);
-            (page, per_page)
-        },
-        Err(_) => (0, DEFAULT_PER_PAGE)
-    }
+    let page = param_as_string(req, "page")
+        .and_then(|v| v.to_string().parse::<i64>().map_err(to_err))
+        .unwrap_or(0);
+    let per_page = param_as_string(req, "per_page")
+        .and_then(|v| v.to_string().parse::<i64>().map_err(to_err))
+        .unwrap_or(DEFAULT_PER_PAGE);
+    (page, per_page)
 }
 
 fn application_json() -> Mime {

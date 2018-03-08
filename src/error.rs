@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::num::ParseIntError;
 use iron::prelude::*;
 use iron::status::Status;
 use iron::headers::{ContentType};
@@ -10,7 +11,6 @@ use serde::Serializer;
 use std::str::FromStr;
 use std::error;
 use postgres;
-use urlencoded;
 use reqwest;
 use url;
 use params::ParamsError;
@@ -94,12 +94,6 @@ impl From<postgres::error::Error> for Error {
     }
 }
 
-impl From<urlencoded::UrlDecodingError> for Error {
-    fn from(_: urlencoded::UrlDecodingError) -> Error {
-        Error::BadRequest
-    }
-}
-
 impl From<reqwest::Error> for Error {
     fn from(_: reqwest::Error) -> Error {
         Error::BadRequest
@@ -112,6 +106,12 @@ impl error::Error for Error {
 
 impl From<ParamsError> for Error {
     fn from(_: ParamsError) -> Error {
+        Error::BadRequest
+    }
+}
+
+impl From<ParseIntError> for Error {
+    fn from(_: ParseIntError) -> Error {
         Error::BadRequest
     }
 }
