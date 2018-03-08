@@ -9,6 +9,7 @@ extern crate regex;
 extern crate uuid;
 extern crate chrono;
 extern crate bodyparser;
+extern crate params;
 extern crate serde;
 extern crate serde_json;
 
@@ -21,6 +22,7 @@ use iron::mime::Mime;
 use staticfile::Static;
 use mount::Mount;
 use router::{Router};
+use params::Params;
 use urlencoded::UrlEncodedQuery;
 use urlencoded::UrlEncodedBody;
 use std::str::FromStr;
@@ -36,7 +38,10 @@ use pink_spider::rss;
 
 const DEFAULT_PER_PAGE: i64 = 25;
 
-fn to_err(e: serde_json::Error) -> Error { Error::from(e) }
+fn to_err<E>(e: E) -> Error
+    where pink_spider::error::Error: std::convert::From<E> {
+    Error::from(e)
+}
 
 pub fn index<'a, T: Model<'a>>(req: &mut Request) -> IronResult<Response> {
     let (page, per_page) = pagination_params(req);
