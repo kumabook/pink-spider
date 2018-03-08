@@ -50,7 +50,6 @@
     "react": "^15.5.4",
     "react-addons-create-fragment": "^15.4.2",
     "react-dom": "^15.4.2",
-    "react-paginate": "^4.4.2",
     "react-redux": "^5.0.5",
     "react-router": "4.1.1",
     "react-router-dom": "^4.1.1",
