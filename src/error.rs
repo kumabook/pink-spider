@@ -13,6 +13,7 @@ use postgres;
 use urlencoded;
 use reqwest;
 use url;
+use params::ParamsError;
 
 #[derive(Debug)]
 pub enum Error {
@@ -107,6 +108,12 @@ impl From<reqwest::Error> for Error {
 
 impl error::Error for Error {
     fn description(&self) -> &str { "" }
+}
+
+impl From<ParamsError> for Error {
+    fn from(_: ParamsError) -> Error {
+        Error::BadRequest
+    }
 }
 
 impl From<Error> for IronError {
