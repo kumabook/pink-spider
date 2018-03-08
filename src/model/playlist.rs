@@ -291,8 +291,8 @@ impl Playlist {
             .clone()
     }
 
-    fn add_tracks(&mut self, tracks: Vec<Track>) {
-        self.tracks = tracks.iter().map(|t| {
+    fn add_tracks(&mut self, tracks: Vec<Track>) -> Vec<Track> {
+        let new_tracks = tracks.iter().map(|t| {
             let mut t = t.clone();
             if let Ok(new_track) = Track::find_or_create(t.provider,
                                                          t.identifier.to_string()) {
@@ -302,6 +302,8 @@ impl Playlist {
             };
             t
         }).collect::<Vec<_>>();
+        self.tracks.append(&mut new_tracks.clone());
+        new_tracks
     }
 
     pub fn update_with_yt_playlist(&mut self, playlist: &youtube::Playlist, items: &Vec<youtube::PlaylistItem>) -> &mut Playlist {
@@ -343,8 +345,11 @@ impl Playlist {
         if playlist.images.len() > 1 {
             self.thumbnail_url = Some(playlist.images[1].url.clone());
         }
-        let tracks = playlist.tracks.items.iter()
-            .map(|ref i| Track::from_sp_track(&i.track))
+        let track_ids = playlist.tracks.items.iter()
+            .map(|ref i| i.track.id.to_string())
+            .collect::<Vec<_>>();
+        let sp_tracks = spotify::fetch_tracks(track_ids).unwrap_or(vec![]);
+        let tracks = sp_tracks.iter().map(|ref t| Track::from_sp_track(t))
             .collect::<Vec<_>>();
         self.add_tracks(tracks);
         self
