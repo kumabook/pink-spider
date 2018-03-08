@@ -1,4 +1,5 @@
 import { combineReducers } from 'redux';
+import { LOCATION_CHANGE } from 'react-router-redux';
 
 const drawlerIsOpen = (state = false, action) => {
   if (action.type === 'TOGGLE_DRAWLER') {
@@ -29,11 +30,26 @@ const message = (state = '', action) => {
   }
 };
 
-const titleReducer = (state = '') => state;
+const title = (state = '') => state;
+
+const needSearch = (state = true, action) => {
+  if (action.type === LOCATION_CHANGE) {
+    return [
+      '/feeds',
+      '/entries',
+      '/tracks',
+      '/playlists',
+      '/albums',
+      '/artists',
+    ].some(path => action.payload.pathname === path);
+  }
+  return state;
+};
 
 export default combineReducers({
   drawlerIsOpen,
   message,
   progress,
-  title: titleReducer,
+  title,
+  needSearch,
 });
