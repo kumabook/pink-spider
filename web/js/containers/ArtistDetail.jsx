@@ -9,13 +9,12 @@ import {
   CardTitle,
   CardText,
 } from 'material-ui/Card';
-import { List, ListItem }          from 'material-ui/List';
-import RaisedButton                from 'material-ui/RaisedButton';
-import { connect }                 from 'react-redux';
-import { update }                  from '../actions/artist';
-import { getUrl }                  from '../model/Artist';
-import tryGet                      from '../utils/tryGet';
-import datePrettify                from '../utils/datePrettify';
+import RaisedButton       from 'material-ui/RaisedButton';
+import { PropertyList }   from 'material-jsonschema';
+import { connect }        from 'react-redux';
+import { update }         from '../actions/artist';
+import { getUrl, schema } from '../model/Artist';
+import tryGet             from '../utils/tryGet';
 
 import {
   NO_IMAGE,
@@ -30,14 +29,10 @@ class ArtistDetail extends React.Component {
     };
   }
   render() {
-    const id          = tryGet(this.props.item, 'id', 'unknown id');
     const name        = tryGet(this.props.item, 'name', 'No Name');
     const description = tryGet(this.props.item, 'description', 'No Description');
     const provider    = tryGet(this.props.item, 'provider', 'No Service');
-    const identifier  = tryGet(this.props.item, 'identifier', 'No ID');
     const artworkUrl  = tryGet(this.props.item, 'artwork_url', NO_IMAGE);
-    const createdAt   = datePrettify(tryGet(this.props.item, 'created_at', null));
-    const updatedAt   = datePrettify(tryGet(this.props.item, 'updated_at', null));
     const overlay = (
       <CardTitle
         title={name}
@@ -72,14 +67,7 @@ class ArtistDetail extends React.Component {
           />
         </CardActions>
         <CardText>
-          <List>
-            <ListItem primaryText="id" secondaryText={id} />
-            <ListItem primaryText="name" secondaryText={name} />
-            <ListItem primaryText="provider" secondaryText={provider} />
-            <ListItem primaryText="identifier" secondaryText={identifier} />
-            <ListItem primaryText="created" secondaryText={createdAt} />
-            <ListItem primaryText="updated" secondaryText={updatedAt} />
-          </List>
+          {<PropertyList schema={schema} item={this.props.item} />}
         </CardText>
       </Card>
     );
