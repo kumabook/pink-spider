@@ -8,13 +8,16 @@ import {
   CardTitle,
   CardText,
 } from 'material-ui/Card';
-import { List, ListItem }      from 'material-ui/List';
-import RaisedButton            from 'material-ui/RaisedButton';
-import { connect }             from 'react-redux';
-import { creators }            from '../actions/track';
-import { getUrl, getOwnerUrl } from '../model/Track';
-import tryGet                  from '../utils/tryGet';
-import datePrettify            from '../utils/datePrettify';
+import { PropertyList } from 'material-jsonschema';
+import RaisedButton     from 'material-ui/RaisedButton';
+import { connect }      from 'react-redux';
+import { creators }     from '../actions/track';
+import tryGet           from '../utils/tryGet';
+import {
+  getUrl,
+  getOwnerUrl,
+  schema,
+} from '../model/Track';
 
 import {
   NO_IMAGE,
@@ -30,19 +33,11 @@ class TrackDetail extends React.Component {
     };
   }
   render() {
-    const id          = tryGet(this.props.item, 'id', 'unknown id');
     const state       = tryGet(this.props.item, 'state', 'unknown state');
-    const ownerId     = tryGet(this.props.item, 'owner_id', 'unknown');
-    const ownerName   = tryGet(this.props.item, 'owner_name', 'unknown');
     const title       = tryGet(this.props.item, 'title', 'No Title');
     const description = tryGet(this.props.item, 'description', 'No Description');
     const provider    = tryGet(this.props.item, 'provider', 'No Service');
-    const identifier  = tryGet(this.props.item, 'identifier', 'No ID');
     const artworkUrl  = tryGet(this.props.item, 'artwork_url', NO_IMAGE);
-    const audioUrl    = tryGet(this.props.item, 'audio_url', null);
-    const publishedAt = datePrettify(tryGet(this.props.item, 'published_at', null));
-    const createdAt   = datePrettify(tryGet(this.props.item, 'created_at', null));
-    const updatedAt   = datePrettify(tryGet(this.props.item, 'updated_at', null));
     const overlay = (
       <CardTitle
         title={title}
@@ -79,19 +74,7 @@ class TrackDetail extends React.Component {
           />
         </CardActions>
         <CardText>
-          <List>
-            <ListItem primaryText="id" secondaryText={id} />
-            <ListItem primaryText="title" secondaryText={title} />
-            <ListItem primaryText="state" secondaryText={state} />
-            <ListItem primaryText="provider" secondaryText={provider} />
-            <ListItem primaryText="identifier" secondaryText={identifier} />
-            <ListItem primaryText="owner id" secondaryText={ownerId} />
-            <ListItem primaryText="owner name" secondaryText={ownerName} />
-            <ListItem primaryText="audio url" secondaryText={audioUrl} />
-            <ListItem primaryText="published" secondaryText={publishedAt} />
-            <ListItem primaryText="created" secondaryText={createdAt} />
-            <ListItem primaryText="updated" secondaryText={updatedAt} />
-          </List>
+          <PropertyList schema={schema} item={this.props.item} />
         </CardText>
       </Card>
     );
