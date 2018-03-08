@@ -8,6 +8,7 @@ import { push }           from 'react-router-redux';
 import { Table }          from 'material-jsonschema';
 import parseIntOr         from '../utils/parseIntOr';
 import { creators }       from '../actions/track';
+import { getQuery }       from '../utils/url';
 import { defaultPerPage } from '../config';
 import {
   schema,
@@ -81,6 +82,7 @@ function mapDispatchToProps(dispatch, { match: { params } }) {
       const searchParams = new URLSearchParams();
       searchParams.append('page', page);
       searchParams.append('per_page', perPage);
+      searchParams.append('query', getQuery(location.search) || '');
       let path = '/tracks';
       if (params.entry_id) {
         path = `/entries/${params.entry_id}/tracks`;

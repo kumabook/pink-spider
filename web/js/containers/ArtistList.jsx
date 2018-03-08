@@ -5,6 +5,7 @@ import { withRouter }     from 'react-router-dom';
 import { push }           from 'react-router-redux';
 import { Table }          from 'material-jsonschema';
 import parseIntOr         from '../utils/parseIntOr';
+import { getQuery }       from '../utils/url';
 import { creators }       from '../actions/artist';
 import { defaultPerPage } from '../config';
 import {
@@ -78,6 +79,7 @@ function mapDispatchToProps(dispatch) {
       const params = new URLSearchParams();
       params.append('page', page);
       params.append('per_page', perPage);
+      params.append('query', getQuery(location.search) || '');
       dispatch(push({
         pathname: '/artists',
         search:   params.toString(),

@@ -6,6 +6,7 @@ import { push }           from 'react-router-redux';
 import { Table }          from 'material-jsonschema';
 import parseIntOr         from '../utils/parseIntOr';
 import { creators }       from '../actions/feed';
+import { getQuery }       from '../utils/url';
 import { defaultPerPage } from '../config';
 import {
   schema,
@@ -79,6 +80,7 @@ function mapDispatchToProps(dispatch) {
       const params = new URLSearchParams();
       params.append('page', page);
       params.append('per_page', perPage);
+      params.append('query', getQuery(location.search) || '');
       dispatch(push({
         pathname: '/feeds',
         search:   params.toString(),
