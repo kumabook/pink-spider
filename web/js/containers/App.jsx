@@ -1,9 +1,13 @@
 import React             from 'react';
 import PropTypes         from 'prop-types';
 import AppBar            from 'material-ui/AppBar';
+import { getStyles }     from 'material-ui/AppBar/AppBar';
 import Drawer            from 'material-ui/Drawer';
 import MenuItem          from 'material-ui/MenuItem';
 import CircularProgress  from 'material-ui/CircularProgress';
+import FlatButton        from 'material-ui/FlatButton';
+import Search            from 'material-ui/svg-icons/action/search';
+import TextField         from 'material-ui/TextField';
 import { connect }       from 'react-redux';
 import { push }          from 'react-router-redux';
 import { withRouter }    from 'react-router-dom';
@@ -30,9 +34,57 @@ class App extends React.Component {
       handleAlbumsMenuClick:    PropTypes.func.isRequired,
       handleTracksMenuClick:    PropTypes.func.isRequired,
       handleArtistsMenuClick:   PropTypes.func.isRequired,
+      handleSearch:             PropTypes.func.isRequired,
       drawlerIsOpen:            PropTypes.bool.isRequired,
       progress:                 PropTypes.bool.isRequired,
+      needSearch:               PropTypes.bool.isRequired,
+      location:                 PropTypes.object.isRequired,
     };
+  }
+  static get contextTypes() {
+    return { muiTheme: React.PropTypes.object.isRequired };
+  }
+  constructor() {
+    super();
+    this.handleSearchFormSubmit = this.handleSearchFormSubmit.bind(this);
+  }
+  handleSearchFormSubmit(e) {
+    e.preventDefault();
+    const query        = e.target.query.value;
+    const { pathname } = this.props.location;
+    if (e.target.query.value) {
+      this.props.handleSearch(query, pathname);
+    }
+  }
+  renderIconElementRight() {
+    if (!this.props.needSearch) {
+      return null;
+    }
+    const styles                = getStyles(this.props, this.context);
+    styles.flatButton.top       = styles.flatButton.marginTop;
+    styles.flatButton.marginTop = 0;
+    const textFieldStyle = {
+      color: '#FFFFFF',
+    };
+    const hintStyle = {
+      color: '#DDDDDD',
+    };
+    return (
+      <form onSubmit={this.handleSearchFormSubmit}>
+        <TextField
+          name="query"
+          hintText="Search"
+          inputStyle={textFieldStyle}
+          hintStyle={hintStyle}
+        />
+        <FlatButton
+          type="submit"
+          style={styles.flatButton}
+        >
+          <Search color="#FFFFFF" />
+        </FlatButton>
+      </form>
+    );
   }
   render() {
     const progress = !this.props.progress ? null : (
@@ -44,7 +96,7 @@ class App extends React.Component {
       <div>
         <AppBar
           title="pink spider"
-          iconClassNameRight="muidocs-icon-navigation-expand-more"
+          iconElementRight={this.renderIconElementRight()}
           onLeftIconButtonTouchTap={this.props.handleClick}
         />
         <Drawer open={this.props.drawlerIsOpen}>
@@ -72,6 +124,7 @@ function mapStateToProps(state) {
     drawlerIsOpen: state.app.drawlerIsOpen,
     message:       state.app.message,
     progress:      state.app.progress,
+    needSearch:    state.app.needSearch,
   };
 }
 
@@ -79,28 +132,31 @@ function mapDispatchToProps(dispatch) {
   return {
     handleClick:          () => dispatch(toggleDrawler()),
     handleFeedsMenuClick: () => {
-      dispatch(push({ pathname: '/feeds', query: { page: 0 } }));
+      dispatch(push({ pathname: '/feeds' }));
       dispatch(toggleDrawler());
     },
     handleEntriesMenuClick: () => {
-      dispatch(push({ pathname: '/entries', query: { page: 0 } }));
+      dispatch(push({ pathname: '/entries' }));
       dispatch(toggleDrawler());
     },
     handlePlaylistsMenuClick: () => {
-      dispatch(push({ pathname: '/playlists', query: { page: 0 } }));
+      dispatch(push({ pathname: '/playlists' }));
       dispatch(toggleDrawler());
     },
     handleAlbumsMenuClick: () => {
-      dispatch(push({ pathname: '/albums', query: { page: 0 } }));
+      dispatch(push({ pathname: '/albums' }));
       dispatch(toggleDrawler());
     },
     handleTracksMenuClick: () => {
-      dispatch(push({ pathname: '/tracks', query: { page: 0 } }));
+      dispatch(push({ pathname: '/tracks' }));
       dispatch(toggleDrawler());
     },
     handleArtistsMenuClick: () => {
-      dispatch(push({ pathname: '/artists', query: { page: 0 } }));
+      dispatch(push({ pathname: '/artists' }));
       dispatch(toggleDrawler());
+    },
+    handleSearch: (query, pathname = '/tracks') => {
+      dispatch(push({ pathname, search: `query=${query}` }));
     },
   };
 }
