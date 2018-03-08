@@ -13,6 +13,7 @@ use reqwest::header::{
 use regex::Regex;
 use serde_json;
 use serde::de::Error;
+use serde::de::DeserializeOwned;
 use get_env;
 use http;
 
@@ -165,6 +166,23 @@ pub struct PagingObject<T> {
     pub total:    i32,
 }
 
+impl<T: DeserializeOwned> PagingObject<T> {
+    pub fn fetch_next(&self) -> serde_json::Result<PagingObject<T>> {
+        if let Some(ref path) = self.next {
+            fetch(&path).and_then(|s| serde_json::from_str(&s))
+        } else {
+            Err(serde_json::Error::missing_field("no value"))
+        }
+    }
+    pub fn fetch_previous(&self) -> serde_json::Result<PagingObject<T>> {
+        if let Some(ref path) = self.next {
+            fetch(&path).and_then(|s| serde_json::from_str(&s))
+        } else {
+            Err(serde_json::Error::missing_field("no value"))
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Token {
     pub access_token: String,
@@ -219,6 +237,11 @@ pub fn fetch_tracks(ids: Vec<String>) -> serde_json::Result<Vec<Track>> {
     result.map(|tracks| tracks.tracks)
 }
 
+pub fn fetch_playlist_tracks(user_id: &str, id: &str) -> serde_json::Result<PagingObject<Track>> {
+    let path = format!("/users/{}/playlists/{}/tracks", user_id, id);
+    fetch(&path).and_then(|s| serde_json::from_str(&s))
+}
+
 /// This function fetches a album info with spotify api.
 ///
 /// # Examples
@@ -263,8 +286,12 @@ pub fn fetch_artists(ids: Vec<String>) -> serde_json::Result<Vec<Artist>> {
 }
 
 fn fetch(path: &str) -> serde_json::Result<String> {
-    let token  = update_token_if_needed()?;
-    let url    = format!("{}{}", BASE_URL, path);
+    let url = format!("{}{}", BASE_URL, path);
+    fetch_url(&url)
+}
+
+fn fetch_url(url: &str) -> serde_json::Result<String> {
+    let token       = update_token_if_needed()?;
     let mut headers = Headers::new();
     headers.set(
         Authorization(
@@ -274,7 +301,7 @@ fn fetch(path: &str) -> serde_json::Result<String> {
         )
     );
     headers.set(Connection::close());
-    let mut res = http::client().get(&url)
+    let mut res = http::client().get(url)
                                 .headers(headers)
                                 .send().unwrap();
     let mut body = String::new();
