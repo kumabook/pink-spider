@@ -237,7 +237,7 @@ pub fn fetch_tracks(ids: Vec<String>) -> serde_json::Result<Vec<Track>> {
     result.map(|tracks| tracks.tracks)
 }
 
-pub fn fetch_playlist_tracks(user_id: &str, id: &str) -> serde_json::Result<PagingObject<Track>> {
+pub fn fetch_playlist_tracks(user_id: &str, id: &str) -> serde_json::Result<PagingObject<PlaylistTrack>> {
     let path = format!("/users/{}/playlists/{}/tracks", user_id, id);
     fetch(&path).and_then(|s| serde_json::from_str(&s))
 }
