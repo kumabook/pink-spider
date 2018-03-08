@@ -9,12 +9,13 @@ import {
   CardTitle,
   CardText,
 } from 'material-ui/Card';
-import { List, ListItem } from 'material-ui/List';
-import RaisedButton       from 'material-ui/RaisedButton';
-import FlatButton         from 'material-ui/FlatButton';
-import Dialog             from 'material-ui/Dialog';
-import { connect }        from 'react-redux';
-import { creators }       from '../actions/entry';
+import RaisedButton     from 'material-ui/RaisedButton';
+import FlatButton       from 'material-ui/FlatButton';
+import Dialog           from 'material-ui/Dialog';
+import { PropertyList } from 'material-jsonschema';
+import { connect }      from 'react-redux';
+import { creators }     from '../actions/entry';
+import { schema }       from '../model/Entry';
 
 class EntryDetail extends React.Component {
   static get propTypes() {
@@ -102,24 +103,7 @@ class EntryDetail extends React.Component {
             />
           </CardActions>
           <CardText>
-            <List>
-              <ListItem primaryText="id" secondaryText={this.props.item.id} />
-              <ListItem primaryText="title" secondaryText={this.props.item.title} />
-              <ListItem primaryText="description" secondaryText={this.props.item.description} />
-              <ListItem primaryText="visual_url" secondaryText={this.props.item.visual_url} />
-              <ListItem primaryText="locale" secondaryText={this.props.item.locale} />
-              <ListItem primaryText="summary" secondaryText={this.props.item.summary} />
-              <ListItem primaryText="author" secondaryText={this.props.item.author} />
-              <ListItem primaryText="crawled" secondaryText={this.props.item.crawled} />
-              <ListItem primaryText="published" secondaryText={this.props.item.published} />
-              <ListItem primaryText="updated" secondaryText={this.props.item.updated} />
-              <ListItem primaryText="fingerprint" secondaryText={this.props.item.fingerprint} />
-              <ListItem primaryText="origin_id" secondaryText={this.props.item.origin_id} />
-              <ListItem primaryText="feed_id" secondaryText={this.props.item.feed_id} />
-
-              <ListItem primaryText="created_at" secondaryText={this.props.item.created_at} />
-              <ListItem primaryText="updated_at" secondaryText={this.props.item.updated_at} />
-            </List>
+            <PropertyList schema={schema} item={this.props.item} />;
           </CardText>
         </Card>
         <Dialog
