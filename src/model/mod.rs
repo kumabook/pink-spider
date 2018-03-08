@@ -40,6 +40,10 @@ pub struct PaginatedCollection<I> {
 pub enum FilterType {
     Equals,
     Contains,
+    GreaterThan,
+    LessThan,
+    GreaterThanOrEquals,
+    LessThanOrEquals,
 }
 
 pub enum Value {
@@ -56,8 +60,12 @@ pub struct Filter<'a> {
 impl<'a> Filter<'a> {
     pub fn to_query(&self, num: i32) -> String {
         let comparison = match self.filter_type {
-            FilterType::Equals   => "=",
-            FilterType::Contains => "ILIKE",
+            FilterType::Equals              => "=",
+            FilterType::Contains            => "ILIKE",
+            FilterType::GreaterThan         => ">",
+            FilterType::LessThan            => "<",
+            FilterType::GreaterThanOrEquals => ">=",
+            FilterType::LessThanOrEquals    => ">=",
         };
         format!("WHERE {} {} ${}", self.field, comparison, num)
     }
