@@ -2,6 +2,7 @@ use postgres;
 use uuid::Uuid;
 use std::fmt;
 use chrono::{NaiveDateTime, Utc, DateTime};
+use params;
 
 use apple_music;
 use youtube;
@@ -153,6 +154,19 @@ impl<'a> Model<'a> for Playlist {
             }
         }
         Ok(())
+    }
+
+    fn update_attributes(&mut self, map: &params::Map) -> &mut Self {
+        match map.find(&["velocity"]) {
+            Some(&params::Value::F64(ref value)) => self.velocity = *value,
+            Some(&params::Value::I64(ref value)) => self.velocity = *value as f64,
+            Some(&params::Value::U64(ref value)) => self.velocity = *value as f64,
+            Some(&params::Value::String(ref v)) => if let Ok(v) = (*v).parse::<f64>() {
+                self.velocity = v.clone()
+            },
+            _                                    => (),
+        };
+        self
     }
 }
 

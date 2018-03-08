@@ -26,6 +26,7 @@ use std::env;
 use error::Error;
 use serde::Serialize;
 use serde::Deserialize;
+use params;
 
 static DEFAULT_DATABASE_URL: &'static str = "postgres://postgres:postgres@localhost/pink_spider_development";
 
@@ -169,4 +170,7 @@ pub trait Model<'a> where Self: std::marker::Sized + Serialize + Deserialize<'a>
     }
     fn create(&self) -> Result<Self, Error>;
     fn save(&mut self) -> Result<(), Error>;
+    fn update_attributes(&mut self, &params::Map) -> &mut Self {
+        self
+    }
 }
