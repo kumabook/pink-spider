@@ -8,14 +8,18 @@ import {
   CardMedia,
   CardTitle,
 } from 'material-ui/Card';
-import { Tabs, Tab }                 from 'material-ui/Tabs';
-import { List, ListItem }          from 'material-ui/List';
-import RaisedButton                from 'material-ui/RaisedButton';
-import { connect }                 from 'react-redux';
-import { creators }                from '../actions/album';
-import { getUrl, getOwnerUrl }     from '../model/Album';
-import tryGet                      from '../utils/tryGet';
-import datePrettify                from '../utils/datePrettify';
+import { Tabs, Tab }           from 'material-ui/Tabs';
+import { List, ListItem }      from 'material-ui/List';
+import RaisedButton            from 'material-ui/RaisedButton';
+import { PropertyList }        from 'material-jsonschema';
+import { connect }             from 'react-redux';
+import { creators }            from '../actions/album';
+import tryGet                  from '../utils/tryGet';
+import {
+  getUrl,
+  getOwnerUrl,
+  schema,
+} from '../model/Album';
 
 import {
   NO_IMAGE,
@@ -81,36 +85,16 @@ class AlbumDetail extends React.Component {
       return null;
     }
     const items = this.props.item.tracks.map((track, index) => (
-      <ListItem primaryText={`${index + 1} ${track.title}`} secondaryText={track.id} />
+      <ListItem
+        key={track.id}
+        primaryText={`${index + 1} ${track.title}`}
+        secondaryText={track.id}
+      />
     ));
     return <List>{items}</List>;
   }
   renderPropsList() {
-    const id          = tryGet(this.props.item, 'id', 'unknown id');
-    const title       = tryGet(this.props.item, 'title', 'No Title');
-    const state       = tryGet(this.props.item, 'state', 'unknown state');
-    const provider    = tryGet(this.props.item, 'provider', 'No Service');
-    const identifier  = tryGet(this.props.item, 'identifier', 'No ID');
-    const ownerId     = tryGet(this.props.item, 'owner_id', 'unknown');
-    const ownerName   = tryGet(this.props.item, 'owner_name', 'unknown');
-    const publishedAt = datePrettify(tryGet(this.props.item, 'published_at', null));
-    const createdAt   = datePrettify(tryGet(this.props.item, 'created_at', null));
-    const updatedAt   = datePrettify(tryGet(this.props.item, 'updated_at', null));
-
-    return (
-      <List>
-        <ListItem primaryText="id" secondaryText={id} />
-        <ListItem primaryText="title" secondaryText={title} />
-        <ListItem primaryText="state" secondaryText={state} />
-        <ListItem primaryText="provider" secondaryText={provider} />
-        <ListItem primaryText="identifier" secondaryText={identifier} />
-        <ListItem primaryText="owner id" secondaryText={ownerId} />
-        <ListItem primaryText="owner name" secondaryText={ownerName} />
-        <ListItem primaryText="published" secondaryText={publishedAt} />
-        <ListItem primaryText="created" secondaryText={createdAt} />
-        <ListItem primaryText="updated" secondaryText={updatedAt} />
-      </List>
-    );
+    return <PropertyList schema={schema} item={this.props.item} />;
   }
   render() {
     return (
