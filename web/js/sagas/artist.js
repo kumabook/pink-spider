@@ -18,10 +18,10 @@ import {
 import { defaultPerPage } from '../config';
 
 
-export function* fetchArtists({ payload: { page = 0, perPage = defaultPerPage } }) {
+export function* fetchArtists({ payload: { page = 0, perPage = defaultPerPage, query } }) {
   try {
     yield put(showProgress());
-    const items = yield call(api.index, page, perPage);
+    const items = yield call(api.index, page, perPage, query);
     yield put(creators.index.succeeded(items));
   } catch (e) {
     yield put(creators.index.failed(e));
