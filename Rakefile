@@ -66,6 +66,28 @@ namespace :db do
     end
   end
 
+  desc "clear partial models"
+  task :clear_partial_models => :environment do
+    Track.where(title: "").find_in_batches do |tracks|
+      track_ids = tracks.map {|t| t.id }
+      TrackArtist.where(track_id: track_ids).delete_all
+      PlaylistTrack.where(track_id: track_ids).delete_all
+      AlbumTrack.where(track_id: track_ids).delete_all
+      TrackEntry.where(track_id: track_ids).delete_all
+    end
+    Album.where(title: "").find_in_batches do |albums|
+      album_ids = albums.map {|a| a.id }
+      AlbumArtist.where(album_id: album_ids).delete_all
+      AlbumTrack.where(album_id: album_ids).delete_all
+      AlbumEntry.where(album_id: album_ids).delete_all
+    end
+    Playlist.where(title: "").find_in_batches do |playlists|
+      playlist_ids = playlists.map {|p| p.id }
+      PlaylistTrack.where(playlist_id: playlist_ids).delete_all
+      PlaylistEntry.where(playlist_id: playlist_ids).delete_all
+    end
+  end
+
   desc "clear artists"
   task :clear_artists => :environment do
     items = Artist.where(provider: 'AppleMusic').select do |artist|
