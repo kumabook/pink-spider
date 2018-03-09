@@ -271,7 +271,9 @@ impl Playlist {
         let conn = conn()?;
         let stmt = conn.prepare("INSERT INTO playlist_tracks
                       (track_id, playlist_id, created_at, updated_at)
-                      VALUES ($1, $2, $3, $4)")?;
+                      VALUES ($1, $2, $3, $4)
+                      CONFLICT ON CONSTRAINT playlist_tracks_pkey
+                      DO UPDATE SET updated_at=$4")?;
         let now = Utc::now().naive_utc();
         stmt.query(&[&track.id, &self.id, &now, &now])?;
         Ok(())
