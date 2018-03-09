@@ -353,7 +353,6 @@ impl Playlist {
         self.title          = playlist.name.clone();
         self.description    = playlist.description.clone();
         self.state          = State::Alive;
-        self.published_at   = Utc::now().naive_utc();
         if playlist.images.len() > 0 {
             self.artwork_url   = Some(playlist.images[0].url.clone());
             self.thumbnail_url = Some(playlist.images[0].url.clone());
