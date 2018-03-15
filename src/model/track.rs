@@ -17,22 +17,22 @@ use model::provider::Provider;
 use model::state::State;
 use model::artist::Artist;
 
-static PROPS: [&'static str; 16]  = ["id",
-                                     "provider",
-                                     "identifier",
-                                     "owner_id",
-                                     "owner_name",
-                                     "url",
-                                     "title",
-                                     "description",
-                                     "thumbnail_url",
-                                     "artwork_url",
-                                     "audio_url",
-                                     "duration",
-                                     "published_at",
-                                     "created_at",
-                                     "updated_at",
-                                     "state"];
+pub static PROPS: [&'static str; 16]  = ["id",
+                                         "provider",
+                                         "identifier",
+                                         "owner_id",
+                                         "owner_name",
+                                         "url",
+                                         "title",
+                                         "description",
+                                         "thumbnail_url",
+                                         "artwork_url",
+                                         "audio_url",
+                                         "duration",
+                                         "published_at",
+                                         "created_at",
+                                         "updated_at",
+                                         "state"];
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Track {
@@ -329,25 +329,6 @@ impl Track {
         let rows = stmt.query(&[&album_ids]).unwrap();
         let mut items: BTreeMap<Uuid, Vec<Track>> = BTreeMap::new();
         for id in album_ids.iter() {
-            items.insert(*id, vec![]);
-        }
-        for row in rows.iter() {
-            let id: Uuid = row.get(PROPS.len());
-            if let Some(tracks) = items.get_mut(&id) {
-                tracks.push(Self::row_to_item(row))
-            }
-        }
-        Ok(items)
-    }
-    pub fn find_by_playlists(playlist_ids: Vec<Uuid>) -> Result<BTreeMap<Uuid, Vec<Track>>, Error> {
-        let conn = conn().unwrap();
-        let sql = format!("SELECT {}, playlist_tracks.playlist_id FROM tracks
-                      LEFT OUTER JOIN playlist_tracks ON playlist_tracks.track_id = tracks.id
-                      WHERE playlist_tracks.playlist_id = ANY($1)", Track::props_str("tracks."));
-        let stmt = conn.prepare(&sql).unwrap();
-        let rows = stmt.query(&[&playlist_ids]).unwrap();
-        let mut items: BTreeMap<Uuid, Vec<Track>> = BTreeMap::new();
-        for id in playlist_ids.iter() {
             items.insert(*id, vec![]);
         }
         for row in rows.iter() {
