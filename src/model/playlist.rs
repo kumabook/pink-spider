@@ -15,6 +15,7 @@ use model::provider::Provider;
 use model::state::State;
 use model::enclosure::Enclosure;
 use model::track::Track;
+use model::playlist_track::PlaylistTrack;
 
 static PROPS: [&'static str; 15]  = ["id",
                                      "provider",
@@ -49,7 +50,7 @@ pub struct Playlist {
     pub created_at:    NaiveDateTime,
     pub updated_at:    NaiveDateTime,
     pub state:         State,
-    pub tracks:        Vec<Track>,
+    pub tracks:        Vec<PlaylistTrack>,
 }
 
 impl PartialEq for Playlist {
@@ -147,10 +148,10 @@ impl<'a> Model<'a> for Playlist {
 
     fn set_relations(playlists: &mut Vec<Playlist>) -> Result<(), Error> {
         let ids: Vec<Uuid> = playlists.iter().map(|i| i.id).collect();
-        let tracks_of_playlist = Track::find_by_playlists(ids.clone())?;
+        let playlist_tracks_map = PlaylistTrack::find_by_playlist_ids(ids.clone())?;
         for playlist in playlists {
-            if let Some(ref mut tracks) = tracks_of_playlist.get(&playlist.id) {
-                playlist.tracks = tracks.clone()
+            if let Some(playlist_tracks) = playlist_tracks_map.get(&playlist.id) {
+                playlist.tracks = playlist_tracks.clone()
             }
         }
         Ok(())
@@ -267,18 +268,6 @@ impl Playlist {
         Playlist::rows_to_items(rows)
     }
 
-    pub fn add_track(&mut self, track: &Track) -> Result<(), Error> {
-        let conn = conn()?;
-        let stmt = conn.prepare("INSERT INTO playlist_tracks
-                      (track_id, playlist_id, created_at, updated_at)
-                      VALUES ($1, $2, $3, $4)
-                      CONFLICT ON CONSTRAINT playlist_tracks_pkey
-                      DO UPDATE SET updated_at=$4")?;
-        let now = Utc::now().naive_utc();
-        stmt.query(&[&track.id, &self.id, &now, &now])?;
-        Ok(())
-    }
-
     pub fn from_yt_playlist(playlist: &youtube::Playlist, items: &Vec<youtube::PlaylistItem>) -> Playlist {
         Playlist::find_or_create(Provider::YouTube, (*playlist).id.to_string())
             .unwrap()
@@ -307,17 +296,17 @@ impl Playlist {
             .clone()
     }
 
-    fn add_tracks(&mut self, tracks: Vec<Track>) -> Vec<Track> {
+    fn add_tracks(&mut self, tracks: Vec<Track>) -> Vec<PlaylistTrack> {
         let new_tracks = tracks.iter().map(|t| {
             let mut t = t.clone();
             if let Ok(new_track) = Track::find_or_create(t.provider,
                                                          t.identifier.to_string()) {
                 t.id      = new_track.id;
-                let _     = t.save();
-                let _     = self.add_track(&t);
-            };
-            t
-        }).collect::<Vec<_>>();
+                t.save().and_then(|_| PlaylistTrack::upsert(&self, &t))
+            } else {
+                Err(Error::Unexpected)
+            }
+        }).filter(|r| r.is_ok()).map(|r| r.unwrap()).collect::<Vec<_>>();
         self.tracks.append(&mut new_tracks.clone());
         new_tracks
     }
@@ -424,7 +413,7 @@ impl Playlist {
         }
     }
 
-    pub fn fetch_tracks(&mut self) -> Result<Vec<Track>, Error> {
+    pub fn fetch_tracks(&mut self) -> Result<Vec<PlaylistTrack>, Error> {
         match self.provider {
             Provider::YouTube    => Ok(vec![]),
             Provider::SoundCloud => Ok(vec![]),
@@ -434,7 +423,7 @@ impl Playlist {
         }
     }
 
-    pub fn fetch_apple_music_tracks(&mut self) -> Result<Vec<Track>, Error> {
+    pub fn fetch_apple_music_tracks(&mut self) -> Result<Vec<PlaylistTrack>, Error> {
         let country = apple_music::country(&self.url);
         let playlist = apple_music::fetch_playlist(&country, &self.identifier)?;
         let songs = playlist.get_songs();
@@ -443,7 +432,7 @@ impl Playlist {
         Ok(self.add_tracks(songs.iter().map(|song| Track::from_am_song(song)).collect()))
     }
 
-    pub fn fetch_spotify_tracks(&mut self) -> Result<Vec<Track>, Error> {
+    pub fn fetch_spotify_tracks(&mut self) -> Result<Vec<PlaylistTrack>, Error> {
         let mut items = vec![];
         let owner_id = self.clone().owner_id.ok_or(Error::Unexpected)?;
 
@@ -451,7 +440,6 @@ impl Playlist {
         items.append(&mut self.add_tracks(page.items.iter()
                                                     .map(|pt| Track::from_sp_track(&pt.track))
                                                     .collect()));
-
         while page.next.is_some() {
             page = page.fetch_next()?;
             items.append(&mut self.add_tracks(page.items.iter()

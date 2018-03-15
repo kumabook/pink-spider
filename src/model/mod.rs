@@ -5,6 +5,7 @@ pub use self::artist::Artist;
 pub use self::enclosure::Enclosure;
 pub use self::provider::Provider;
 pub use self::entry::Entry;
+pub use self::playlist_track::PlaylistTrack;
 pub use self::feed::Feed;
 pub use self::state::State;
 
@@ -14,6 +15,7 @@ mod album;
 mod artist;
 mod entry;
 mod feed;
+mod playlist_track;
 mod provider;
 mod state;
 mod enclosure;

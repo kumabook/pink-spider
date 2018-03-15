@@ -28,7 +28,7 @@ use chrono::NaiveDateTime;
 extern crate pink_spider;
 
 use pink_spider::error::Error;
-use pink_spider::model::{Model, Feed, Entry, Track, Playlist, Album, Artist, Enclosure, Provider, PaginatedCollection, Filter, FilterType};
+use pink_spider::model::{Model, Feed, Entry, Track, Playlist, PlaylistTrack, Album, Artist, Enclosure, Provider, PaginatedCollection, Filter, FilterType};
 use pink_spider::get_env;
 use pink_spider::rss;
 
@@ -108,6 +108,21 @@ pub fn index_by_entry<'a, T: Enclosure<'a>>(req: &mut Request) -> IronResult<Res
     let ref entry_id = req.extensions.get::<Router>().unwrap().find("entry_id").unwrap();
     let uuid = Uuid::parse_str(entry_id).map_err(|_| Error::Unprocessable)?;
     let items = T::find_by_entry_id(uuid);
+    let col = PaginatedCollection {
+        page:     0,
+        per_page: items.len() as i64,
+        total:    items.len() as i64,
+        items:    items,
+    };
+    let body = serde_json::to_string(&col).map_err(to_err)?;
+    Ok(Response::with((status::Ok, application_json(), body)))
+}
+
+pub fn index_tracks_by_playlist(req: &mut Request) -> IronResult<Response> {
+    let ref id = req.extensions.get::<Router>().unwrap().find("playlist_id").unwrap();
+    let uuid   = Uuid::parse_str(id).map_err(|_| Error::Unprocessable)?;
+    let map  = PlaylistTrack::find_by_playlist_ids(vec![uuid])?;
+    let items = map.get(&uuid).unwrap().clone();
     let col = PaginatedCollection {
         page:     0,
         per_page: items.len() as i64,
@@ -296,6 +311,7 @@ pub fn main() {
         update_track:             post "/v1/tracks/:id"                  => update::<Track>,
         index_tracks:             get  "/v1/tracks"                      => index::<Track>,
         index_tracks_by_entry:    get  "/v1/entries/:entry_id/tracks"    => index_by_entry::<Track>,
+        index_tracks_by_playlist: get  "/v1/playlists/:playlist_id/tracks"  => index_tracks_by_playlist,
 
         show_playlist_by_id:      get  "/v1/playlists/:id"               => show_by_id::<Playlist>,
         show_playlist:            get  "/v1/playlists/:provider/:id"     => show::<Playlist>,
