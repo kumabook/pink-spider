@@ -90,7 +90,7 @@ function mapDispatchToProps(dispatch) {
       const params = new URLSearchParams();
       params.append('page', page);
       params.append('per_page', perPage);
-      params.append('query', getQuery(location.search) || '');
+      params.append('query', getQuery(window.location.search) || '');
       dispatch(push({ search: params.toString() }));
     },
     itemsOfEntry: (resourceName, entryId) => {
