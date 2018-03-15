@@ -45,7 +45,7 @@ pub fn index<'a, T: Model<'a>>(req: &mut Request) -> IronResult<Response> {
         let q = format!("%{}%", q);
         let filter = Filter {
             filter_type: FilterType::Contains,
-            field: "title",
+            field: T::search_prop(),
             value: &q,
         };
         T::find(page, per_page, Some(filter))
