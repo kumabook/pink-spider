@@ -51,6 +51,9 @@ impl<'a> Model<'a> for Artist {
             .map(|&p| format!("{}{}", prefix, p))
             .collect::<Vec<String>>().join(",")
     }
+    fn search_prop() -> &'static str {
+        "name"
+    }
     fn row_to_item(row: postgres::rows::Row) -> Artist {
         Artist {
             id:            row.get(0),

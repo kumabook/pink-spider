@@ -87,6 +87,9 @@ pub fn conn() -> Result<Connection, postgres::error::Error> {
 pub trait Model<'a> where Self: std::marker::Sized + Serialize + Deserialize<'a> + Clone {
     fn table_name() -> String;
     fn props_str(prefix: &str) -> String;
+    fn search_prop() -> &'static str {
+        "title"
+    }
     fn row_to_item(rows: postgres::rows::Row) -> Self;
     fn rows_to_items(rows: postgres::rows::Rows) -> Vec<Self> {
         let mut items = Vec::new();
