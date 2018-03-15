@@ -84,11 +84,11 @@ class PlaylistDetail extends React.Component {
     if (!this.props.item.tracks) {
       return null;
     }
-    const items = this.props.item.tracks.map((track, index) => (
+    const items = this.props.item.tracks.map(({ updated_at: updatedAt, track }, index) => (
       <ListItem
         key={track.id}
         primaryText={`${index + 1} ${track.title}`}
-        secondaryText={track.id}
+        secondaryText={updatedAt}
         rightIcon={<ContentLink onClick={() => this.props.handleTrackClick(track)} />}
       />
     ));
