@@ -49,6 +49,16 @@ pub fn index<'a, T: Model<'a>>(req: &mut Request) -> IronResult<Response> {
             value: &q,
         };
         T::find(page, per_page, Some(filter))
+    } else if let Ok(q) = param_as_string(req, "type") {
+        if q == "active" {
+            T::find(page, per_page, Some(Filter {
+                filter_type: FilterType::GreaterThan,
+                field: "velocity",
+                value: &0.0,
+            }))
+        } else {
+            T::find(page, per_page, None)
+        }
     } else {
         T::find(page, per_page, None)
     };
