@@ -1,9 +1,17 @@
 # coding: utf-8
+require 'irb'
 require 'active_record'
 require 'yaml'
 require 'erb'
 require 'logger'
 include ActiveRecord::Tasks
+
+task :default => :console
+
+task :console => "db:environment" do
+  ARGV.clear
+  IRB.start
+end
 
 namespace :db do
   env = ENV['ENV'] || 'development'
@@ -16,8 +24,6 @@ namespace :db do
     config =  clazz.new(ENV['DATABASE_URL']).to_hash
     { env => config }
   end
-
-  task :default => :migrate
 
   task :environment do
     config = YAML.load(ERB.new(File.read('config/database.yml')).result)
