@@ -5,7 +5,7 @@ rust:
 before_install:
   - sudo apt-get update
 addons:
-  postgresql: "9.4"
+  postgresql: "9.6"
   apt:
     packages:
       - libcurl4-openssl-dev
