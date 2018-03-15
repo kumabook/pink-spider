@@ -8,6 +8,7 @@ describe('app reducer', () => {
       {
         drawlerIsOpen: false,
         message:       '',
+        needSearch:    true,
         progress:      false,
         title:         '',
       }

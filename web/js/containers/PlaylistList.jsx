@@ -80,7 +80,7 @@ function mapDispatchToProps(dispatch, { match: { params } }) {
       const searchParams = new URLSearchParams();
       searchParams.append('page', page);
       searchParams.append('per_page', perPage);
-      searchParams.append('query', getQuery(location.search) || '');
+      searchParams.append('query', getQuery(window.location.search) || '');
       let path = '/playlists';
       if (params.entry_id) {
         path = `/entries/${params.entry_id}/playlists`;
