@@ -12,6 +12,7 @@ use reqwest::header::{
 };
 use regex::Regex;
 use serde_json;
+use serde::{Deserialize, Deserializer};
 use serde::de::Error;
 use serde::de::DeserializeOwned;
 use get_env;
@@ -36,6 +37,13 @@ lazy_static! {
         get_env::var("SPOTIFY_CLIENT_SECRET").unwrap_or("".to_string())
     };
     static ref TOKEN: Mutex<Option<Token>> = Mutex::new(None);
+}
+
+fn nullable_string<'de, D>(deserializer: D) -> Result<String, D::Error>
+    where D: Deserializer<'de>
+{
+    let opt = Option::deserialize(deserializer)?;
+    Ok(opt.unwrap_or_default())
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -96,15 +104,19 @@ pub struct User {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Album {
+    #[serde(default, deserialize_with = "nullable_string")]
     pub album_type:        String,
     pub artists:           Vec<Artist>,
     pub available_markets: Vec<String>,
     pub external_urls:     BTreeMap<String, String>,
+    #[serde(default, deserialize_with = "nullable_string")]
     pub href:              String,
+    #[serde(default, deserialize_with = "nullable_string")]
     pub id:                String,
     pub images:            Vec<Image>,
     pub name:              String,
 //  pub type:              String, TODO Use serde instead of rustc_serialize
+    #[serde(default, deserialize_with = "nullable_string")]
     pub uri:               String,
     pub tracks:            Option<PagingObject<Track>>,
 }
@@ -112,10 +124,13 @@ pub struct Album {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Artist {
     pub external_urls: BTreeMap<String, String>,
+    #[serde(default, deserialize_with = "nullable_string")]
     pub href:          String,
+    #[serde(default, deserialize_with = "nullable_string")]
     pub id:            String,
     pub name:          String,
-//  pub type:            String, TODO Use serde instead of rustc_serialize
+ //  pub type:            String, TODO Use serde instead of rustc_serialize
+    #[serde(default, deserialize_with = "nullable_string")]
     pub uri:           String,
     pub images:        Option<Vec<Image>>,
 }
