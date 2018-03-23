@@ -201,7 +201,7 @@ impl Artist {
         Artist::rows_to_items(rows)
     }
 
-    fn find_by_relations(ids: Vec<Uuid>, name: &str) -> Result<BTreeMap<Uuid, Vec<Artist>>, Error> {
+    fn find_by_relations(ids: &Vec<Uuid>, name: &str) -> Result<BTreeMap<Uuid, Vec<Artist>>, Error> {
         let conn = conn().unwrap();
         let sql = format!("SELECT {0}, {1}_artists.{1}_id FROM artists
                       LEFT OUTER JOIN {1}_artists ON {1}_artists.artist_id = artists.id
@@ -222,11 +222,11 @@ impl Artist {
         Ok(items)
     }
 
-    pub fn find_by_tracks(track_ids: Vec<Uuid>) -> Result<BTreeMap<Uuid, Vec<Artist>>, Error> {
+    pub fn find_by_tracks(track_ids: &Vec<Uuid>) -> Result<BTreeMap<Uuid, Vec<Artist>>, Error> {
         Artist::find_by_relations(track_ids, "track")
     }
 
-    pub fn find_by_albums(album_ids: Vec<Uuid>) -> Result<BTreeMap<Uuid, Vec<Artist>>, Error> {
+    pub fn find_by_albums(album_ids: &Vec<Uuid>) -> Result<BTreeMap<Uuid, Vec<Artist>>, Error> {
         Artist::find_by_relations(album_ids, "album")
     }
 
