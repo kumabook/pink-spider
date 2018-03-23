@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { push } from 'react-router-redux';
 import {
   Card,
   CardActions,
@@ -8,11 +9,14 @@ import {
   CardTitle,
   CardText,
 } from 'material-ui/Card';
-import { PropertyList } from 'material-jsonschema';
-import RaisedButton     from 'material-ui/RaisedButton';
-import { connect }      from 'react-redux';
-import { creators }     from '../actions/track';
-import tryGet           from '../utils/tryGet';
+import { PropertyList }   from 'material-jsonschema';
+import { Tabs, Tab }      from 'material-ui/Tabs';
+import { List, ListItem } from 'material-ui/List';
+import ContentLink        from 'material-ui/svg-icons/content/link';
+import RaisedButton       from 'material-ui/RaisedButton';
+import { connect }        from 'react-redux';
+import { creators }       from '../actions/track';
+import tryGet             from '../utils/tryGet';
 import {
   getUrl,
   getOwnerUrl,
@@ -30,9 +34,11 @@ class TrackDetail extends React.Component {
     return {
       item:                    PropTypes.object.isRequired,
       handleUpdateButtonClick: PropTypes.func.isRequired,
+      handleArtistClick:       PropTypes.func.isRequired,
+      handlePlaylistClick:     PropTypes.func.isRequired,
     };
   }
-  render() {
+  renderSummaryCard() {
     const state       = tryGet(this.props.item, 'state', 'unknown state');
     const title       = tryGet(this.props.item, 'title', 'No Title');
     const description = tryGet(this.props.item, 'description', 'No Description');
@@ -73,10 +79,55 @@ class TrackDetail extends React.Component {
             onClick={() => this.props.handleUpdateButtonClick(this.props.item)}
           />
         </CardActions>
-        <CardText>
-          <PropertyList schema={schema} item={this.props.item} />
-        </CardText>
+        <CardText />
       </Card>
+    );
+  }
+  renderPropsList() {
+    return <PropertyList schema={schema} item={this.props.item} />;
+  }
+  renderArtistList() {
+    if (!this.props.item.artists) {
+      return null;
+    }
+    const items = this.props.item.artists.map(artist => (
+      <ListItem
+        key={artist.id}
+        primaryText={artist.name}
+        rightIcon={<ContentLink onClick={() => this.props.handleArtistClick(artist)} />}
+      />
+    ));
+    return <List>{items}</List>;
+  }
+  renderPlaylistList() {
+    if (!this.props.item.playlists) {
+      return null;
+    }
+    const items = this.props.item.playlists.map(playlist => (
+      <ListItem
+        key={playlist.id}
+        primaryText={playlist.title}
+        rightIcon={<ContentLink onClick={() => this.props.handlePlaylistClick(playlist)} />}
+      />
+    ));
+    return <List>{items}</List>;
+  }
+  render() {
+    return (
+      <Tabs>
+        <Tab label="Summary">
+          {this.renderSummaryCard()}
+        </Tab>
+        <Tab label="Props">
+          {this.renderPropsList()}
+        </Tab>
+        <Tab label="Artists" >
+          {this.renderArtistList()}
+        </Tab>
+        <Tab label="Playlists" >
+          {this.renderPlaylistList()}
+        </Tab>
+      </Tabs>
     );
   }
 }
@@ -90,6 +141,8 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
   return {
     handleUpdateButtonClick: track => dispatch(creators.update.start(track)),
+    handlePlaylistClick:     ({ id }) => dispatch(push({ pathname: `/playlists/${id}` })),
+    handleArtistClick:       ({ id }) => dispatch(push({ pathname: `/artists/${id}` })),
   };
 }
 
