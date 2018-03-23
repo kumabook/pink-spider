@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { withRouter } from 'react-router-dom';
+import { push } from 'react-router-redux';
 import {
   Card,
   CardActions,
@@ -10,6 +11,7 @@ import {
 } from 'material-ui/Card';
 import { Tabs, Tab }           from 'material-ui/Tabs';
 import { List, ListItem }      from 'material-ui/List';
+import ContentLink             from 'material-ui/svg-icons/content/link';
 import RaisedButton            from 'material-ui/RaisedButton';
 import { PropertyList }        from 'material-jsonschema';
 import { connect }             from 'react-redux';
@@ -31,6 +33,7 @@ class AlbumDetail extends React.Component {
   static get propTypes() {
     return {
       item:                    PropTypes.object.isRequired,
+      handleArtistClick:       PropTypes.func.isRequired,
       handleUpdateButtonClick: PropTypes.func.isRequired,
     };
   }
@@ -80,6 +83,19 @@ class AlbumDetail extends React.Component {
       </Card>
     );
   }
+  renderArtistList() {
+    if (!this.props.item.artists) {
+      return null;
+    }
+    const items = this.props.item.artists.map(artist => (
+      <ListItem
+        key={artist.id}
+        primaryText={artist.name}
+        rightIcon={<ContentLink onClick={() => this.props.handleArtistClick(artist)} />}
+      />
+    ));
+    return <List>{items}</List>;
+  }
   renderTrackList() {
     if (!this.props.item.tracks) {
       return null;
@@ -105,6 +121,9 @@ class AlbumDetail extends React.Component {
         <Tab label="Props">
           {this.renderPropsList()}
         </Tab>
+        <Tab label="Artists" >
+          {this.renderArtistList()}
+        </Tab>
         <Tab label="Tracks" >
           {this.renderTrackList()}
         </Tab>
@@ -122,6 +141,7 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
   return {
     handleUpdateButtonClick: item => dispatch(creators.update.start(item)),
+    handleArtistClick:       ({ id }) => dispatch(push({ pathname: `/artists/${id}` })),
   };
 }
 
