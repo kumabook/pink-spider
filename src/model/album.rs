@@ -141,8 +141,8 @@ impl<'a> Model<'a> for Album {
 
     fn set_relations(albums: &mut Vec<Album>) -> Result<(), Error> {
         let ids: Vec<Uuid> = albums.iter().map(|i| i.id).collect();
-        let tracks_of_album = Track::find_by_albums(ids.clone())?;
-        let artists_of_album = Artist::find_by_albums(ids.clone())?;
+        let tracks_of_album = Track::find_by_albums(&ids)?;
+        let artists_of_album = Artist::find_by_albums(&ids)?;
         for album in albums {
             if let Some(ref mut tracks) = tracks_of_album.get(&album.id) {
                 album.tracks = tracks.clone()

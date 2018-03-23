@@ -16,6 +16,8 @@ use model::enclosure::Enclosure;
 use model::provider::Provider;
 use model::state::State;
 use model::artist::Artist;
+use model::album::Album;
+use model::playlist::Playlist;
 
 pub static PROPS: [&'static str; 16]  = ["id",
                                          "provider",
@@ -52,7 +54,9 @@ pub struct Track {
     pub created_at:    NaiveDateTime,
     pub updated_at:    NaiveDateTime,
     pub state:         State,
+    pub album:         Option<Album>,
     pub artists:       Option<Vec<Artist>>,
+    pub playlists:     Option<Vec<Playlist>>,
 }
 
 impl PartialEq for Track {
@@ -95,7 +99,9 @@ impl<'a> Model<'a> for Track {
             created_at:    row.get(13),
             updated_at:    row.get(14),
             state:         State::new(row.get(15)),
+            album:         None,
             artists:       None,
+            playlists:     None,
         }
     }
     fn create(&self) -> Result<Track, Error> {
@@ -155,10 +161,14 @@ impl<'a> Model<'a> for Track {
 
     fn set_relations(tracks: &mut Vec<Track>) -> Result<(), Error> {
         let ids = tracks.iter().map(|i| i.id).collect();
-        let items = Artist::find_by_tracks(ids)?;
+        let artists_map   = Artist::find_by_tracks(&ids)?;
+        let playlists_map = Playlist::find_by_tracks(&ids)?;
         for track in tracks {
-            if let Some(ref mut artists) = items.get(&track.id) {
+            if let Some(ref mut artists) = artists_map.get(&track.id) {
                 track.artists = Some(artists.clone())
+            }
+            if let Some(ref mut playlists) = playlists_map.get(&track.id) {
+                track.playlists = Some(playlists.clone())
             }
         }
         Ok(())
@@ -184,7 +194,9 @@ impl<'a> Enclosure<'a> for Track {
             created_at:    Utc::now().naive_utc(),
             updated_at:    Utc::now().naive_utc(),
             state:         State::Alive,
+            album:         None,
             artists:       None,
+            playlists:     None,
         }
     }
 
@@ -320,7 +332,7 @@ impl Track {
         let rows = stmt.query(&[&album_id]).unwrap();
         Track::rows_to_items(rows)
     }
-    pub fn find_by_albums(album_ids: Vec<Uuid>) -> Result<BTreeMap<Uuid, Vec<Track>>, Error> {
+    pub fn find_by_albums(album_ids: &Vec<Uuid>) -> Result<BTreeMap<Uuid, Vec<Track>>, Error> {
         let conn = conn().unwrap();
         let sql = format!("SELECT {}, album_tracks.album_id FROM tracks
                       LEFT OUTER JOIN album_tracks ON album_tracks.track_id = tracks.id

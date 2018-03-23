@@ -1,6 +1,7 @@
 use postgres;
 use uuid::Uuid;
 use std::fmt;
+use std::collections::BTreeMap;
 use chrono::{NaiveDateTime, Utc, DateTime};
 use params;
 
@@ -267,6 +268,28 @@ impl Playlist {
         let rows = stmt.query(&[]).unwrap();
         Playlist::rows_to_items(rows)
     }
+
+    pub fn find_by_tracks(ids: &Vec<Uuid>) -> Result<BTreeMap<Uuid, Vec<Playlist>>, Error> {
+        let conn = conn().unwrap();
+        let sql = format!("SELECT {}, playlist_tracks.track_id FROM playlists
+                      LEFT OUTER JOIN playlist_tracks ON playlist_tracks.playlist_id = playlists.id
+                      WHERE playlist_tracks.track_id = ANY($1) ORDER BY playlist_tracks.updated_at DESC LIMIT {}",
+                          Playlist::props_str("playlists."), ids.len() * 20);
+        let stmt = conn.prepare(&sql).unwrap();
+        let rows = stmt.query(&[&ids]).unwrap();
+        let mut items: BTreeMap<Uuid, Vec<Playlist>> = BTreeMap::new();
+        for id in ids.iter() {
+            items.insert(*id, vec![]);
+        }
+        for row in rows.iter() {
+            let id: Uuid = row.get(PROPS.len());
+            if let Some(playlists) = items.get_mut(&id) {
+                playlists.push(Playlist::row_to_item(row))
+            }
+        }
+        Ok(items)
+    }
+
 
     pub fn from_yt_playlist(playlist: &youtube::Playlist, items: &Vec<youtube::PlaylistItem>) -> Playlist {
         Playlist::find_or_create(Provider::YouTube, (*playlist).id.to_string())
