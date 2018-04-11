@@ -491,7 +491,9 @@ fn extract_enclosures_from_url(url: String) -> (Vec<Playlist>, Vec<Album>, Vec<T
 
 #[cfg(test)]
 mod test {
-    use super::scrape;
+    use std::fs::File;
+    use url::Url;
+    use super::extract;
     use super::extract_identifier;
     use youtube;
     use soundcloud;
@@ -526,16 +528,15 @@ mod test {
     }
     #[test]
     fn test_scrape() {
-        let url       = "http://spincoaster.com/spincoaster-breakout-2017";
-        let product   = scrape(url).unwrap();
+        let url       = Url::parse("http://example.com/").unwrap();
+        let mut f     = File::open("fixture/test.html").unwrap();
+        let product   = extract(&mut f, &url).unwrap();
         let playlists = product.playlists;
         let tracks    = product.tracks;
-        assert_eq!(playlists.len(), 2);
-        let youtube_tracks: Vec<&Track> = tracks.iter().filter(|&x| x.provider == Provider::YouTube).collect();
+        assert_eq!(playlists.len(), 1);
         let spotify_tracks: Vec<&Track> = tracks.iter().filter(|&x| x.provider == Provider::Spotify).collect();
-        assert!(youtube_tracks.len() > 0);
         assert_eq!(spotify_tracks.len(), 0);
         let spotify_playlists: Vec<&Playlist> = playlists.iter().filter(|&x| x.provider == Provider::Spotify).collect();
-        assert_eq!(spotify_playlists[0].tracks.len(), 30);
+        assert!(spotify_playlists[0].tracks.len() > 0);
     }
 }
