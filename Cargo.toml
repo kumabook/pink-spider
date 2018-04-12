@@ -15,6 +15,10 @@ name = "crawler"
 path = "src/crawler.rs"
 
 [[bin]]
+name = "crawl_typica_media"
+path = "src/crawl_typica_media.rs"
+
+[[bin]]
 name = "update_tracks"
 path = "src/update_tracks.rs"
 

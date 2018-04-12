@@ -210,11 +210,14 @@ impl Feed {
     pub fn crawl(&mut self) -> Result<Vec<Entry>, Error> {
         let rss_feed      = rss::fetch(&self.url)?;
         let mut entries   = vec![];
+        println!("rss_feed.entries.length {:?}", rss_feed.entries.len());
         for entry in rss_feed.entries {
+            println!("entry.alternate {:?}", entry.alternate);
             if entry.alternate.len() == 0 {
                 continue;
             }
             let alt = entry.alternate.first().unwrap();
+            println!("{:?}", alt.href.to_string());
             match Entry::find_or_create_by_url_if_invalid(alt.href.to_string()) {
                 Ok(mut e) => {
                     println!("Found new entry: {}", e.url);
@@ -225,7 +228,9 @@ impl Feed {
                         entries.push(e);
                     }
                 },
-                Err(_) => (),
+                Err(e) => {
+                    println!("{:?}", e);
+                },
             }
         }
         Ok(entries)
