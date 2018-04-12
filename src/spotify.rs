@@ -184,10 +184,7 @@ pub struct PagingObject<T> {
 impl<T: DeserializeOwned> PagingObject<T> {
     pub fn fetch_next(&self) -> serde_json::Result<PagingObject<T>> {
         if let Some(ref path) = self.next {
-            fetch_url(&path).and_then(|s| {
-                println!("{}", s);
-                serde_json::from_str(&s)
-            })
+            fetch_url(&path).and_then(|s| serde_json::from_str(&s))
         } else {
             Err(serde_json::Error::missing_field("no value"))
         }
