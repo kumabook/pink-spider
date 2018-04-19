@@ -44,9 +44,10 @@ impl PlaylistTrack {
                       LEFT OUTER JOIN playlist_tracks
                       ON playlist_tracks.track_id = tracks.id
                       WHERE playlist_tracks.playlist_id = ANY($1)
-                      ORDER BY playlist_tracks.created_at DESC",
+                      ORDER BY playlist_tracks.created_at DESC LIMIT {}",
                           Track::props_str("tracks."),
-                          PlaylistTrack::props_str("playlist_tracks."));
+                          PlaylistTrack::props_str("playlist_tracks."),
+                          playlist_ids.len() * 200);
         let stmt = conn.prepare(&sql).map_err(|e| {
             println!("{:?}", e);
             e
