@@ -1,5 +1,5 @@
 # coding: utf-8
-require 'irb'
+require 'pry'
 require 'active_record'
 require 'yaml'
 require 'erb'
@@ -10,7 +10,7 @@ task :default => :console
 
 task :console => "db:environment" do
   ARGV.clear
-  IRB.start
+  Pry.start
 end
 
 namespace :db do
