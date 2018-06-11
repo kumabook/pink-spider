@@ -2,8 +2,9 @@ extern crate hyper;
 extern crate reqwest;
 extern crate iron;
 extern crate params;
-#[macro_use]
 extern crate html5ever;
+#[macro_use]
+extern crate xml5ever;
 extern crate tendril;
 extern crate regex;
 extern crate string_cache;
@@ -42,6 +43,7 @@ pub mod itunes;
 pub mod youtube;
 pub mod soundcloud;
 pub mod spotify;
+pub mod gracenote;
 pub mod lemoned;
 pub mod get_env;
 pub mod http;
