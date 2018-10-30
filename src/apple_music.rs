@@ -150,12 +150,15 @@ pub struct AlbumAttributes {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AlbumRelations {
-    pub artists: Relationship<Artist>,
+    pub artists: Relationship<ArtistOfAlbum>,
     pub genres:  Option<Resource<Genre, NoRelations>>,
     pub tracks:  Relationship<Track>,
 }
 
 pub type Artist = Resource<ArtistAttributes, ArtistRelations>;
+
+pub type ArtistOfSong = Resource<ArtistAttributes, ArtistOfItemRelations>;
+pub type ArtistOfAlbum = Resource<ArtistAttributes, ArtistOfItemRelations>;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -170,6 +173,15 @@ pub struct ArtistAttributes {
 #[serde(rename_all = "camelCase")]
 pub struct ArtistRelations {
     pub albums:      Relationship<Album>,
+    pub genres:      Option<Resource<Genre, NoRelations>>,
+    pub playlists:   Option<Relationship<Playlist>>,
+    pub music_videos: Option<Relationship<MusicVideo>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ArtistOfItemRelations {
+    pub albums:      Relationship<PartialResource>,
     pub genres:      Option<Resource<Genre, NoRelations>>,
     pub playlists:   Option<Relationship<Playlist>>,
     pub music_videos: Option<Relationship<MusicVideo>>,
@@ -226,7 +238,7 @@ pub struct SongAttributes {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SongRelations {
     pub albums:  Relationship<PartialResource>,
-    pub artists: Relationship<Artist>,
+    pub artists: Relationship<ArtistOfAlbum>,
     pub genres:  Option<Resource<Genre, NoRelations>>,
 }
 
