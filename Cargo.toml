@@ -11,8 +11,8 @@ name = "app"
 path = "src/main.rs"
 
 [[bin]]
-name = "crawler"
-path = "src/crawler.rs"
+name = "rss_crawler"
+path = "src/rss_crawler.rs"
 
 [[bin]]
 name = "update_tracks"
