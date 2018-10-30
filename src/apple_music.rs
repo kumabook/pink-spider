@@ -451,9 +451,9 @@ mod test {
     use super::*;
     #[test]
     fn test_fetch_playlist() {
-        let playlist = fetch_playlist("jp", "pl.2ff0e502db0c44a598a7cb2261a5e6b2").unwrap();
-        assert_eq!(playlist.id, "pl.2ff0e502db0c44a598a7cb2261a5e6b2");
-        assert_eq!(playlist.attributes.name, "LILI LIMIT が選ぶ マイプレイリスト");
+        let playlist = fetch_playlist("jp", "pl.f4d106fed2bd41149aaacabb233eb5eb").unwrap();
+        assert_eq!(playlist.id, "pl.f4d106fed2bd41149aaacabb233eb5eb");
+        assert_eq!(playlist.attributes.name, "トゥデイズ ヒッツ");
         assert_eq!(playlist.attributes.curator_name, Some("Apple Music".to_string()));
         assert!(playlist.attributes.artwork.is_some());
         assert_ne!(playlist.attributes.url, "");
