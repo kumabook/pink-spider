@@ -373,7 +373,8 @@ impl Playlist {
             self.thumbnail_url = Some(playlist.images[1].url.clone());
         }
         let track_ids = playlist.tracks.items.iter()
-            .map(|ref i| i.track.id.to_string())
+            .filter(|ref i| i.track.is_some())
+            .map(|ref i| i.track.clone().unwrap().id.to_string())
             .collect::<Vec<_>>();
         let sp_tracks = spotify::fetch_tracks(track_ids).unwrap_or(vec![]);
         let tracks = sp_tracks.iter().map(|ref t| Track::from_sp_track(t))
@@ -461,12 +462,14 @@ impl Playlist {
 
         let mut page = spotify::fetch_playlist_tracks(&owner_id, &self.identifier)?;
         items.append(&mut self.add_tracks(page.items.iter()
-                                                    .map(|pt| Track::from_sp_track(&pt.track))
+                                                    .filter(|pt| pt.track.is_some())
+                                                    .map(|pt| Track::from_sp_track(&pt.track.clone().unwrap()))
                                                     .collect()));
         while page.next.is_some() {
             page = page.fetch_next()?;
             items.append(&mut self.add_tracks(page.items.iter()
-                                                        .map(|pt| Track::from_sp_track(&pt.track))
+                                                        .filter(|pt| pt.track.is_some())
+                                                        .map(|pt| Track::from_sp_track(&pt.track.clone().unwrap()))
                                                         .collect()));
         }
         Ok(items)
