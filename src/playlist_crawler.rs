@@ -9,11 +9,11 @@ pub fn main() {
     println!("Start crawling playlists...");
     let now = Instant::now();
     let mut playlists = Playlist::find_actives();
-    println!("{} playlists", playlists.len());
+    println!("[pl_cralwer]{} playlists", playlists.len());
     let total = playlists.len();
     let mut index = 0;
     for playlist in playlists.iter_mut() {
-        println!("[{}/{}] Fetch latest tracks of [{}] {}: {}",
+        println!("[pl_cralwer][{}/{}] Fetch latest tracks of [{}] {}: {}",
                  index,
                  total,
                  playlist.provider,
@@ -22,14 +22,14 @@ pub fn main() {
         let tracks = match playlist.fetch_tracks() {
             Ok(tracks) => tracks,
             Err(e)     => {
-                println!("{}", e);
+                println!("[pl_cralwer]{}", e);
                 vec![]
             }
         };
-        println!("{} tracks are added", tracks.len());
+        println!("[pl_cralwer]{} tracks are added", tracks.len());
         index += 1;
     }
 
-    println!("Complete crawling playlists... total {} ms",
+    println!("[pl_cralwer]Complete crawling playlists... total {} ms",
              Duration::from_std(now.elapsed()).unwrap().num_milliseconds());
 }
