@@ -1,6 +1,7 @@
 use std::io::Read;
 use std::collections::BTreeMap;
 use std::sync::Mutex;
+use std::cmp::min;
 use chrono::{NaiveDateTime, Utc, Duration};
 use reqwest::header::{
     Headers,
@@ -245,10 +246,24 @@ pub fn fetch_track(id: &str) -> serde_json::Result<Track> {
 }
 
 pub fn fetch_tracks(ids: Vec<String>) -> serde_json::Result<Vec<Track>> {
+    let mut track_ids = ids;
+    let mut tracks: Vec<Track> = vec![];
+    loop {
+        let mut t_ids = track_ids.clone();
+        let (left, right) = t_ids.split_at_mut(min(50, track_ids.len()));
+        if left.len() == 0 {
+            break
+        }
+        let items = fetch_tracks_by_ids(left.to_vec())?;
+        tracks.append(&mut items.clone());
+        track_ids = right.to_vec().clone();
+    }
+    Ok(tracks)
+}
+
+pub fn fetch_tracks_by_ids(ids: Vec<String>) -> serde_json::Result<Vec<Track>> {
     let path = format!("/tracks?ids={}", ids.join(","));
-    let result: serde_json::Result<Tracks> = fetch(&path).and_then(|s| {
-        serde_json::from_str(&s)
-    });
+    let result: serde_json::Result<Tracks> = fetch(&path).and_then(|s| serde_json::from_str(&s));
     result.map(|tracks| tracks.tracks)
 }
 
