@@ -41,7 +41,6 @@ fn fetch_spotify_track() {
     let artists = track.artists.unwrap();
     let artist = &artists[0];
     assert_eq!(artist.name, "The Killers");
-    println!("{:?}", artist);
     assert!(artist.clone().artwork_url.unwrap().len() > 0);
 }
 
@@ -50,7 +49,7 @@ fn fetch_spotify_album() {
     let sp_album = pink_spider::spotify::fetch_album("4OHNH3sDzIxnmUADXzv2kT").unwrap();
     let album = pink_spider::model::Album::from_sp_album(&sp_album);
     assert_eq!(album.identifier, "4OHNH3sDzIxnmUADXzv2kT");
-    assert_eq!(album.title, "Hot Fuss (Deluxe Version)");
+    assert_eq!(album.title, "Hot Fuss");
     assert_eq!(album.owner_name.unwrap_or_default(), "The Killers");
     let artists = album.artists.unwrap();
     let artist = &artists[0];
