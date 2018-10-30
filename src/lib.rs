@@ -39,7 +39,6 @@ pub mod scraper;
 pub mod rss;
 pub mod model;
 pub mod apple_music;
-pub mod itunes;
 pub mod youtube;
 pub mod soundcloud;
 pub mod spotify;
