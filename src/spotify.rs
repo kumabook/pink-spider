@@ -167,7 +167,7 @@ pub struct PlaylistTrack {
     pub added_at: Option<String>,
     pub added_by: Option<User>,
     pub is_local: bool,
-    pub track:    Track,
+    pub track:    Option<Track>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
