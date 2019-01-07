@@ -1,7 +1,13 @@
-FROM rust:1.21.0
-RUN curl -sL https://deb.nodesource.com/setup_6.x | bash
-RUN apt-get update && \
-    apt-get install -qq -y build-essential nodejs ruby ruby-dev libpq-dev postgresql-client --fix-missing --no-install-recommends
+FROM ruby:2.5.3
+
+RUN curl -sL https://deb.nodesource.com/setup_10.x | bash
+
+RUN apt-get update
+RUN apt-get install -y build-essential nodejs
+RUN apt-get install -y libpq-dev postgresql-client
+
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH $HOME/.cargo/bind
 
 RUN npm install yarn --global
 
