@@ -202,7 +202,7 @@ pub fn update_entry(req: &mut Request) -> IronResult<Response> {
 pub fn update<'a, T: Enclosure<'a>>(req: &mut Request) -> IronResult<Response> {
     let mut enclosure = T::find_by_id(&query_as_string(req, "id"))?;
     let map = req.get_ref::<params::Params>().map_err(to_err)?;
-    enclosure.fetch_props()?;
+    let _ = enclosure.fetch_props();
     enclosure.update_attributes(map);
     enclosure.save()?;
     let body = serde_json::to_string(&enclosure).map_err(to_err)?;
