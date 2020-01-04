@@ -238,7 +238,7 @@ pub fn parse_embed_url_as_playlist(url: &str) -> Option<(String, String)> {
 /// ```
 /// let track = pink_spider::spotify::fetch_track("3n3Ppam7vgaVa1iaRUc9Lp").unwrap();
 ///
-/// assert_eq!(track.id, "3n3Ppam7vgaVa1iaRUc9Lp");
+/// assert_eq!(track.id.unwrap(), "3n3Ppam7vgaVa1iaRUc9Lp");
 /// ```
 pub fn fetch_track(id: &str) -> serde_json::Result<Track> {
     let path = format!("/tracks/{}", id);
