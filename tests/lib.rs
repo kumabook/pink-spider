@@ -34,7 +34,7 @@ fn fetch_apple_music_album() {
 #[test]
 fn fetch_spotify_track() {
     let sp_track = pink_spider::spotify::fetch_track("3n3Ppam7vgaVa1iaRUc9Lp").unwrap();
-    let track = pink_spider::model::Track::from_sp_track(&sp_track);
+    let track = pink_spider::model::Track::from_sp_track(&sp_track).unwrap();
     assert_eq!(track.identifier, "3n3Ppam7vgaVa1iaRUc9Lp");
     assert_eq!(track.title, "Mr. Brightside");
     assert_eq!(track.owner_name.unwrap_or_default(), "The Killers");
