@@ -42,7 +42,7 @@ with request of scraping track from web page.
 5. Build and run backend
 
     ```shell
-    cargo run
+    cargo run --bin app
     ```
 
 6. Build frontend
