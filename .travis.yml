@@ -20,8 +20,8 @@ matrix:
 services:
   - postgresql
 before_script:
-  - rvm install ruby-2.5.3 --binary --fuzzy
-  - rvm use 2.5.3
+  - rvm install ruby-2.6.5 --binary --fuzzy
+  - rvm use 2.6.5
   - gem install bundler
   - bundle install
   - nvm install 7.4.0
