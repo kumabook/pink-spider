@@ -283,11 +283,12 @@ impl Track {
             .update_with_sc_track(track)
             .clone()
     }
-    pub fn from_sp_track(track: &spotify::Track) -> Track {
-        Track::find_or_create(Provider::Spotify, (*track).id.to_string())
+    pub fn from_sp_track(track: &spotify::Track) -> Result<Track, Error> {
+        let track_id = track.clone().id.ok_or(Error::Unexpected)?;
+        Ok(Track::find_or_create(Provider::Spotify, track_id.to_string())
             .unwrap()
             .update_with_sp_track(track)
-            .clone()
+            .clone())
     }
     fn add_artist(&mut self, artist: &Artist) -> Result<(), Error> {
         let conn = conn()?;
@@ -459,8 +460,11 @@ impl Track {
     }
 
     pub fn update_with_sp_track(&mut self, track: &spotify::Track) -> &mut Track {
+        if track.id == None {
+            return self
+        }
         self.provider       = Provider::Spotify;
-        self.identifier     = track.id.to_string();
+        self.identifier     = track.clone().id.unwrap();
         if track.artists.len() > 0 {
             self.owner_id   = Some(track.artists[0].id.clone());
             self.owner_name = Some(track.artists[0].name.clone());

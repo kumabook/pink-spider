@@ -374,10 +374,15 @@ impl Playlist {
         }
         let track_ids = playlist.tracks.items.iter()
             .filter(|ref i| i.track.is_some())
-            .map(|ref i| i.track.clone().unwrap().id.to_string())
+            .map(|ref i| i.track.clone().unwrap())
+            .filter(|ref track| track.id.is_some())
+            .map(|track| track.id.unwrap().to_string())
             .collect::<Vec<_>>();
         let sp_tracks = spotify::fetch_tracks(track_ids).unwrap_or(vec![]);
-        let tracks = sp_tracks.iter().map(|ref t| Track::from_sp_track(t))
+        let tracks = sp_tracks.iter()
+            .map(|ref t| Track::from_sp_track(t))
+            .filter(|ref r| r.is_ok())
+            .map(|r| r.unwrap())
             .collect::<Vec<_>>();
         self.add_tracks(tracks);
         self
@@ -461,16 +466,24 @@ impl Playlist {
         let owner_id = self.clone().owner_id.ok_or(Error::Unexpected)?;
 
         let mut page = spotify::fetch_playlist_tracks(&owner_id, &self.identifier)?;
-        items.append(&mut self.add_tracks(page.items.iter()
-                                                    .filter(|pt| pt.track.is_some())
-                                                    .map(|pt| Track::from_sp_track(&pt.track.clone().unwrap()))
-                                                    .collect()));
+        items.append(&mut self.add_tracks(
+            page.items.iter()
+                .filter(|pt| pt.track.is_some())
+                .map(|pt| Track::from_sp_track(&pt.track.clone().unwrap()))
+                .filter(|ref r| r.is_ok())
+                .map(|r| r.unwrap())
+                .collect())
+        );
         while page.next.is_some() {
             page = page.fetch_next()?;
-            items.append(&mut self.add_tracks(page.items.iter()
-                                                        .filter(|pt| pt.track.is_some())
-                                                        .map(|pt| Track::from_sp_track(&pt.track.clone().unwrap()))
-                                                        .collect()));
+            items.append(&mut self.add_tracks(
+                page.items.iter()
+                    .filter(|pt| pt.track.is_some())
+                    .map(|pt| Track::from_sp_track(&pt.track.clone().unwrap()))
+                    .filter(|ref r| r.is_ok())
+                    .map(|r| r.unwrap())
+                    .collect())
+            );
         }
         Ok(items)
     }

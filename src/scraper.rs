@@ -300,7 +300,7 @@ fn fetch_spotify_album(identifier: String) -> (Vec<Playlist>, Vec<Album>, Vec<Tr
 
 fn fetch_spotify_track(identifier: String) -> Vec<Track> {
     match spotify::fetch_track(&identifier) {
-        Ok(t) => vec![Track::from_sp_track(&t)],
+        Ok(t) => Track::from_sp_track(&t).map(|t| vec![t]).unwrap_or(vec![]),
         Err(_) => vec![Track::new(Provider::Spotify, identifier)],
     }
 }

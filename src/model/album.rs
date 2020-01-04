@@ -331,9 +331,14 @@ impl Album {
 
         let track_ids = album.tracks.clone()
             .map(|t| t.items).unwrap_or(vec![]).iter()
-            .map(|ref t| t.id.clone()).collect();
+            .filter(|ref t| t.id.is_some())
+            .map(|t| t.clone().id.unwrap())
+            .collect();
         let sp_tracks = spotify::fetch_tracks(track_ids).unwrap_or(vec![]);
-        let tracks = sp_tracks.iter().map(|ref t| Track::from_sp_track(t))
+        let tracks = sp_tracks.iter()
+            .map(|ref t| Track::from_sp_track(t))
+            .filter(|ref t| t.is_ok())
+            .map(|t| t.unwrap().clone())
             .map(|ref mut t| t.update_with_sp_album(&album).clone())
             .collect::<Vec<_>>();
         self.add_tracks(tracks);
