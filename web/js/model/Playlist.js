@@ -75,7 +75,12 @@ export const getUrl = (playlist) => {
     case 'SoundCloud':
       return `https://soundcloud.com/playlists/${id}`;
     case 'Spotify':
-      return formatOpenURL(parse(playlist.url));
+      try {
+        return formatOpenURL(parse(playlist.url));
+      } catch (e) {
+        const s = playlist.url.split(':');
+        return `http://open.spotify.com/playlist/${s[2]}`;
+      }
     case 'AppleMusic': {
       const country = getCountryParam(playlist.url);
       return `http://tools.applemusic.com/embed/v1/playlist/pl.${id}?country=${country}`;
