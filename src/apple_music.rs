@@ -229,7 +229,7 @@ pub struct SongAttributes {
     pub name:               String,
     pub play_params:        Option<PlayParameters>,
     pub previews:           Vec<Preview>,
-    pub release_date:       String,
+    // pub release_date:       Option<String>,
     pub track_number:       i32,
     pub url:                String,
     pub work_name:          Option<String>,
