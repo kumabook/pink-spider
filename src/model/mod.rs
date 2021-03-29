@@ -24,6 +24,7 @@ use std;
 use uuid::Uuid;
 use postgres;
 use postgres::{Connection, TlsMode};
+use postgres::tls::native_tls::NativeTls;
 use std::env;
 use error::Error;
 use serde::Serialize;
@@ -75,10 +76,11 @@ impl<'a> Filter<'a> {
 }
 
 pub fn conn() -> Result<Connection, postgres::error::Error> {
+    let negotiator = NativeTls::new().unwrap();
     let opt_url = env::var("DATABASE_URL");
     match opt_url {
         Ok(url) =>
-            Connection::connect(url.trim(), TlsMode::None),
+            Connection::connect(url.trim(), TlsMode::Require(&negotiator)),
         Err(_)  =>
             Connection::connect(DEFAULT_DATABASE_URL, TlsMode::None)
     }
