@@ -272,27 +272,6 @@ pub fn send(query: Query) -> Result<String, Error> {
     Ok(body)
 }
 
-pub fn parse(res: String) -> Result<Response, Error> {
-    let dom = parse_document(RcDom::default(), Default::default())
-        .from_utf8()
-        .read_from(&mut res.as_bytes())
-        .unwrap();
-    let handle = dom.document.clone();
-    let mut response = Response { albums: vec![] };
-    for child in handle.children.borrow().iter() {
-        match child.clone().data {
-            Element { ref name, .. } => {
-                let tag_name = name.local.as_ref();
-                match tag_name.as_ref() {
-                    "RESPONSES" => parse_as_response(child.clone(), &mut response),
-                    _           => (),
-                }
-            },
-            _ => (),
-        }
-    }
-    Ok(response)
-}
 
 pub fn parse_as_response(handle: Handle, response: &mut Response) {
     for child in handle.children.borrow().iter() {
