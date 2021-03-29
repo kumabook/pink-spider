@@ -3,14 +3,6 @@ use std::collections::BTreeMap;
 use std::sync::Mutex;
 use std::cmp::min;
 use chrono::{NaiveDateTime, Utc, Duration};
-use reqwest::header::{
-    Headers,
-    Authorization,
-    Bearer,
-    Basic,
-    Connection,
-    ContentType
-};
 use regex::Regex;
 use serde_json;
 use serde::{Deserialize, Deserializer};
@@ -321,18 +313,10 @@ fn fetch(path: &str) -> serde_json::Result<String> {
 }
 
 fn fetch_url(url: &str) -> serde_json::Result<String> {
-    let token       = update_token_if_needed()?;
-    let mut headers = Headers::new();
-    headers.set(
-        Authorization(
-            Bearer {
-                token: token.access_token
-            }
-        )
-    );
-    headers.set(Connection::close());
+    let token = update_token_if_needed()?;
+//    headers.set(Connection::close());
     let mut res = http::client().get(url)
-                                .headers(headers)
+                                .bearer_auth(token.access_token)
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
@@ -348,21 +332,11 @@ fn fetch_url(url: &str) -> serde_json::Result<String> {
 /// assert!(token.is_ok());
 /// ```
 pub fn fetch_token() -> serde_json::Result<Token> {
-    let url         = "https://accounts.spotify.com/api/token";
-    let mut headers = Headers::new();
-    headers.set(
-        Authorization(
-            Basic {
-                username: CLIENT_ID.to_string(),
-                password: Some(CLIENT_SECRET.to_string()),
-            }
-        )
-    );
-    headers.set(ContentType("application/x-www-form-urlencoded".parse().unwrap()));
-    headers.set(Connection::close());
+    let url = "https://accounts.spotify.com/api/token";
     let mut res = http::client().post(url)
                                 .body("grant_type=client_credentials")
-                                .headers(headers)
+                                .header("content-type", "application/x-www-form-urlencoded")
+                                .basic_auth(CLIENT_ID.to_string(), Some(CLIENT_SECRET.to_string()))
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();

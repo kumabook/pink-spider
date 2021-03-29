@@ -1,5 +1,6 @@
 extern crate hyper;
 extern crate reqwest;
+extern crate mime;
 extern crate iron;
 extern crate params;
 extern crate html5ever;

@@ -1,5 +1,5 @@
 use std::io::Read;
-use reqwest::header::Connection;
+//use reqwest::header::Connection;
 use serde_json;
 use get_env;
 use http;
@@ -60,7 +60,7 @@ pub fn fetch_track(id: &str) -> serde_json::Result<Track> {
     let params = format!("client_id={}", *API_KEY);
     let url    = format!("{}/tracks/{}?{}", BASE_URL, id, params);
     let mut res = http::client().get(&url)
-                                .header(Connection::close())
+//                                .header(Connection::close())
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
@@ -71,7 +71,7 @@ pub fn fetch_playlist(id: &str) -> serde_json::Result<Playlist> {
     let params = format!("client_id={}", *API_KEY);
     let url    = format!("{}/playlists/{}?{}", BASE_URL, id, params);
     let mut res = http::client().get(&url)
-                                .header(Connection::close())
+//                                .header(Connection::close())
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
@@ -83,7 +83,7 @@ pub fn fetch_user_tracks(id: &str) -> serde_json::Result<Vec<Track>> {
     let params = format!("client_id={}", *API_KEY);
     let url    = format!("{}/users/{}/tracks?{}", BASE_URL, id, params);
     let mut res = http::client().get(&url)
-                                .header(Connection::close())
+//                                .header(Connection::close())
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();

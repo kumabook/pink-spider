@@ -1518,6 +1518,7 @@ dependencies = [
  "hyper 0.14.5",
  "iron",
  "lazy_static 1.4.0",
+ "mime 0.3.16",
  "mount",
  "opengraph",
  "params",

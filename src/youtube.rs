@@ -1,5 +1,5 @@
 use std::io::Read;
-use reqwest::header::Connection;
+//use reqwest::header::Connection;
 use std::collections::BTreeMap;
 use serde_json;
 use serde::de::Error;
@@ -206,7 +206,7 @@ pub fn fetch_playlist(id: &str) -> serde_json::Result<PlaylistResponse> {
                          MAX_RESULTS);
     let url     = format!("{}/{}?{}", BASE_URL, "playlists", params);
     let mut res = http::client().get(&url)
-                                .header(Connection::close())
+//                                .header(Connection::close())
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
@@ -220,7 +220,7 @@ pub fn fetch_playlist_items(id: &str) -> serde_json::Result<PlaylistItemResponse
                          MAX_RESULTS);
     let url    = format!("{}/{}?{}", BASE_URL, "playlistItems", params);
     let mut res = http::client().get(&url)
-                                .header(Connection::close())
+//                                .header(Connection::close())
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
@@ -231,7 +231,7 @@ pub fn fetch_video(id: &str) -> serde_json::Result<Video> {
     let params = format!("key={}&part=snippet&id={}", *API_KEY, id);
     let url    = format!("{}/{}?{}", BASE_URL, "videos", params);
     let mut res = http::client().get(&url)
-                                .header(Connection::close())
+//                                .header(Connection::close())
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();
@@ -246,7 +246,7 @@ pub fn fetch_channel(id: &str) -> serde_json::Result<Channel> {
     let params = format!("key={}&part=snippet&id={}", *API_KEY, id);
     let url    = format!("{}/{}?{}", BASE_URL, "channels", params);
     let mut res = http::client().get(&url)
-                                .header(Connection::close())
+//                                .header(Connection::close())
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();

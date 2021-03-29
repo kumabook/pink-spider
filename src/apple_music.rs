@@ -1,9 +1,3 @@
-use reqwest::header::{
-    Headers,
-    Authorization,
-    Bearer,
-    Connection,
-};
 use std::io::Read;
 use regex::Regex;
 use serde_json;
@@ -377,11 +371,8 @@ pub fn parse_url(value: &str, regex_str: &str) -> Option<(String, String, String
 fn fetch(path: &str) -> serde_json::Result<String> {
     let token  = DEVELOPER_TOKEN.to_string();
     let url    = format!("{}{}", BASE_URL, path);
-    let mut headers = Headers::new();
-    headers.set(Authorization(Bearer { token: token }));
-    headers.set(Connection::close());
     let mut res = http::client().get(&url)
-                                .headers(headers)
+                                .bearer_auth(token)
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();

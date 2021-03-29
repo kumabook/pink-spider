@@ -1,9 +1,9 @@
 use std::io::Read;
 use chrono::{DateTime, Utc};
-use reqwest::header::{
-    Headers,
-    Connection,
-};
+//use reqwest::header::{
+//    Headers,
+//    Connection,
+//};
 use serde_json;
 use get_env;
 use http;
@@ -51,10 +51,10 @@ pub fn fetch_track(id: &str) -> serde_json::Result<Track> {
 
 fn fetch(path: &str) -> serde_json::Result<String> {
     let url    = format!("{}/v1{}", *BASE_URL, path);
-    let mut headers = Headers::new();
-    headers.set(Connection::close());
+//    let mut headers = Headers::new();
+//    headers.set(Connection::close());
     let mut res = http::client().get(&url)
-                                .headers(headers)
+//                                .headers(headers)
                                 .send().unwrap();
     let mut body = String::new();
     res.read_to_string(&mut body).unwrap();

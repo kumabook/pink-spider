@@ -11,9 +11,11 @@ use html5ever::tendril::stream::TendrilSink;
 use std::default::Default;
 use regex::Regex;
 use reqwest::header::{
-    Connection,
-    ConnectionOption,
-    UserAgent,
+    HeaderMap,
+    HeaderValue,
+    USER_AGENT,
+    CONNECTION,
+    CONTENT_TYPE
 };
 use http;
 use url::Url;
@@ -37,7 +39,7 @@ use url::percent_encoding::{percent_decode};
 use get_env;
 
 lazy_static! {
-    static ref USER_AGENT: String = {
+    static ref USER_AGENT_VALUE: String = {
         get_env::var("USER_AGENT").unwrap_or("".to_string())
     };
 }
@@ -56,13 +58,14 @@ pub struct ScraperProduct {
 }
 
 pub fn scrape(url: &str) -> Result<ScraperProduct, Error> {
-    let client      = http::client();
-    let mut builder = client.get(url);
-    builder.header(Connection(vec![ConnectionOption::Close]));
-    if *USER_AGENT != "" {
-        builder.header(UserAgent::new(USER_AGENT.to_string()));
+    let mut headers = HeaderMap::new();
+    if *USER_AGENT_VALUE != "" {
+        headers.insert(USER_AGENT, HeaderValue::from_str(&USER_AGENT_VALUE.to_string()).unwrap());
     }
-    let mut res = builder.send()?;
+
+    let client  = http::client();
+    let mut res =  client.get(url)
+          .headers(headers.clone()).send()?;
     if res.status().is_success() {
         let url = Url::parse(url)?;
         extract(&mut res, &url)

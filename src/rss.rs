@@ -1,12 +1,12 @@
 use reqwest::header:: {
-    Headers,
-    Connection,
-    ConnectionOption,
-    ContentType,
-    Accept,
-    qitem,
+    HeaderMap,
+    CONNECTION,
+  //  CONNECTION_OPTION,
+    CONTENT_TYPE,
+    ACCEPT,
+//    qitem,
 };
-use reqwest::mime::*;
+use mime::Mime;
 use std::io::Read;
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::ISO_8859_1;
@@ -15,18 +15,19 @@ use error::Error;
 use error::Error::BadRequest;
 use feed_rs;
 
-fn get_charset(headers: &Headers) -> Option<&str> {
-    headers.get::<ContentType>()
-        .and_then(|c| c.get_param(CHARSET))
-        .map(|n| n.as_str())
+fn get_charset(headers: &HeaderMap) -> Option<String> {
+    headers.get(CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<Mime>().ok())
+        .and_then(|mime| mime.get_param("charset").map(|n| n.as_str().to_string()))
 }
 
 pub fn fetch(url: &str) -> Result<feed_rs::Feed, Error> {
     let mime: Mime = "*/*".parse().unwrap();
     let client = http::client();
     let mut builder = client.get(url);
-    builder.header(Connection(vec![ConnectionOption::Close]));
-    builder.header(Accept(vec![qitem(mime)]));
+//    builder.header(Connection(vec![ConnectionOption::Close]));
+//    builder.header(Accept(vec![qitem(mime)]));
     let mut res = builder.send()?;
     let charset = get_charset(&res.headers()).map(|v| v.to_lowercase());
     match charset.as_ref().map(String::as_ref) {
