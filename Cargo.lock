@@ -96,12 +96,6 @@ dependencies = [
 
 [[package]]
 name = "bitflags"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4efd02e230a02e18f92fc2735f44597385ed02ad8f831e7c1c1156ee5e1ab3a5"
-
-[[package]]
-name = "bitflags"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
@@ -206,7 +200,7 @@ version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
 ]
 
 [[package]]
@@ -245,30 +239,11 @@ dependencies = [
 
 [[package]]
 name = "core-foundation"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25bfd746d203017f7d5cbd31ee5d8e17f94b6521c7af77ece6c9e4b2d4b16c67"
-dependencies = [
- "core-foundation-sys 0.2.3",
- "libc",
-]
-
-[[package]]
-name = "core-foundation"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0a89e2ae426ea83155dccf10c0fa6b1463ef6d5fcb44cee0b224a408fa640a62"
 dependencies = [
- "core-foundation-sys 0.8.2",
- "libc",
-]
-
-[[package]]
-name = "core-foundation-sys"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "065a5d7ffdcbc8fa145d6f0746f3555025b9097a9e9cda59f7467abae670c78d"
-dependencies = [
+ "core-foundation-sys",
  "libc",
 ]
 
@@ -551,7 +526,7 @@ version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2e9763c69ebaae630ba35f74888db465e49e259ba1bc0eda7d06f4a067615d82"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
  "fuchsia-zircon-sys",
 ]
 
@@ -846,7 +821,7 @@ dependencies = [
  "bytes 0.4.12",
  "futures",
  "hyper 0.12.36",
- "native-tls 0.2.7",
+ "native-tls",
  "tokio-io",
 ]
 
@@ -1164,34 +1139,18 @@ dependencies = [
 
 [[package]]
 name = "native-tls"
-version = "0.1.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f74dbadc8b43df7864539cedb7bc91345e532fdd913cfdc23ad94f4d2d40fbc0"
-dependencies = [
- "lazy_static 0.2.11",
- "libc",
- "openssl 0.9.24",
- "schannel",
- "security-framework 0.1.16",
- "security-framework-sys 0.1.16",
- "tempdir",
-]
-
-[[package]]
-name = "native-tls"
 version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8d96b2e1c8da3957d58100b09f102c6d9cfdfced01b7ec5a8974044bb09dbd4"
+source = "git+https://github.com/sfackler/rust-native-tls?tag=v0.2.7#41522daa6f6e76182c3118a7f9c23f6949e6d59f"
 dependencies = [
  "lazy_static 1.4.0",
  "libc",
  "log 0.4.14",
- "openssl 0.10.32",
+ "openssl",
  "openssl-probe",
  "openssl-sys",
  "schannel",
- "security-framework 2.2.0",
- "security-framework-sys 2.2.0",
+ "security-framework",
+ "security-framework-sys",
  "tempfile",
 ]
 
@@ -1321,24 +1280,11 @@ dependencies = [
 
 [[package]]
 name = "openssl"
-version = "0.9.24"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3605c298474a3aa69de92d21139fb5e2a81688d308262359d85cdd0d12a7985"
-dependencies = [
- "bitflags 0.9.1",
- "foreign-types",
- "lazy_static 1.4.0",
- "libc",
- "openssl-sys",
-]
-
-[[package]]
-name = "openssl"
 version = "0.10.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "038d43985d1ddca7a9900630d8cd031b56e4794eecc2e9ea39dd17aa04399a70"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
  "cfg-if 1.0.0",
  "foreign-types",
  "lazy_static 1.4.0",
@@ -1551,12 +1497,12 @@ dependencies = [
 [[package]]
 name = "postgres"
 version = "0.15.2"
-source = "git+https://github.com/sfackler/rust-postgres.git?tag=postgres-v0.15.2#0516cb9d109f9450a0154cc35060b2c4bd02f492"
+source = "git+https://github.com/kumabook/rust-postgres.git?branch=postgres-v0.15.2-p1#f361afa7fccb4edd7d040dc41d0c43333a47529c"
 dependencies = [
  "bytes 0.4.12",
  "fallible-iterator",
  "log 0.4.14",
- "native-tls 0.1.5",
+ "native-tls",
  "postgres-protocol",
  "postgres-shared",
  "socket2",
@@ -1565,7 +1511,7 @@ dependencies = [
 [[package]]
 name = "postgres-protocol"
 version = "0.3.2"
-source = "git+https://github.com/sfackler/rust-postgres.git?tag=postgres-v0.15.2#0516cb9d109f9450a0154cc35060b2c4bd02f492"
+source = "git+https://github.com/kumabook/rust-postgres.git?branch=postgres-v0.15.2-p1#f361afa7fccb4edd7d040dc41d0c43333a47529c"
 dependencies = [
  "base64 0.6.0",
  "byteorder",
@@ -1583,7 +1529,7 @@ dependencies = [
 [[package]]
 name = "postgres-shared"
 version = "0.4.1"
-source = "git+https://github.com/sfackler/rust-postgres.git?tag=postgres-v0.15.2#0516cb9d109f9450a0154cc35060b2c4bd02f492"
+source = "git+https://github.com/kumabook/rust-postgres.git?branch=postgres-v0.15.2-p1#f361afa7fccb4edd7d040dc41d0c43333a47529c"
 dependencies = [
  "chrono",
  "fallible-iterator",
@@ -1855,7 +1801,7 @@ version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94341e4e44e24f6b591b59e47a8a027df12e008d73fd5672dbea9cc22f4507d9"
 dependencies = [
- "bitflags 1.2.1",
+ "bitflags",
 ]
 
 [[package]]
@@ -1925,7 +1871,7 @@ dependencies = [
  "log 0.4.14",
  "mime 0.3.16",
  "mime_guess 2.0.3",
- "native-tls 0.2.7",
+ "native-tls",
  "serde 1.0.125",
  "serde_json",
  "serde_urlencoded",
@@ -2014,37 +1960,15 @@ checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
 
 [[package]]
 name = "security-framework"
-version = "0.1.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfa44ee9c54ce5eecc9de7d5acbad112ee58755239381f687e564004ba4a2332"
-dependencies = [
- "core-foundation 0.2.3",
- "core-foundation-sys 0.2.3",
- "libc",
- "security-framework-sys 0.1.16",
-]
-
-[[package]]
-name = "security-framework"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3670b1d2fdf6084d192bc71ead7aabe6c06aa2ea3fbd9cc3ac111fa5c2b1bd84"
 dependencies = [
- "bitflags 1.2.1",
- "core-foundation 0.9.1",
- "core-foundation-sys 0.8.2",
+ "bitflags",
+ "core-foundation",
+ "core-foundation-sys",
  "libc",
- "security-framework-sys 2.2.0",
-]
-
-[[package]]
-name = "security-framework-sys"
-version = "0.1.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5421621e836278a0b139268f36eee0dc7e389b784dc3f79d8f11aabadf41bead"
-dependencies = [
- "core-foundation-sys 0.2.3",
- "libc",
+ "security-framework-sys",
 ]
 
 [[package]]
@@ -2053,7 +1977,7 @@ version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3676258fd3cfe2c9a0ec99ce3038798d847ce3e4bb17746373eb9f0f1ac16339"
 dependencies = [
- "core-foundation-sys 0.8.2",
+ "core-foundation-sys",
  "libc",
 ]
 
