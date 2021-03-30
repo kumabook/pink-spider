@@ -67,3 +67,4 @@ features = ["with-uuid", "with-chrono", "with-serde_json", "with-native-tls"]
 optional = true
 [patch.crates-io]
 iron = { git = 'https://github.com/iron/iron', branch = "0.6-maintenance" }
+openssl = { git = 'https://github.com/sfackler/rust-openssl', tag = "openssl-v0.10.33" }
