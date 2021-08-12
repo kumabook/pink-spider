@@ -2793,8 +2793,3 @@ dependencies = [
  "markup5ever 0.7.5",
  "time",
 ]
-
-[[patch.unused]]
-name = "openssl"
-version = "0.10.33"
-source = "git+https://github.com/sfackler/rust-openssl?tag=openssl-v0.10.33#140ec193d5ad1ab91321069ccb2f86be947fafee"

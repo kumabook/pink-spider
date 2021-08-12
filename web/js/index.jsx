@@ -34,7 +34,7 @@ injectTapEventPlugin();
 const history = createHistory();
 const sagaMiddleware = createSagaMiddleware();
 const store = createStore(reducers, applyMiddleware(sagaMiddleware,
-                                                    routerMiddleware(history)));
+  routerMiddleware(history)));
 sagaMiddleware.run(rootSaga);
 ReactDOM.render(
   <MuiThemeProvider>

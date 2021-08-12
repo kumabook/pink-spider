@@ -80,7 +80,7 @@ pub fn conn() -> Result<Connection, postgres::error::Error> {
     let opt_url = env::var("DATABASE_URL");
     match opt_url {
         Ok(url) =>
-            Connection::connect(url.trim(), TlsMode::Require(&negotiator)),
+            Connection::connect(url.trim(), TlsMode::None),
         Err(_)  =>
             Connection::connect(DEFAULT_DATABASE_URL, TlsMode::None)
     }

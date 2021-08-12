@@ -33,7 +33,7 @@ export const receiveTracks = (tracks, entryId) => ({
 export const fetchTracks = (page = 0, perPage = 10, entryId = null) => (dispatch) => {
   dispatch({ type: 'FETCH_TRACKS', page, perPage, entryId });
   const promise = entryId ? track.indexByEntry(entryId, page, perPage) :
-        track.index(page, perPage);
+    track.index(page, perPage);
   return promise.then(tracks => dispatch(receiveTracks(tracks, entryId)));
 };
 
@@ -62,7 +62,7 @@ export const receivePlaylists = (playlists, entryId) => ({
 export const fetchPlaylists = (page = 0, perPage = 10, entryId = null) => (dispatch) => {
   dispatch({ type: 'FETCH_PLAYLISTS', page, perPage, entryId });
   const promise = entryId ? playlist.indexByEntry(entryId, page, perPage) :
-        playlist.index(page, perPage);
+    playlist.index(page, perPage);
   return promise.then(playlists => dispatch(receivePlaylists(playlists, entryId)));
 };
 
@@ -83,7 +83,7 @@ export const receiveAlbums = (albums, entryId) => ({
 export const fetchAlbums = (page = 0, perPage = 10, entryId = null) => (dispatch) => {
   dispatch({ type: 'FETCH_ALBUMS', page, perPage, entryId });
   const promise = entryId ? album.indexByEntry(entryId, page, perPage) :
-        album.index(page, perPage);
+    album.index(page, perPage);
   return promise.then(albums => dispatch(receiveAlbums(albums, entryId)));
 };
 
