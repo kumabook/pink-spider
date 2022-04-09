@@ -45,7 +45,7 @@
     "history": "^4.6.1",
     "material-jsonschema": "0.0.13",
     "material-ui": "^0.18.1",
-    "moment": "^2.17.1",
+    "moment": "^2.29.2",
     "prop-types": "^15.5.10",
     "react": "^15.5.4",
     "react-addons-create-fragment": "^15.4.2",
